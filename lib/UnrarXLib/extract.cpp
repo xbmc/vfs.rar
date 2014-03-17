@@ -617,7 +617,12 @@ bool CmdExtract::ExtractCurrentFile(CommandData *Cmd,Archive &Arc,int HeaderSize
 #endif
           return(true);
         }
-        if (XBMC->CreateDirectory(DestFileName))
+        char name[NM];
+        if (WideName)
+          WideToUtf(DestFileNameW, name, NM);
+        else
+          strcpy(name, DestFileName);
+        if (XBMC->CreateDirectory(name))
         {
 #ifndef GUI
           mprintf(St(MCreatDir),DestFileName);

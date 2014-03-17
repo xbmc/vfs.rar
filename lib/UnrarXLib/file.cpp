@@ -108,15 +108,20 @@ bool File::Open(const char *Name,const wchar *NameW,bool OpenShared,bool Update)
   HandleType=FILE_HANDLENORMAL;
   SkipClose=false;
   bool success=hNewFile!=BAD_HANDLE;*/
+  char name[NM];
+  if (NameW)
+    WideToUtf(NameW, name, NM);
+  else
+    strcpy(name, Name);
   bool success;
   if (Update)
   {
-    m_File = XBMC->OpenFileForWrite(Name, true);
+    m_File = XBMC->OpenFileForWrite(name, true);
     success = m_File != NULL;
   }
   else
   {
-    m_File = XBMC->OpenFile(Name, 0);
+    m_File = XBMC->OpenFile(name, 0);
     success = m_File != NULL;
   }
   if (success)
@@ -170,14 +175,22 @@ bool File::Create(const char *Name,const wchar *NameW)
 #else
   hFile=fopen(Name,CREATEBINARY);
 #endif*/
-  const char* lastslash = strrchr(Name, '\\');
+  char name[NM];
+  if (NameW)
+    WideToUtf(NameW, name, NM);
+  else
+    strcpy(name, Name);
+  char* lastslash = strrchr(name, '\\');
+  char tmp;
   if (!lastslash)
-    lastslash = strrchr(Name, '/');
-  char temp[1024];
-  strncpy(temp, Name, lastslash-Name);
-  temp[lastslash-Name] = '\0';
-  XBMC->CreateDirectory(temp);
-  m_File = XBMC->OpenFileForWrite(Name, true);
+    lastslash = strrchr(name, '/');
+  if (lastslash) {
+    tmp = *lastslash;
+    *lastslash = '\0';
+  }
+  XBMC->CreateDirectory(name);
+  *lastslash = tmp;
+  m_File = XBMC->OpenFileForWrite(name, true);
   NewFile=true;
   HandleType=FILE_HANDLENORMAL;
   SkipClose=false;
