@@ -5,19 +5,19 @@
   name="RAR archive support"
   provider-name="spiff">
   <requires>
-    <import addon="xbmc.vfs" version="1.0.0"/>
+    <import addon="kodi.vfs" version="1.0.0"/>
   </requires>
   <extension
-    point="xbmc.vfs"
+    point="kodi.vfs"
     protocols="rar"
     extensions=".rar|.001"
     files="true"
     directories="true"
     filedirectories="true"
-    library_linux="vfs.rar.so"/>
+    library_@PLATFORM@="@LIBRARY_FILENAME@" />
   <extension point="xbmc.addon.metadata">
     <summary lang="en">RAR archive support</summary>
     <description lang="en">RAR archive support</description>
-    <platform>all</platform>
+    <platform>@PLATFORM@</platform>
   </extension>
 </addon>

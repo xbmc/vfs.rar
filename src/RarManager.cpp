@@ -20,12 +20,11 @@
 
 #include "RarManager.h"
 
-#include "xbmc/libXBMC_addon.h"
+#include "libXBMC_addon.h"
 extern ADDON::CHelper_libXBMC_addon *XBMC;
 
 #include <set>
 
-#define EXTRACTION_WARN_SIZE 50*1024*1024
 
 using namespace std;
 using namespace XFILE;
@@ -81,7 +80,7 @@ CRarManager::~CRarManager()
 
 bool CRarManager::CacheRarredFile(std::string& strPathInCache, const std::string& strRarPath, const std::string& strPathInRar, uint8_t bOptions, const std::string& strDir, const int64_t iSize)
 {
-  PLATFORM::CLockObject lock(m_lock);
+  P8PLATFORM::CLockObject lock(m_lock);
 
   //If file is listed in the cache, then use listed copy or cleanup before overwriting.
   bool bOverwrite = (bOptions & EXFILE_OVERWRITE) != 0;
@@ -113,21 +112,6 @@ bool CRarManager::CacheRarredFile(std::string& strPathInCache, const std::string
   }
 
   int iRes = 0;
-/*  if (iSize > EXTRACTION_WARN_SIZE)
-  {
-    CGUIDialogYesNo* pDialog = (CGUIDialogYesNo*)g_windowManager.GetWindow(WINDOW_DIALOG_YES_NO);
-    if (pDialog)
-    {
-      pDialog->SetHeading(120);
-      pDialog->SetLine(0, 645);
-      pDialog->SetLine(1, URIUtils::GetFileName(strPathInRar));
-      pDialog->SetLine(2, "");
-      pDialog->DoModal();
-      if (!pDialog->IsConfirmed())
-        iRes = 2; // pretend to be canceled
-    }
-  }
-*/
 
   std::string strPath = strPathInRar;
   std::string strCachedPath = strDir+"/rarfolder";//URIUtils::AddFileToFolder(strDir + "rarfolder%04d", // FIXME
@@ -225,7 +209,7 @@ bool CRarManager::CacheRarredFile(std::string& strPathInCache, const std::string
 bool CRarManager::GetFilesInRar(std::vector<VFSDirEntry>& vecpItems, const std::string& strRarPath,
                                 bool bMask, const std::string& strPathInRar)
 {
-  PLATFORM::CLockObject lock(m_lock);
+  P8PLATFORM::CLockObject lock(m_lock);
 
   ArchiveList_struct* pFileList = NULL;
   map<std::string,pair<ArchiveList_struct*,std::vector<CFileInfo> > >::iterator it = m_ExFiles.find(strRarPath);
@@ -339,6 +323,8 @@ CFileInfo* CRarManager::GetFileInRar(const std::string& strRarPath, const std::s
   for (vector<CFileInfo>::iterator it2=j->second.second.begin(); it2 != j->second.second.end(); ++it2)
     if (it2->m_strPathInRar == strPathInRar)
       return &(*it2);
+
+  return NULL;
 }
 
 bool CRarManager::GetPathInCache(std::string& strPathInCache, const std::string& strRarPath, const std::string& strPathInRar)
@@ -350,6 +336,8 @@ bool CRarManager::GetPathInCache(std::string& strPathInCache, const std::string&
   for (vector<CFileInfo>::iterator it2=j->second.second.begin(); it2 != j->second.second.end(); ++it2)
     if (it2->m_strPathInRar == strPathInRar)
       return XBMC->FileExists(it2->m_strCachedPath.c_str(), true);
+
+  return false;
 }
 
 bool CRarManager::IsFileInRar(bool& bResult, const std::string& strRarPath, const std::string& strPathInRar)
@@ -376,7 +364,7 @@ bool CRarManager::IsFileInRar(bool& bResult, const std::string& strRarPath, cons
 
 void CRarManager::ClearCache(bool force)
 {
-  PLATFORM::CLockObject lock(m_lock);
+  P8PLATFORM::CLockObject lock(m_lock);
   map<std::string, pair<ArchiveList_struct*,vector<CFileInfo> > >::iterator j;
   for (j = m_ExFiles.begin() ; j != m_ExFiles.end() ; j++)
   {
@@ -394,7 +382,7 @@ void CRarManager::ClearCache(bool force)
 
 void CRarManager::ClearCachedFile(const std::string& strRarPath, const std::string& strPathInRar)
 {
-  PLATFORM::CLockObject lock(m_lock);
+  P8PLATFORM::CLockObject lock(m_lock);
   map<std::string,pair<ArchiveList_struct*,vector<CFileInfo> > >::iterator j = m_ExFiles.find(strRarPath);
   if (j == m_ExFiles.end())
   {

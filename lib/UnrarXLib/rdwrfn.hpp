@@ -4,7 +4,7 @@
 class CmdAdd;
 class Unpack;
 
-#include <xbmc/threads/mutex.h>
+#include <threads/mutex.h>
 
 class ComprDataIO
 {
@@ -82,11 +82,11 @@ class ComprDataIO
     int UnpackToMemorySize;
     
     // added stuff
-    PLATFORM::CEvent* hBufferFilled;
-    PLATFORM::CEvent* hBufferEmpty;
-    PLATFORM::CEvent* hSeek;
-    PLATFORM::CEvent* hSeekDone;
-    PLATFORM::CEvent* hQuit;
+    P8PLATFORM::CEvent* hBufferFilled;
+    P8PLATFORM::CEvent* hBufferEmpty;
+    P8PLATFORM::CEvent* hSeek;
+    P8PLATFORM::CEvent* hSeekDone;
+    P8PLATFORM::CEvent* hQuit;
     bool bQuit;
     Int64 m_iSeekTo;
     Int64 m_iStartOfBuffer;

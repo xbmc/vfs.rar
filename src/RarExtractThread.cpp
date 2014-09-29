@@ -18,7 +18,7 @@
  *
  */
 #include "RarExtractThread.h"
-#include "xbmc/libXBMC_addon.h"
+#include "libXBMC_addon.h"
 #include "rar.hpp"
 
 extern ADDON::CHelper_libXBMC_addon *XBMC;
@@ -45,11 +45,11 @@ void CRarFileExtractThread::Start(Archive* pArc, CommandData* pCmd, CmdExtract* 
   m_pExtract = pExtract;
   m_iSize = iSize;
 
-  m_pExtract->GetDataIO().hBufferFilled = new PLATFORM::CEvent();
-  m_pExtract->GetDataIO().hBufferEmpty = new PLATFORM::CEvent();
-  m_pExtract->GetDataIO().hSeek = new PLATFORM::CEvent(false);
-  m_pExtract->GetDataIO().hSeekDone = new PLATFORM::CEvent();
-  m_pExtract->GetDataIO().hQuit = new PLATFORM::CEvent(false);
+  m_pExtract->GetDataIO().hBufferFilled = new P8PLATFORM::CEvent();
+  m_pExtract->GetDataIO().hBufferEmpty = new P8PLATFORM::CEvent();
+  m_pExtract->GetDataIO().hSeek = new P8PLATFORM::CEvent(false);
+  m_pExtract->GetDataIO().hSeekDone = new P8PLATFORM::CEvent();
+  m_pExtract->GetDataIO().hQuit = new P8PLATFORM::CEvent(false);
 
   hRunning.Signal();
   hRestart.Signal();
@@ -79,4 +79,5 @@ void* CRarFileExtractThread::Process()
     }
   }
   hRestart.Signal();
+  return NULL;
 }

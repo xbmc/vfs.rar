@@ -21,13 +21,13 @@
 #ifndef RAR_EXTRACT_THREAD_H_
 #define RAR_EXTRACT_THREAD_H_
 
-#include <xbmc/threads/threads.h>
+#include <threads/threads.h>
 
 class Archive;
 class CmdExtract;
 class CommandData;
 
-class CRarFileExtractThread : public PLATFORM::CThread
+class CRarFileExtractThread : public P8PLATFORM::CThread
 {
 public:
   CRarFileExtractThread();
@@ -37,9 +37,9 @@ public:
 
   virtual void* Process();
 
-  PLATFORM::CEvent hRunning;
-  PLATFORM::CEvent hRestart;
-  PLATFORM::CEvent hQuit;
+  P8PLATFORM::CEvent hRunning;
+  P8PLATFORM::CEvent hRestart;
+  P8PLATFORM::CEvent hQuit;
 
 protected:
   Archive* m_pArc;

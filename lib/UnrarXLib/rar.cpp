@@ -1,6 +1,6 @@
 #include "rar.hpp"
 #include "UnrarX.hpp"
-#include <xbmc/libXBMC_addon.h>
+#include <kodi/libXBMC_addon.h>
 #include <memory>
 
 extern ADDON::CHelper_libXBMC_addon* XBMC;

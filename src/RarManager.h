@@ -26,8 +26,8 @@
 
 #include "UnrarX.hpp"
 
-#include <xbmc/threads/threads.h>
-#include <xbmc/xbmc_vfs_types.h>
+#include <threads/threads.h>
+#include <kodi_vfs_types.h>
 
 #define EXFILE_OVERWRITE 1
 #define EXFILE_AUTODELETE 2
@@ -54,7 +54,7 @@ public:
 
     return false;
   }
-  PLATFORM::CTimeout watch;
+  P8PLATFORM::CTimeout watch;
   int m_iIsSeekable;
 };
 
@@ -81,7 +81,7 @@ protected:
 
   bool ListArchive(const std::string& strRarPath, ArchiveList_struct* &pArchiveList);
   std::map<std::string, std::pair<ArchiveList_struct*,std::vector<CFileInfo> > > m_ExFiles;
-  PLATFORM::CMutex m_lock;
+  P8PLATFORM::CMutex m_lock;
 
   int64_t CheckFreeSpace(const std::string& strDrive);
 };

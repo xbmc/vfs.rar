@@ -2,7 +2,7 @@
 
 // BE WARNED THIS FILE IS HEAVILY MODIFIED TO BE USED WITH XBMC
 
-#include <xbmc/libXBMC_addon.h>
+#include <libXBMC_addon.h>
 
 extern ADDON::CHelper_libXBMC_addon* XBMC;
 
@@ -255,6 +255,7 @@ bool File::Close()
 #if defined(_WIN_32) || defined(TARGET_POSIX)
         //success=CloseHandle(hFile) != FALSE;
         XBMC->CloseFile(m_File);
+        m_File = NULL;
 #else
         success=fclose(hFile)!=EOF;
 #endif

@@ -18,8 +18,8 @@
  *
  */
 
-#include "xbmc/libXBMC_addon.h"
-#include "xbmc/threads/mutex.h"
+#include "libXBMC_addon.h"
+#include "threads/mutex.h"
 #include <map>
 #include <sstream>
 #include <fcntl.h>
@@ -34,8 +34,34 @@ ADDON::CHelper_libXBMC_addon *XBMC           = NULL;
 
 extern "C" {
 
-#include "xbmc/xbmc_vfs_dll.h"
-#include "xbmc/IFileTypes.h"
+#include "kodi/kodi_vfs_dll.h"
+#include "kodi/IFileTypes.h"
+
+static std::string URLEncode(const std::string& strURLData)
+{
+  std::string strResult;
+
+  /* wonder what a good value is here is, depends on how often it occurs */
+  strResult.reserve( strURLData.length() * 2 );
+
+  for (size_t i = 0; i < strURLData.size(); ++i)
+  {
+    const char kar = strURLData[i];
+
+    // Don't URL encode "-_.!()" according to RFC1738
+    //! @todo Update it to "-_.~" after Gotham according to RFC3986
+    if (std::isalnum(kar) || kar == '-' || kar == '.' || kar == '_' || kar == '!' || kar == '(' || kar == ')')
+      strResult.push_back(kar);
+    else
+    {
+      char temp[128];
+      sprintf(temp,"%%%2.2X", (unsigned int)((unsigned char)kar));
+      strResult += temp;
+    }
+  }
+
+  return strResult;
+}
 
 //-- Create -------------------------------------------------------------------
 // Called on load. Addon should fully initalize or return error status
@@ -324,7 +350,7 @@ struct RARContext
         {
           extract->GetDataIO().hQuit->Broadcast();
           while (extract_thread->hRunning.Wait(1))
-            PLATFORM::CEvent::Sleep(1);
+            P8PLATFORM::CEvent::Sleep(1);
         }
         delete extract->GetDataIO().hBufferFilled;
         delete extract->GetDataIO().hBufferEmpty;
@@ -443,7 +469,7 @@ void* Open(VFSURL* url)
   return NULL;
 }
 
-unsigned int Read(void* context, void* lpBuf, int64_t uiBufSize)
+ssize_t Read(void* context, void* lpBuf, size_t uiBufSize)
 {
   RARContext* ctx = (RARContext*)context;
 
@@ -456,14 +482,14 @@ unsigned int Read(void* context, void* lpBuf, int64_t uiBufSize)
   if( !ctx->extract->GetDataIO().hBufferEmpty->Wait(5000))
   {
     XBMC->Log(ADDON::LOG_ERROR, "%s - Timeout waiting for buffer to empty", __FUNCTION__);
-    return 0;
+    return -1;
   }
 
   uint8_t* pBuf = (uint8_t*)lpBuf;
-  int64_t uicBufSize = uiBufSize;
+  ssize_t uicBufSize = uiBufSize;
   if (ctx->inbuffer > 0)
   {
-    int64_t iCopy = uiBufSize<ctx->inbuffer?uiBufSize:ctx->inbuffer;
+    ssize_t iCopy = uiBufSize<ctx->inbuffer?uiBufSize:ctx->inbuffer;
     memcpy(lpBuf,ctx->head,size_t(iCopy));
     ctx->head += iCopy;
     ctx->inbuffer -= int(iCopy);
@@ -500,7 +526,7 @@ unsigned int Read(void* context, void* lpBuf, int64_t uiBufSize)
     if (ctx->inbuffer == 0)
       break;
 
-    int copy = std::min(ctx->inbuffer, uicBufSize);
+    ssize_t copy = std::min(ctx->inbuffer, uicBufSize);
     memcpy(pBuf, ctx->head, copy);
     ctx->head += copy;
     pBuf += copy;
@@ -511,12 +537,15 @@ unsigned int Read(void* context, void* lpBuf, int64_t uiBufSize)
 
   ctx->extract->GetDataIO().hBufferEmpty->Signal();
 
-  return static_cast<unsigned int>(uiBufSize-uicBufSize);
+  return uiBufSize-uicBufSize;
 }
 
 bool Close(void* context)
 {
   RARContext* ctx = (RARContext*)context;
+  if (!ctx)
+    return true;
+
   if (ctx->file)
   {
     XBMC->CloseFile(ctx->file);
@@ -527,6 +556,8 @@ bool Close(void* context)
     ctx->CleanUp();
   }
   delete ctx;
+
+  return true;
 }
 
 int64_t GetLength(void* context)
@@ -812,7 +843,7 @@ int Truncate(void* context, int64_t size)
   return -1;
 }
 
-int Write(void* context, const void* lpBuf, int64_t uiBufSize)
+ssize_t Write(void* context, const void* lpBuf, size_t uiBufSize)
 {
   return -1;
 }
@@ -832,7 +863,7 @@ void* OpenForWrite(VFSURL* url, bool bOverWrite)
   return NULL;
 }
 
-void* ContainsFiles(VFSURL* url, VFSDirEntry** items, int* num_items)
+void* ContainsFiles(VFSURL* url, VFSDirEntry** items, int* num_items, char* rootpath)
 {
   const char* sub;
   if ((sub=strstr(url->filename, ".part")))
@@ -857,16 +888,18 @@ void* ContainsFiles(VFSURL* url, VFSDirEntry** items, int* num_items)
 
     if (strPath[strPath.size()-1] == '/')
       strPath.erase(strPath.end()-1);
+    std::string encoded = URLEncode(strPath);
+    std::stringstream str;
+    str << "rar://" << encoded << "/";
+    strcpy(rootpath, str.str().c_str());
     for (size_t iEntry=0;iEntry<itms->size();++iEntry)
     {
       char* tofree = (*itms)[iEntry].path;
-      char* encoded = XBMC->URLEncode(strPath.c_str());
       std::stringstream str;
       str << "rar://" << encoded << "/" << (*itms)[iEntry].path << url->options;
       (*itms)[iEntry].path = strdup(str.str().c_str());
       (*itms)[iEntry].title = NULL;
       free(tofree);
-      XBMC->FreeString(encoded);
     }
     *items = &(*itms)[0];
     *num_items = itms->size();

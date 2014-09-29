@@ -1,6 +1,6 @@
 #include "rar.hpp"
 
-#include <xbmc/libXBMC_addon.h>
+#include <libXBMC_addon.h>
 
 extern ADDON::CHelper_libXBMC_addon* XBMC;
 
