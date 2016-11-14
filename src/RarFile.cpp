@@ -34,8 +34,8 @@ ADDON::CHelper_libXBMC_addon *XBMC           = NULL;
 
 extern "C" {
 
-#include "kodi/kodi_vfs_dll.h"
-#include "kodi/IFileTypes.h"
+#include "kodi_vfs_dll.h"
+#include "IFileTypes.h"
 
 static std::string URLEncode(const std::string& strURLData)
 {
