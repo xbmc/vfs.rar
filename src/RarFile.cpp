@@ -868,9 +868,20 @@ void* ContainsFiles(VFSURL* url, VFSDirEntry** items, int* num_items, char* root
   const char* sub;
   if ((sub=strstr(url->filename, ".part")))
   {
-    if (!((*(sub+5) == '0'  && *(sub+6) == '1') || 
-          (*(sub+6) == '0' && *(sub + 7) == '1')))
-      return NULL;
+    if (url->filename+strlen(url->filename)-sub > 6)
+    {
+      if (*(sub+5) == '0')
+      {
+        if (!((*(sub+5) == '0'  && *(sub+6) == '1') ||  // .part0x
+              (*(sub+6) == '0' && *(sub + 7) == '1'))) //  .part00x
+          return nullptr;
+      }
+      else if (*(sub+6) == '.')
+      {
+        if (*(sub+5) != '1')
+          return nullptr;
+      }
+    }
   }
   std::vector<VFSDirEntry>* itms = new std::vector<VFSDirEntry>();
   if (CRarManager::Get().GetFilesInRar(*itms, url->url))
