@@ -19,7 +19,7 @@
  */
 
 #include "libXBMC_addon.h"
-#include "threads/mutex.h"
+#include "p8-platform/threads/mutex.h"
 #include <map>
 #include <sstream>
 #include <fcntl.h>

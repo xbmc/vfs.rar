@@ -21,7 +21,7 @@
 #ifndef RAR_EXTRACT_THREAD_H_
 #define RAR_EXTRACT_THREAD_H_
 
-#include <threads/threads.h>
+#include "p8-platform/threads/threads.h"
 
 class Archive;
 class CmdExtract;
