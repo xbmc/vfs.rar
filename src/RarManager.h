@@ -26,7 +26,7 @@
 
 #include "UnrarX.hpp"
 
-#include <threads/threads.h>
+#include "p8-platform/threads/threads.h"
 #include <kodi_vfs_types.h>
 
 #define EXFILE_OVERWRITE 1
