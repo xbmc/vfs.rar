@@ -280,6 +280,8 @@ bool CRarManager::GetFilesInRar(std::vector<VFSDirEntry>& vecpItems, const std::
         entry.label = strdup(vec[iDepth].c_str());
         entry.path = strdup((vec[iDepth]+'/').c_str());
         entry.folder = true;
+        entry.num_props = 0;
+        entry.properties = nullptr;
         vecpItems.push_back(entry);
       }
     }
