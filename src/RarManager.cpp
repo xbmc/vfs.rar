@@ -113,10 +113,10 @@ bool CRarManager::CacheRarredFile(std::string& strPathInCache, const std::string
 
   int iRes = 0;
 
+  std::string cf = strDir+"rarfolderXXXXXX";
+  mkdtemp(const_cast<char*>(cf.c_str()));
   std::string strPath = strPathInRar;
-  std::string strCachedPath = strDir+"/rarfolder";//URIUtils::AddFileToFolder(strDir + "rarfolder%04d", // FIXME
-                                                  //      URIUtils::GetFileName(strPathInRar));
-  //strCachedPath = CUtil::GetNextPathname(strCachedPath, 9999);
+  std::string strCachedPath = cf+'/'+strPathInRar;
   if (strCachedPath.empty())
   {
     XBMC->Log(ADDON::LOG_ERROR, "Could not cache file %s", (strRarPath + strPathInRar).c_str());
