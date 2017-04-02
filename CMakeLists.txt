@@ -25,6 +25,6 @@ add_definitions(-D_LARGEFILE64_SOURCE
                 -D_FILE_OFFSET_BITS=64
                 -D__STDC_FORMAT_MACROS)
 
-set(DEPLIBS unrarxlib ${kodiplatform_LIBRARIES})
+set(DEPLIBS unrarxlib ${p8-platform_LIBRARIES} ${kodiplatform_LIBRARIES})
 
 build_addon(vfs.rar RAR DEPLIBS)

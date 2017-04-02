@@ -114,7 +114,12 @@ bool CRarManager::CacheRarredFile(std::string& strPathInCache, const std::string
   int iRes = 0;
 
   std::string cf = strDir+"rarfolderXXXXXX";
+#ifdef _WIN32
+  _mktemp_s(const_cast<char*>(cf.c_str()), cf.length() + 1);
+#else
   mkdtemp(const_cast<char*>(cf.c_str()));
+#endif
+
   std::string strPath = strPathInRar;
   std::string strCachedPath = cf+'/'+strPathInRar;
   if (strCachedPath.empty())

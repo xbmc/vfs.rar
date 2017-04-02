@@ -20,6 +20,8 @@
 
 #include "libXBMC_addon.h"
 #include "p8-platform/threads/mutex.h"
+#include <algorithm>
+#include <cctype>
 #include <map>
 #include <sstream>
 #include <fcntl.h>
@@ -526,7 +528,7 @@ ssize_t Read(void* context, void* lpBuf, size_t uiBufSize)
     if (ctx->inbuffer == 0)
       break;
 
-    ssize_t copy = std::min(ctx->inbuffer, uicBufSize);
+    ssize_t copy = std::min(static_cast<ssize_t>(ctx->inbuffer), uicBufSize);
     memcpy(pBuf, ctx->head, copy);
     ctx->head += copy;
     pBuf += copy;
