@@ -41,8 +41,9 @@ set(SOURCES archive.cpp
             unpack.cpp
             volume.cpp)
 
-add_definitions(-DSILENT)
-
-add_options(ALL_LANGUAGES ALL_BUILDS "-fPIC")
-
 add_library(unrarxlib STATIC ${SOURCES})
+if(NOT CORE_SYSTEM_NAME STREQUAL windows)
+  target_compile_definitions(unrarxlib PRIVATE -DSILENT -fPIC)
+else()
+  target_compile_definitions(unrarxlib PRIVATE -D_XBMC -Dstrcasecmp=_stricmp)
+endif()
