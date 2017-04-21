@@ -20,6 +20,12 @@
 
 #include "libXBMC_addon.h"
 #include "p8-platform/threads/mutex.h"
+#if defined(CreateDirectory)
+#undef CreateDirectory
+#endif
+#if defined(RemoveDirectory)
+#undef RemoveDirectory
+#endif
 #include <algorithm>
 #include <cctype>
 #include <map>
