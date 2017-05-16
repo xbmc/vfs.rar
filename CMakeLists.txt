@@ -21,6 +21,9 @@ set(RAR_SOURCES src/RarFile.cpp
                 src/RarExtractThread.cpp
                 src/RarManager.cpp)
 
+set(RAR_HEADERS src/RarExtractThread.h
+                src/RarManager.h)
+
 add_definitions(-D_LARGEFILE64_SOURCE
                 -D_FILE_OFFSET_BITS=64
                 -D__STDC_FORMAT_MACROS)
