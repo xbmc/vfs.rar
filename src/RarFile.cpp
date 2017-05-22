@@ -88,14 +88,6 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
   return ADDON_STATUS_OK;
 }
 
-//-- Stop ---------------------------------------------------------------------
-// This dll must cease all runtime activities
-// !!! Add-on master function !!!
-//-----------------------------------------------------------------------------
-void ADDON_Stop()
-{
-}
-
 //-- Destroy ------------------------------------------------------------------
 // Do everything before unload of this add-on
 // !!! Add-on master function !!!
