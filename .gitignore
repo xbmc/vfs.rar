@@ -1,0 +1,30 @@
+# build artifacts
+build/
+obj-x86_64-linux-gnu/
+vfs.rar/addon.xml
+
+# commonly used editors
+# vim
+*.swp
+
+# Eclipse
+*.project
+*.cproject
+.classpath
+*.sublime-*
+.settings/
+
+# KDevelop 4
+*.kdev4
+
+# gedit
+*~
+
+# CLion
+/.idea
+
+# clion
+.idea/
+
+# KDev
+*.kdev4
