@@ -18,10 +18,9 @@
  *
  */
 #include "RarExtractThread.h"
-#include "libXBMC_addon.h"
+#include <kodi/General.h>
 #include "rar.hpp"
 
-extern ADDON::CHelper_libXBMC_addon *XBMC;
 
 CRarFileExtractThread::CRarFileExtractThread() : hRunning(false), hQuit(false)
 {
@@ -68,11 +67,11 @@ void* CRarFileExtractThread::Process()
       }
       catch (int rarErrCode)
       {
-        XBMC->Log(ADDON::LOG_ERROR,"CFileRarExtractThread::Process failed. CmdExtract::ExtractCurrentFile threw a UnrarXLib error code of %d",rarErrCode);
+        kodi::Log(ADDON_LOG_ERROR,"CFileRarExtractThread::Process failed. CmdExtract::ExtractCurrentFile threw a UnrarXLib error code of %d",rarErrCode);
       }
       catch (...)
       {
-        XBMC->Log(ADDON::LOG_ERROR,"filerar CFileRarExtractThread::Process failed. CmdExtract::ExtractCurrentFile threw an Unknown exception");
+        kodi::Log(ADDON_LOG_ERROR,"filerar CFileRarExtractThread::Process failed. CmdExtract::ExtractCurrentFile threw an Unknown exception");
       }
 
       hRunning.Reset();

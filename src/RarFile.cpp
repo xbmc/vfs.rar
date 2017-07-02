@@ -18,7 +18,8 @@
  *
  */
 
-#include "libXBMC_addon.h"
+#include <kodi/addon-instance/VFS.h>
+#include <kodi/General.h>
 #include "p8-platform/threads/mutex.h"
 #if defined(CreateDirectory)
 #undef CreateDirectory
@@ -37,13 +38,6 @@
 #include "RarManager.h"
 
 #define SEEKTIMOUT 30000
-
-ADDON::CHelper_libXBMC_addon *XBMC           = NULL;
-
-extern "C" {
-
-#include "kodi_vfs_dll.h"
-#include "IFileTypes.h"
 
 static std::string URLEncode(const std::string& strURLData)
 {
@@ -71,57 +65,6 @@ static std::string URLEncode(const std::string& strURLData)
   return strResult;
 }
 
-//-- Create -------------------------------------------------------------------
-// Called on load. Addon should fully initalize or return error status
-//-----------------------------------------------------------------------------
-ADDON_STATUS ADDON_Create(void* hdl, void* props)
-{
-  if (!XBMC)
-    XBMC = new ADDON::CHelper_libXBMC_addon;
-
-  if (!XBMC->RegisterMe(hdl))
-  {
-    delete XBMC, XBMC=NULL;
-    return ADDON_STATUS_PERMANENT_FAILURE;
-  }
-
-  return ADDON_STATUS_OK;
-}
-
-//-- Stop ---------------------------------------------------------------------
-// This dll must cease all runtime activities
-// !!! Add-on master function !!!
-//-----------------------------------------------------------------------------
-void ADDON_Stop()
-{
-}
-
-//-- Destroy ------------------------------------------------------------------
-// Do everything before unload of this add-on
-// !!! Add-on master function !!!
-//-----------------------------------------------------------------------------
-void ADDON_Destroy()
-{
-  XBMC=NULL;
-}
-
-//-- GetStatus ---------------------------------------------------------------
-// Returns the current Status of this visualisation
-// !!! Add-on master function !!!
-//-----------------------------------------------------------------------------
-ADDON_STATUS ADDON_GetStatus()
-{
-  return ADDON_STATUS_OK;
-}
-
-//-- SetSetting ---------------------------------------------------------------
-// Set a specific Setting value (called from XBMC)
-// !!! Add-on master function !!!
-//-----------------------------------------------------------------------------
-ADDON_STATUS ADDON_SetSetting(const char *strSetting, const void* value)
-{
-  return ADDON_STATUS_OK;
-}
 
 struct RARContext
 {
@@ -138,7 +81,7 @@ struct RARContext
   std::string pathinrar;
   int8_t fileoptions;
   int64_t size;
-  void* file;
+  kodi::vfs::CFile* file;
   int64_t fileposition;
   int64_t bufferstart;
   bool seekable;
@@ -157,14 +100,20 @@ struct RARContext
     seekable = true;
   }
 
-  void Init(VFSURL* url)
+  ~RARContext()
+  {
+    if (file)
+      delete file;
+  }
+  
+  void Init(const VFSURL& url)
   {
     cachedir = "special://temp/";
-    rarpath = url->hostname;
-    password = url->password;
-    pathinrar = url->filename;
+    rarpath = url.hostname;
+    password = url.password;
+    pathinrar = url.filename;
     std::vector<std::string> options;
-    std::string options2(url->options);
+    std::string options2(url.options);
     if (!options2.empty())
       CRarManager::Tokenize(options2.substr(1), options, "&");
     fileoptions = 0;
@@ -272,9 +221,7 @@ struct RARContext
 //          }
 //          else
           {
-            char* tnew = XBMC->UnknownToUTF8(archive->NewLhd.FileName);
-            strFileName = tnew;
-            XBMC->FreeString(tnew);
+            kodi::UnknownToUTF8(archive->NewLhd.FileName, strFileName);
           }
 
           /* replace back slashes into forward slashes */
@@ -303,12 +250,12 @@ struct RARContext
     }
     catch (int rarErrCode)
     {
-      XBMC->Log(ADDON::LOG_ERROR,"filerar failed in UnrarXLib while CFileRar::OpenInArchive with an UnrarXLib error code of %d",rarErrCode);
+      kodi::Log(ADDON_LOG_ERROR,"filerar failed in UnrarXLib while CFileRar::OpenInArchive with an UnrarXLib error code of %d",rarErrCode);
       return false;
     }
     catch (...)
     {
-      XBMC->Log(ADDON::LOG_ERROR,"filerar failed in UnrarXLib while CFileRar::OpenInArchive with an Unknown exception");
+      kodi::Log(ADDON_LOG_ERROR,"filerar failed in UnrarXLib while CFileRar::OpenInArchive with an Unknown exception");
       return false;
     }
   }
@@ -349,41 +296,63 @@ struct RARContext
     }
     catch (int rarErrCode)
     {
-      XBMC->Log(ADDON::LOG_ERROR,"filerar failed in UnrarXLib while deleting CFileRar with an UnrarXLib error code of %d",rarErrCode);
+      kodi::Log(ADDON_LOG_ERROR,"filerar failed in UnrarXLib while deleting CFileRar with an UnrarXLib error code of %d",rarErrCode);
     }
     catch (...)
     {
-      XBMC->Log(ADDON::LOG_ERROR,"filerar failed in UnrarXLib while deleting CFileRar with an Unknown exception");
+      kodi::Log(ADDON_LOG_ERROR,"filerar failed in UnrarXLib while deleting CFileRar with an Unknown exception");
     }
   }
 };
 
-void* Open(VFSURL* url)
+class CRARFile
+  : public kodi::addon::CInstanceVFS
+{
+public:
+  CRARFile(KODI_HANDLE instance) : CInstanceVFS(instance) { }
+
+  virtual void* Open(const VFSURL& url) override;
+  virtual ssize_t Read(void* context, void* buffer, size_t uiBufSize) override;
+  virtual int64_t Seek(void* context, int64_t position, int whence) override;
+  virtual int64_t GetLength(void* context) override;
+  virtual int64_t GetPosition(void* context) override;
+  virtual int IoControl(void* context, XFILE::EIoControl request, void* param) override;
+  virtual int Stat(const VFSURL& url, struct __stat64* buffer) override;
+  virtual bool Close(void* context) override;
+  virtual bool Exists(const VFSURL& url) override;
+  virtual void ClearOutIdle() override;
+  virtual void DisconnectAll() override;
+  virtual bool DirectoryExists(const VFSURL& url) override;
+  virtual bool GetDirectory(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>& items, CVFSCallbacks callbacks) override;
+  virtual bool ContainsFiles(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>& items, std::string& rootpath) override;
+};
+
+
+void* CRARFile::Open(const VFSURL& url)
 {
   RARContext* result = new RARContext;
   result->Init(url);
-  std::vector<VFSDirEntry>* itms = new std::vector<VFSDirEntry>();
-  std::vector<VFSDirEntry>& items = *itms;
+  std::vector<kodi::vfs::CDirEntry> items;
+
   CRarManager::Get().GetFilesInRar(items, result->rarpath, false);
   size_t i;
   for (i=0;i<items.size();++i)
   {
-    if (result->pathinrar == items[i].label)
+    if (result->pathinrar == items[i].Label())
       break;
   }
 
   if (i<items.size())
   {
-    if (items[i].num_props > 0 && atoi(items[i].properties->val) == 0x30) // stored
+    if (items[i].GetProperties().size() == 1 && atoi(items[i].GetProperties().begin()->second.c_str()) == 0x30)
     {
       if (!result->OpenInArchive())
       {
         delete result;
-        FreeDirectory(itms);
         return NULL;
       }
 
-      result->size = items[i].size;
+      result->size = items[i].Size();
 
       // perform 'noidx' check
       CFileInfo* pFile = CRarManager::Get().GetFileInRar(result->rarpath, result->pathinrar);
@@ -400,15 +369,13 @@ void* Open(VFSURL* url)
         else
           result->seekable = (pFile->m_iIsSeekable == 1);
       }
-      FreeDirectory(itms);
       return result;
     }
     else
     {
       CFileInfo* info = CRarManager::Get().GetFileInRar(result->rarpath, result->pathinrar);
-      if ((!info || !XBMC->FileExists(info->m_strCachedPath.c_str(), true)) && result->fileoptions & EXFILE_NOCACHE)
+      if ((!info || !kodi::vfs::FileExists(info->m_strCachedPath.c_str(), true)) && result->fileoptions & EXFILE_NOCACHE)
       {
-        FreeDirectory(itms);
         delete result;
         return NULL;
       }
@@ -416,45 +383,42 @@ void* Open(VFSURL* url)
 
       if (!CRarManager::Get().CacheRarredFile(strPathInCache, result->rarpath, result->pathinrar,
                                               EXFILE_AUTODELETE | result->fileoptions, result->cachedir,
-                                              items[i].size))
+                                              items[i].Size()))
       {
-        XBMC->Log(ADDON::LOG_ERROR,"filerar::open failed to cache file %s",result->pathinrar.c_str());
-        FreeDirectory(itms);
+        kodi::Log(ADDON_LOG_ERROR,"filerar::open failed to cache file %s",result->pathinrar.c_str());
         delete result;
         return NULL;
       }
 
-      if (!(result->file=XBMC->OpenFile(strPathInCache.c_str(), 0)))
+      result->file = new kodi::vfs::CFile;
+      if (!result->file->OpenFile(strPathInCache.c_str(), 0))
       {
-        XBMC->Log(ADDON::LOG_ERROR,"filerar::open failed to open file in cache: %s",strPathInCache.c_str());
-        FreeDirectory(itms);
+        kodi::Log(ADDON_LOG_ERROR,"filerar::open failed to open file in cache: %s",strPathInCache.c_str());
         delete result;
         return NULL;
       }
 
-      FreeDirectory(itms);
       return result;
     }
   }
 
-  FreeDirectory(itms);
   delete result;
   return NULL;
 }
 
-ssize_t Read(void* context, void* lpBuf, size_t uiBufSize)
+ssize_t CRARFile::Read(void* context, void* lpBuf, size_t uiBufSize)
 {
   RARContext* ctx = (RARContext*)context;
 
   if (ctx->file)
-    return XBMC->ReadFile(ctx->file,lpBuf,uiBufSize);
+    return ctx->file->Read(lpBuf,uiBufSize);
 
   if (ctx->fileposition >= GetLength(context)) // we are done
     return 0;
 
   if( !ctx->extract->GetDataIO().hBufferEmpty->Wait(5000))
   {
-    XBMC->Log(ADDON::LOG_ERROR, "%s - Timeout waiting for buffer to empty", __FUNCTION__);
+    kodi::Log(ADDON_LOG_ERROR, "%s - Timeout waiting for buffer to empty", __FUNCTION__);
     return -1;
   }
 
@@ -492,7 +456,7 @@ ssize_t Read(void* context, void* lpBuf, size_t uiBufSize)
         ctx->inbuffer > MAXWINMEMSIZE - (ctx->head - ctx->buffer))
     {
       // invalid data returned by UnrarXLib, prevent a crash
-      XBMC->Log(ADDON::LOG_ERROR, "CRarFile::Read - Data buffer in inconsistent state");
+      kodi::Log(ADDON_LOG_ERROR, "CRarFile::Read - Data buffer in inconsistent state");
       ctx->inbuffer = 0;
     }
 
@@ -513,7 +477,7 @@ ssize_t Read(void* context, void* lpBuf, size_t uiBufSize)
   return uiBufSize-uicBufSize;
 }
 
-bool Close(void* context)
+bool CRARFile::Close(void* context)
 {
   RARContext* ctx = (RARContext*)context;
   if (!ctx)
@@ -521,7 +485,8 @@ bool Close(void* context)
 
   if (ctx->file)
   {
-    XBMC->CloseFile(ctx->file);
+    delete ctx->file;
+    ctx->file = nullptr;
     CRarManager::Get().ClearCachedFile(ctx->rarpath, ctx->pathinrar);
   }
   else
@@ -533,39 +498,39 @@ bool Close(void* context)
   return true;
 }
 
-int64_t GetLength(void* context)
+int64_t CRARFile::GetLength(void* context)
 {
   RARContext* ctx = (RARContext*)context;
 
   if (ctx->file)
-    return XBMC->GetFileLength(ctx->file);
+    return ctx->file->GetLength();
 
   return ctx->size;
 }
 
 //*********************************************************************************************
-int64_t GetPosition(void* context)
+int64_t CRARFile::GetPosition(void* context)
 {
   RARContext* ctx = (RARContext*)context;
   if (ctx->file)
-    return XBMC->GetFilePosition(ctx->file);
+    return ctx->file->GetPosition();
 
   return ctx->fileposition;
 }
 
 
-int64_t Seek(void* context, int64_t iFilePosition, int iWhence)
+int64_t CRARFile::Seek(void* context, int64_t iFilePosition, int iWhence)
 {
   RARContext* ctx = (RARContext*)context;
   if (!ctx->seekable)
     return -1;
 
   if (ctx->file)
-    return XBMC->SeekFile(ctx->file, iFilePosition, iWhence);
+    return ctx->file->Seek(iFilePosition, iWhence);
 
   if( !ctx->extract->GetDataIO().hBufferEmpty->Wait(SEEKTIMOUT) )
   {
-    XBMC->Log(ADDON::LOG_ERROR, "%s - Timeout waiting for buffer to empty", __FUNCTION__);
+    kodi::Log(ADDON_LOG_ERROR, "%s - Timeout waiting for buffer to empty", __FUNCTION__);
     return -1;
   }
 
@@ -620,7 +585,7 @@ int64_t Seek(void* context, int64_t iFilePosition, int iWhence)
 
     if( !ctx->extract->GetDataIO().hBufferEmpty->Wait(SEEKTIMOUT) )
     {
-      XBMC->Log(ADDON::LOG_ERROR, "%s - Timeout waiting for buffer to empty", __FUNCTION__);
+      kodi::Log(ADDON_LOG_ERROR, "%s - Timeout waiting for buffer to empty", __FUNCTION__);
       return -1;
     }
     ctx->extract->GetDataIO().hBufferEmpty->Signal();
@@ -634,7 +599,7 @@ int64_t Seek(void* context, int64_t iFilePosition, int iWhence)
   ctx->extract->GetDataIO().hBufferFilled->Signal();
   if( !ctx->extract->GetDataIO().hSeekDone->Wait(SEEKTIMOUT))
   {
-    XBMC->Log(ADDON::LOG_ERROR, "%s - Timeout waiting for seek to finish", __FUNCTION__);
+    kodi::Log(ADDON_LOG_ERROR, "%s - Timeout waiting for seek to finish", __FUNCTION__);
     return -1;
   }
 
@@ -646,7 +611,7 @@ int64_t Seek(void* context, int64_t iFilePosition, int iWhence)
 
   if( !ctx->extract->GetDataIO().hBufferEmpty->Wait(SEEKTIMOUT) )
   {
-    XBMC->Log(ADDON::LOG_ERROR, "%s - Timeout waiting for buffer to empty", __FUNCTION__);
+    kodi::Log(ADDON_LOG_ERROR, "%s - Timeout waiting for buffer to empty", __FUNCTION__);
     return -1;
   }
   ctx->inbuffer = ctx->extract->GetDataIO().m_iSeekTo; // keep data
@@ -655,7 +620,7 @@ int64_t Seek(void* context, int64_t iFilePosition, int iWhence)
   if (ctx->inbuffer < 0 || ctx->inbuffer > MAXWINMEMSIZE)
   {
     // invalid data returned by UnrarXLib, prevent a crash
-    XBMC->Log(ADDON::LOG_ERROR, "CRarFile::Seek - Data buffer in inconsistent state");
+    kodi::Log(ADDON_LOG_ERROR, "CRarFile::Seek - Data buffer in inconsistent state");
     ctx->inbuffer = 0;
     return -1;
   }
@@ -666,14 +631,14 @@ int64_t Seek(void* context, int64_t iFilePosition, int iWhence)
   return ctx->fileposition;
 }
 
-bool Exists(VFSURL* url)
+bool CRARFile::Exists(const VFSURL& url)
 {
   RARContext ctx;
   ctx.Init(url);
-  
+
   // First step:
   // Make sure that the archive exists in the filesystem.
-  if (!XBMC->FileExists(ctx.rarpath.c_str(), false)) 
+  if (!kodi::vfs::FileExists(ctx.rarpath.c_str(), false)) 
     return false;
 
   // Second step:
@@ -686,7 +651,7 @@ bool Exists(VFSURL* url)
   return bResult;
 }
 
-int Stat(VFSURL* url, struct __stat64* buffer)
+int CRARFile::Stat(const VFSURL& url, struct __stat64* buffer)
 {
   memset(buffer, 0, sizeof(struct __stat64));
   RARContext* ctx = (RARContext*)Open(url);
@@ -710,7 +675,7 @@ int Stat(VFSURL* url, struct __stat64* buffer)
   return -1;
 }
 
-int IoControl(void* context, XFILE::EIoControl request, void* param)
+int CRARFile::IoControl(void* context, XFILE::EIoControl request, void* param)
 {
   RARContext* ctx = (RARContext*)context;
 
@@ -720,33 +685,24 @@ int IoControl(void* context, XFILE::EIoControl request, void* param)
   return -1;
 }
 
-void ClearOutIdle()
+void CRARFile::ClearOutIdle()
 {
 }
 
-void DisconnectAll()
+void CRARFile::DisconnectAll()
 {
   CRarManager::Get().ClearCache(true);
 }
 
-bool DirectoryExists(VFSURL* url)
+bool CRARFile::DirectoryExists(const VFSURL& url)
 {
-  VFSDirEntry* dir;
-  int num_items;
-  void* ctx = GetDirectory(url, &dir, &num_items, NULL);
-  if (ctx)
-  {
-    FreeDirectory(ctx);
-    return true;
-  }
-
-  return false;
+  std::vector<kodi::vfs::CDirEntry> items;
+  return GetDirectory(url, items, nullptr);
 }
 
-void* GetDirectory(VFSURL* url, VFSDirEntry** items,
-                   int* num_items, VFSCallbacks* callbacks)
+bool CRARFile::GetDirectory(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>& items, CVFSCallbacks callbacks)
 {
-  std::string strPath(url->url);
+  std::string strPath(url.url);
   size_t pos;
   if ((pos=strPath.find("?")) != std::string::npos)
     strPath.erase(strPath.begin()+pos, strPath.end());
@@ -755,117 +711,60 @@ void* GetDirectory(VFSURL* url, VFSDirEntry** items,
   if (strPath[strPath.size()-1] != '/')
     strPath += '/';
 
-  std::string strArchive = url->hostname;
-  std::string strOptions = url->options;
-  std::string strPathInArchive = url->filename;
+  std::string strArchive = url.hostname;
+  std::string strOptions = url.options;
+  std::string strPathInArchive = url.filename;
 
-  std::vector<VFSDirEntry>* itms = new std::vector<VFSDirEntry>;
-  if (CRarManager::Get().GetFilesInRar(*itms,strArchive,true,strPathInArchive))
+  if (CRarManager::Get().GetFilesInRar(items, strArchive, true, strPathInArchive))
   {
     // fill in paths
-    for (size_t iEntry=0;iEntry<itms->size();++iEntry)
+    for (auto& entry : items)
     {
       std::stringstream str;
-      str << strPath << (*itms)[iEntry].path << url->options;
-      char* tofree = (*itms)[iEntry].path;
-      (*itms)[iEntry].path = strdup(str.str().c_str());
-      free(tofree);
-      (*itms)[iEntry].title = NULL;
+      str << strPath << entry.Path() << url.options;
+      entry.SetPath(str.str());
     }
-    *items = &(*itms)[0];
-    *num_items = itms->size();
-
-    return itms;
+    return true;
   }
   else
   {
-    XBMC->Log(ADDON::LOG_ERROR,"%s: rar lib returned no files in archive %s, likely corrupt",__FUNCTION__,strArchive.c_str());
-    return NULL;
+    kodi::Log(ADDON_LOG_ERROR,"%s: rar lib returned no files in archive %s, likely corrupt",__FUNCTION__,strArchive.c_str());
+    return false;
   }
 }
 
-void FreeDirectory(void* items)
-{
-  std::vector<VFSDirEntry>& ctx = *(std::vector<VFSDirEntry>*)items;
-  for (size_t i=0;i<ctx.size();++i)
-  {
-    free(ctx[i].label);
-    for (size_t j=0;j<ctx[i].num_props;++j)
-    {
-      free(ctx[i].properties[j].name);
-      free(ctx[i].properties[j].val);
-    }
-    delete ctx[i].properties;
-    free(ctx[i].path);
-  }
-  delete &ctx;
-}
-
-bool CreateDirectory(VFSURL* url)
-{
-  return false;
-}
-
-bool RemoveDirectory(VFSURL* url)
-{
-  return false;
-}
-
-int Truncate(void* context, int64_t size)
-{
-  return -1;
-}
-
-ssize_t Write(void* context, const void* lpBuf, size_t uiBufSize)
-{
-  return -1;
-}
-
-bool Delete(VFSURL* url)
-{
-  return false;
-}
-
-bool Rename(VFSURL* url, VFSURL* url2)
-{
-  return false;
-}
-
-void* OpenForWrite(VFSURL* url, bool bOverWrite)
-{ 
-  return NULL;
-}
-
-void* ContainsFiles(VFSURL* url, VFSDirEntry** items, int* num_items, char* rootpath)
+bool CRARFile::ContainsFiles(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>& items, std::string& rootpath)
 {
   const char* sub;
-  if ((sub=strstr(url->filename, ".part")))
+  if ((sub=strstr(url.filename, ".part")))
   {
-    if (url->filename+strlen(url->filename)-sub > 6)
+    if (url.filename+strlen(url.filename)-sub > 6)
     {
       if (*(sub+5) == '0')
       {
         if (!((*(sub+5) == '0'  && *(sub+6) == '1') ||  // .part0x
               (*(sub+6) == '0' && *(sub + 7) == '1'))) //  .part00x
-          return nullptr;
+        {
+          return false;
+        }
       }
       else if (*(sub+6) == '.')
       {
         if (*(sub+5) != '1')
-          return nullptr;
+        {
+          return false;
+        }
       }
     }
   }
-  std::vector<VFSDirEntry>* itms = new std::vector<VFSDirEntry>();
-  if (CRarManager::Get().GetFilesInRar(*itms, url->url))
+
+  if (CRarManager::Get().GetFilesInRar(items, url.url))
   {
-    if (itms->size() == 1 && atoi((*itms)[0].properties->val) != 0x30)
-    {
-      delete itms;
-      return NULL;
-    }
+    if (items[0].GetProperties().size() == 1 && atoi(items[0].GetProperties().begin()->second.c_str()) != 0x30)
+      return false;
+
     // fill in paths
-    std::string strPath(url->url);
+    std::string strPath(url.url);
     size_t pos;
     if ((pos=strPath.find("?")) != std::string::npos)
       strPath.erase(strPath.begin()+pos, strPath.end());
@@ -875,57 +774,28 @@ void* ContainsFiles(VFSURL* url, VFSDirEntry** items, int* num_items, char* root
     std::string encoded = URLEncode(strPath);
     std::stringstream str;
     str << "rar://" << encoded << "/";
-    strcpy(rootpath, str.str().c_str());
-    for (size_t iEntry=0;iEntry<itms->size();++iEntry)
+    rootpath = str.str();
+    for (auto& entry : items)
     {
-      char* tofree = (*itms)[iEntry].path;
       std::stringstream str;
-      str << "rar://" << encoded << "/" << (*itms)[iEntry].path << url->options;
-      (*itms)[iEntry].path = strdup(str.str().c_str());
-      (*itms)[iEntry].title = NULL;
-      free(tofree);
+      str << "rar://" << encoded << "/" << entry.Path() << url.options;
+      entry.SetPath(str.str());
     }
-    *items = &(*itms)[0];
-    *num_items = itms->size();
-    return itms;
   }
-  delete itms;
-  return NULL;
+
+  return !items.empty();
 }
 
-int GetStartTime(void* ctx)
+
+class CMyAddon : public kodi::addon::CAddonBase
 {
-  return 0;
-}
+public:
+  CMyAddon() { }
+  virtual ADDON_STATUS CreateInstance(int instanceType, std::string instanceID, KODI_HANDLE instance, KODI_HANDLE& addonInstance) override
+  {
+    addonInstance = new CRARFile(instance);
+    return ADDON_STATUS_OK;
+  }
+};
 
-int GetTotalTime(void* ctx)
-{
-  return 0;
-}
-
-bool NextChannel(void* context, bool preview)
-{
-  return false;
-}
-
-bool PrevChannel(void* context, bool preview)
-{
-  return false;
-}
-
-bool SelectChannel(void* context, unsigned int uiChannel)
-{
-  return false;
-}
-
-bool UpdateItem(void* context)
-{
-  return false;
-}
-
-int GetChunkSize(void* context)
-{
-  return 0;
-}
-
-}
+ADDONCREATOR(CMyAddon);
