@@ -27,7 +27,7 @@
 #include "UnrarX.hpp"
 
 #include "p8-platform/threads/threads.h"
-#include <kodi_vfs_types.h>
+#include <kodi/addon-instance/VFS.h>
 
 #define EXFILE_OVERWRITE 1
 #define EXFILE_AUTODELETE 2
@@ -69,7 +69,7 @@ public:
                        const std::string& strDir =RAR_DEFAULT_CACHE, const int64_t iSize=-1);
   bool GetPathInCache(std::string& strPathInCache, const std::string& strRarPath,
                       const std::string& strPathInRar = "");
-  bool GetFilesInRar(std::vector<VFSDirEntry>& vecpItems, const std::string& strRarPath,
+  bool GetFilesInRar(std::vector<kodi::vfs::CDirEntry>& vecpItems, const std::string& strRarPath,
                      bool bMask=true, const std::string& strPathInRar="");
   CFileInfo* GetFileInRar(const std::string& strRarPath, const std::string& strPathInRar);
   bool IsFileInRar(bool& bResult, const std::string& strRarPath, const std::string& strPathInRar);

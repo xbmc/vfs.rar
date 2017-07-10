@@ -2,16 +2,10 @@
 
 // BE WARNED THIS FILE IS HEAVILY MODIFIED TO BE USED WITH XBMC
 
-#include <libXBMC_addon.h>
-
-extern ADDON::CHelper_libXBMC_addon* XBMC;
-
 //static File *CreatedFiles[32];
 static int RemoveCreatedActive=0;
 
-File::File()
-  :  m_File(NULL)
-
+File::File() : m_File(nullptr)
 {
 //  hFile=BAD_HANDLE;
   *FileName=0;
@@ -37,7 +31,7 @@ File::~File()
     else
       Close();*/
   if (m_File && !SkipClose)
-    XBMC->CloseFile(m_File);
+    delete m_File;
 }
 
 
@@ -114,15 +108,14 @@ bool File::Open(const char *Name,const wchar *NameW,bool OpenShared,bool Update)
   else
     strcpy(name, Name);
   bool success;
+  m_File = new kodi::vfs::CFile;
   if (Update)
   {
-    m_File = XBMC->OpenFileForWrite(name, true);
-    success = m_File != NULL;
+    success = m_File->OpenFileForWrite(name, true);
   }
   else
   {
-    m_File = XBMC->OpenFile(name, 0);
-    success = m_File != NULL;
+    success = m_File->OpenFile(name, 0);
   }
   if (success)
   {
@@ -137,6 +130,11 @@ bool File::Open(const char *Name,const wchar *NameW,bool OpenShared,bool Update)
       WideToChar(NameW,FileName);
     //AddFileToList(hFile);
     AddFileToList();
+  }
+  else
+  {
+    delete m_File;
+    m_File = nullptr;
   }
   return(success);
 }
@@ -188,9 +186,15 @@ bool File::Create(const char *Name,const wchar *NameW)
     tmp = *lastslash;
     *lastslash = '\0';
   }
-  XBMC->CreateDirectory(name);
+  kodi::vfs::CreateDirectory(name);
   *lastslash = tmp;
-  m_File = XBMC->OpenFileForWrite(name, true);
+  m_File = new kodi::vfs::CFile;
+  if (!m_File->OpenFileForWrite(name, true))
+  {
+    delete m_File;
+    m_File = nullptr;
+    return false;
+  }
   NewFile=true;
   HandleType=FILE_HANDLENORMAL;
   SkipClose=false;
@@ -254,8 +258,8 @@ bool File::Close()
       {
 #if defined(_WIN_32) || defined(TARGET_POSIX)
         //success=CloseHandle(hFile) != FALSE;
-        XBMC->CloseFile(m_File);
-        m_File = NULL;
+        delete m_File;
+        m_File = nullptr;
 #else
         success=fclose(hFile)!=EOF;
 #endif
@@ -280,7 +284,7 @@ bool File::Close()
 
 void File::Flush()
 {
-  XBMC->FlushFile(m_File);
+  m_File->Flush();
 /*#ifdef _WIN_32
   FlushFileBuffers(hFile);
 #else
@@ -296,7 +300,7 @@ bool File::Delete()
   if (hFile!=BAD_HANDLE)
     Close();
   return(DelFile(FileName,FileNameW));*/
-  return XBMC->DeleteFile(FileName);
+  return kodi::vfs::DeleteFile(FileName);
 }
 
 
@@ -350,13 +354,13 @@ void File::Write(const void *Data,int Size)
       const int MaxSize=0x4000;
       for (int I=0;I<Size;I+=MaxSize)
         //if (!(success=WriteFile(hFile,(byte *)Data+I,Min(Size-I,MaxSize),&Written,NULL) != FALSE))
-        XBMC->WriteFile(m_File, (byte*)Data+I,Min(Size-I,MaxSize));
+        m_File->Write((byte*)Data+I,Min(Size-I,MaxSize));
         //  break;
     }
     else
     {
       //success=WriteFile(hFile,Data,Size,&Written,NULL) != FALSE;
-      XBMC->WriteFile(m_File, Data, Size);
+      m_File->Write(Data, Size);
     }
 #else
     success=fwrite(Data,1,Size,hFile)==Size && !ferror(hFile);
@@ -433,7 +437,7 @@ int File::DirectRead(void *Data,int Size)
   int Read = 0;
   while (Size)
   {
-    int nRead = XBMC->ReadFile(m_File, Data, Size);
+    int nRead = m_File->Read(Data, Size);
     if (nRead == 0)
       break;
     Read += nRead;
@@ -466,8 +470,8 @@ int File::DirectRead(void *Data,int Size)
 #ifdef _WIN_32
   DWORD Read;
   //if (!ReadFile(hFile,Data,Size,&Read,NULL))
-  Read = XBMC->ReadFile(m_File,Data,Size);
-  if ((Read != Size) && (XBMC->GetFilePosition(m_File) != XBMC->GetFileLength(m_File)))
+  Read = m_File->Read(Data,Size);
+  if ((Read != Size) && (m_File->GetFilePosition() != m_File->GetFileLength()))
   {
     if (IsDevice() && Size>MaxDeviceRead)
       return(DirectRead(Data,MaxDeviceRead));
@@ -514,7 +518,7 @@ bool File::RawSeek(Int64 Offset,int Method)
   if (Offset > FileLength())
     return false;
 
-  if (XBMC->SeekFile(m_File,Offset,Method) < 0)
+  if (m_File->Seek(Offset,Method) < 0)
   {
     return(false);
   }
@@ -537,7 +541,7 @@ Int64 File::Tell()
   //LONG HighDist=0;
   //uint LowDist=SetFilePointer(hFile,0,&HighDist,FILE_CURRENT);
   //Int64 pos = m_File.GetPosition();
-  return XBMC->GetFilePosition(m_File);
+  return m_File->GetPosition();
   /*if (LowDist==0xffffffff && GetLastError()!=NO_ERROR)
     if (AllowExceptions)
       ErrHandler.SeekError(FileName);
@@ -684,7 +688,7 @@ void File::SetCloseFileStat(RarTime *ftm,RarTime *fta,uint FileAttr)
 
 Int64 File::FileLength()
 {
-  return (XBMC->GetFileLength(m_File));
+  return (m_File->GetLength());
 }
 
 

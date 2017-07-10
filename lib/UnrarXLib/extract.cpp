@@ -1,8 +1,6 @@
 #include "rar.hpp"
 
-#include <libXBMC_addon.h>
-
-extern ADDON::CHelper_libXBMC_addon* XBMC;
+#include <kodi/Filesystem.h>
 
 // a cautious wrapper around strncpy
 char *strncpy_null_terminated(char *dest, const char *src, size_t n)
@@ -622,7 +620,7 @@ bool CmdExtract::ExtractCurrentFile(CommandData *Cmd,Archive &Arc,int HeaderSize
           WideToUtf(DestFileNameW, name, NM);
         else
           strcpy(name, DestFileName);
-        if (XBMC->CreateDirectory(name))
+        if (kodi::vfs::CreateDirectory(name))
         {
 #ifndef GUI
           mprintf(St(MCreatDir),DestFileName);

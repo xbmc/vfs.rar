@@ -1,9 +1,7 @@
 #include "rar.hpp"
 #include "UnrarX.hpp"
-#include <kodi/libXBMC_addon.h>
+#include <kodi/Filesystem.h>
 #include <memory>
-
-extern ADDON::CHelper_libXBMC_addon* XBMC;
 
 #include "smallfn.cpp"
 
@@ -393,7 +391,7 @@ int urarlib_list(char *rarfile, ArchiveList_struct **ppList, char *libpassword, 
               char NextName[NM];
               char LastName[NM];
               strcpy(NextName,pArc->FileName);
-              while (XBMC->FileExists(NextName, true))
+              while (kodi::vfs::FileExists(NextName, true))
               {
                 strcpy(LastName,NextName);
                 NextVolumeName(NextName,(pArc->NewMhd.Flags & MHD_NEWNUMBERING)==0 || pArc->OldFormat);

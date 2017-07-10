@@ -1,6 +1,8 @@
 #ifndef _RAR_FILE_
 #define _RAR_FILE_
 
+#include <kodi/Filesystem.h>
+
 #ifdef _WIN_32
 typedef HANDLE FileHandle;
 #define BAD_HANDLE INVALID_HANDLE_VALUE
@@ -30,7 +32,7 @@ class File
     void AddFileToList();
 
     //FileHandle hFile;
-    void* m_File;
+    kodi::vfs::CFile* m_File;
 
     bool LastWrite;
     FILE_HANDLETYPE HandleType;
