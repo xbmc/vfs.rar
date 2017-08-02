@@ -1,0 +1,22 @@
+Source: kodi-vfs-rar
+Priority: extra
+Maintainer: Arne Morten Kvarving <spiff@xbmc.org>
+Build-Depends: debhelper (>= 9.0.0), cmake, libkodiplatform-dev (>= 16.0.0),
+               kodi-addon-dev
+Standards-Version: 3.9.4
+Section: libs
+
+Package: kodi-vfs-rar
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: RAR VFS for Kodi
+ RAR VFS for Kodi
+
+Package: kodi-vfs-rar-dbg
+Section: debug
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: debug symbols for RAR VFS for Kodi
+ debug symbols for RAR VFS for Kodi
+
