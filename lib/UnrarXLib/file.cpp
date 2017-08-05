@@ -688,7 +688,7 @@ void File::SetCloseFileStat(RarTime *ftm,RarTime *fta,uint FileAttr)
 
 Int64 File::FileLength()
 {
-  return (m_File->GetLength());
+  return m_File ? m_File->GetLength() : 0;
 }
 
 
