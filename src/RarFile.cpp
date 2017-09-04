@@ -697,7 +697,8 @@ void CRARFile::DisconnectAll()
 bool CRARFile::DirectoryExists(const VFSURL& url)
 {
   std::vector<kodi::vfs::CDirEntry> items;
-  return GetDirectory(url, items, nullptr);
+  CVFSCallbacks callbacks(nullptr);
+  return GetDirectory(url, items, callbacks);
 }
 
 bool CRARFile::GetDirectory(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>& items, CVFSCallbacks callbacks)
