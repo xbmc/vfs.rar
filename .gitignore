@@ -28,3 +28,4 @@ vfs.rar/addon.xml
 
 # KDev
 *.kdev4
+/.vs
