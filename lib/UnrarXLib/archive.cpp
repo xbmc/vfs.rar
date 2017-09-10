@@ -188,6 +188,7 @@ bool Archive::IsArchive(bool EnableBroken)
 #ifdef RARDLL
   SilentOpen=true;
 #endif
+  if (Encrypted) return (true);
   if (!SilentOpen || !Encrypted)
   {
     SaveFilePos SavePos(*this);
