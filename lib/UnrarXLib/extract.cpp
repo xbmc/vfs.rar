@@ -183,6 +183,7 @@ EXTRACT_ARC_CODE CmdExtract::ExtractArchive(CommandData *Cmd)
 
 bool CmdExtract::ExtractCurrentFile(CommandData *Cmd,Archive &Arc,int HeaderSize,bool &Repeat)
 {
+  if (Arc.NotFirstVolume) return false;
   if (!Unp)
   {
     Unp=new Unpack(&DataIO);
@@ -736,10 +737,13 @@ bool CmdExtract::ExtractCurrentFile(CommandData *Cmd,Archive &Arc,int HeaderSize
       DataIO.SetSkipUnpCRC(SkipSolid);
 
 #ifndef _WIN_CE
-      if (!TestMode && !Arc.BrokenFileHeader &&
-         (Arc.NewLhd.FullPackSize<<11)>Arc.NewLhd.FullUnpSize &&
-      (Arc.NewLhd.FullUnpSize<100000000 || Arc.FileLength()>Arc.NewLhd.FullPackSize))
-    CurFile.Prealloc(Arc.NewLhd.FullUnpSize);
+      if (GetDataIO().UnpackToMemorySize == -1)
+      {
+        if (!TestMode && !Arc.BrokenFileHeader &&
+          (Arc.NewLhd.FullPackSize << 11)>Arc.NewLhd.FullUnpSize &&
+          (Arc.NewLhd.FullUnpSize<100000000 || Arc.FileLength()>Arc.NewLhd.FullPackSize))
+          CurFile.Prealloc(Arc.NewLhd.FullUnpSize);
+      }
 #endif
     CurFile.SetAllowDelete(!Cmd->KeepBroken);
 

@@ -48,7 +48,7 @@ static std::string URLEncode(const std::string& strURLData)
 
   for (size_t i = 0; i < strURLData.size(); ++i)
   {
-    const char kar = strURLData[i];
+    const unsigned char kar = strURLData[i];
 
     // Don't URL encode "-_.!()" according to RFC1738
     //! @todo Update it to "-_.~" after Gotham according to RFC3986
@@ -189,7 +189,11 @@ struct RARContext
         CleanUp();
         return false;
       }
-
+      if (archive->NotFirstVolume)
+      {
+        CleanUp();
+        return false;
+      }
       extract = new CmdExtract;
       if (!extract)
       {
@@ -736,27 +740,110 @@ bool CRARFile::GetDirectory(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>
 
 bool CRARFile::ContainsFiles(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>& items, std::string& rootpath)
 {
-  const char* sub;
-  if ((sub=strstr(url.filename, ".part")))
+  CommandData *cmd = NULL;
+  Archive *archive = NULL;
+  cmd = new CommandData;
+  if (!cmd)
   {
-    if (url.filename+strlen(url.filename)-sub > 6)
+    if (archive)
     {
-      if (*(sub+5) == '0')
-      {
-        if (!((*(sub+5) == '0'  && *(sub+6) == '1') ||  // .part0x
-              (*(sub+6) == '0' && *(sub + 7) == '1'))) //  .part00x
-        {
-          return false;
-        }
-      }
-      else if (*(sub+6) == '.')
-      {
-        if (*(sub+5) != '1')
-        {
-          return false;
-        }
-      }
+      delete archive;
+      archive = NULL;
     }
+    if (cmd)
+    {
+      delete cmd;
+      cmd = NULL;
+    }
+    return false;
+  }
+
+  // Set the arguments for the extract command
+  strcpy(cmd->Command, "X");
+
+  cmd->AddArcName(const_cast<char*>(url.url), NULL);
+
+  strncpy(cmd->ExtrPath, "", sizeof(cmd->ExtrPath) - 2);
+  cmd->ExtrPath[sizeof(cmd->ExtrPath) - 2] = 0;
+  cmd->ExtrPath[sizeof(cmd->ExtrPath) - 1] = 0;
+  if (cmd->ExtrPath[strlen(cmd->ExtrPath) - 1] != '/')
+  {
+    int pos = strlen(cmd->ExtrPath) - 1;
+    cmd->ExtrPath[pos] = '/';
+    cmd->ExtrPath[pos + 1] = 0;
+  }
+
+  cmd->ParseDone();
+
+  // Open the archive
+  archive = new Archive(cmd);
+  if (!archive)
+  {
+    if (archive)
+    {
+      delete archive;
+      archive = NULL;
+    }
+    if (cmd)
+    {
+      delete cmd;
+      cmd = NULL;
+    }
+    return false;
+  }
+  if (!archive->WOpen(url.url, NULL)) {
+    if (archive)
+    {
+      delete archive;
+      archive = NULL;
+    }
+    if (cmd)
+    {
+      delete cmd;
+      cmd = NULL;
+    }
+    return false;
+  }
+
+  if (!archive->IsArchive(false)) {
+    if (archive)
+    {
+      delete archive;
+      archive = NULL;
+    }
+    if (cmd)
+    {
+      delete cmd;
+      cmd = NULL;
+    }
+    return false;
+  }
+  if (archive->NotFirstVolume)
+  {
+    if (archive)
+    {
+      delete archive;
+      archive = NULL;
+    }
+    if (cmd)
+    {
+      delete cmd;
+      cmd = NULL;
+    }
+    return false;
+  }
+  if (archive->Encrypted) {
+    if (archive)
+    {
+      delete archive;
+      archive = NULL;
+    }
+    if (cmd)
+    {
+      delete cmd;
+      cmd = NULL;
+    }
+    return false;
   }
 
   if (CRarManager::Get().GetFilesInRar(items, url.url))
