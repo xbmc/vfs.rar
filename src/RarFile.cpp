@@ -184,63 +184,136 @@ struct RARContext
         CleanUp();
         return false;
       }
-      if (!(archive->IsOpened() && archive->IsArchive(true)))
+      uint FileCount = 0;
+      ArchiveList_struct *pPrev = NULL;
+      int iArchive = 0;
+      bool found = false;
+      while (1)
       {
-        CleanUp();
-        return false;
-      }
-      if (archive->NotFirstVolume)
-      {
-        CleanUp();
-        return false;
-      }
-      extract = new CmdExtract;
-      if (!extract)
-      {
-        CleanUp();
-        return false;
-      }
-      extract->GetDataIO().SetUnpackToMemory(buffer,0);
-      extract->GetDataIO().SetCurrentCommand(*(cmd->Command));
-      struct FindData FD;
-      if (FindFile::FastFind(rarpath.c_str(),NULL,&FD))
-          extract->GetDataIO().TotalArcSize+=FD.Size;
-      extract->ExtractArchiveInit(cmd,*archive);
-
-      while (true)
-      {
-        if ((iHeaderSize = archive->ReadHeader()) <= 0)
+        if (!(archive->IsOpened() && archive->IsArchive(true)))
         {
           CleanUp();
           return false;
         }
-
-        if (archive->GetHeaderType() == FILE_HEAD)
+        if (archive->NotFirstVolume && iArchive == 0)
         {
-          std::string strFileName;
-
-//          if (wcslen(archive->NewLhd.FileNameW) > 0)
-//          {
-//            g_charsetConverter.wToUTF8(m_pArc->NewLhd.FileNameW, strFileName);
-//          }
-//          else
-          {
-            kodi::UnknownToUTF8(archive->NewLhd.FileName, strFileName);
-          }
-
-          /* replace back slashes into forward slashes */
-          /* this could get us into troubles, file could two different files, one with / and one with \ */
-//          StringUtils::Replace(strFileName, '\\', '/');
-
-          if (strFileName == pathinrar)
-          {
-            break;
-          }
+          CleanUp();
+          return false;
         }
+        extract = new CmdExtract;
+        if (!extract)
+        {
+          CleanUp();
+          return false;
+        }
+        extract->GetDataIO().SetUnpackToMemory(buffer, 0);
+        extract->GetDataIO().SetCurrentCommand(*(cmd->Command));
+        struct FindData FD;
+        if (FindFile::FastFind(rarpath.c_str(), NULL, &FD))
+          extract->GetDataIO().TotalArcSize += FD.Size;
+        extract->ExtractArchiveInit(cmd, *archive);
 
-        archive->SeekToNext();
+          while ((iHeaderSize = archive->ReadHeader()) > 0)
+          {
+            if (archive->GetHeaderType() == FILE_HEAD)
+            {
+              std::string strFileName;
+
+              //          if (wcslen(archive->NewLhd.FileNameW) > 0)
+              //          {
+              //            g_charsetConverter.wToUTF8(m_pArc->NewLhd.FileNameW, strFileName);
+              //          }
+              //          else
+              {
+                kodi::UnknownToUTF8(archive->NewLhd.FileName, strFileName);
+              }
+
+              /* replace back slashes into forward slashes */
+              /* this could get us into troubles, file could two different files, one with / and one with \ */
+    //          StringUtils::Replace(strFileName, '\\', '/');
+              size_t index = 0;
+              std::string oldStr = "\\";
+              std::string newStr = "/";
+              while (index < strFileName.size() && (index = strFileName.find(oldStr, index)) != std::string::npos)
+              {
+                strFileName.replace(index, oldStr.size(), newStr);
+                index += newStr.size();
+              }
+              if (strFileName == pathinrar)
+              {
+                found = true;
+                break;
+              }
+            }
+
+            archive->SeekToNext();
+          }
+          if (found == true) break;
+          if (found==false && /*cmd->VolSize != 0 && */((archive->NewLhd.Flags & LHD_SPLIT_AFTER) || (archive->GetHeaderType() == ENDARC_HEAD && (archive->EndArcHead.Flags & EARC_NEXT_VOLUME) != 0)))
+          {
+            if (/*FileCount == 1 && */iArchive == 0)
+            {
+              char NextName[NM];
+              char LastName[NM];
+              strcpy(NextName, archive->FileName);
+              while (kodi::vfs::FileExists(NextName, true))
+              {
+                strcpy(LastName, NextName);
+                NextVolumeName(NextName, (archive->NewMhd.Flags & MHD_NEWNUMBERING) == 0 || archive->OldFormat);
+              }
+              Archive arc;
+              if (arc.WOpen(LastName, NULL))
+              {
+                bool bBreak = false;
+                while (arc.ReadHeader()>0)
+                {
+                  if (arc.GetHeaderType() == FILE_HEAD)
+                  {
+                    std::string check;
+
+                    //          if (wcslen(archive->NewLhd.FileNameW) > 0)
+                    //          {
+                    //            g_charsetConverter.wToUTF8(m_pArc->NewLhd.FileNameW, strFileName);
+                    //          }
+                    //          else
+                    {
+                      kodi::UnknownToUTF8(arc.NewLhd.FileName, check);
+                    }
+
+                    /* replace back slashes into forward slashes */
+                    /* this could get us into troubles, file could two different files, one with / and one with \ */
+                    //          StringUtils::Replace(strFileName, '\\', '/');
+                    size_t index = 0;
+                    std::string oldStr = "\\";
+                    std::string newStr = "/";
+                    while (index < check.size() && (index = check.find(oldStr, index)) != std::string::npos)
+                    {
+                      check.replace(index, oldStr.size(), newStr);
+                      index += newStr.size();
+                    }
+                    if (check == pathinrar)
+                    {
+                      break;
+                    }
+                  }
+                  //                  iOffset = pArc->Tell();
+                  arc.SeekToNext();
+                }
+                if (bBreak)
+                {
+                  break;
+                }
+              }
+            }
+            if (MergeArchive(*archive, NULL, false, *cmd->Command))
+            {
+              iArchive++;
+              archive->Seek(0, SEEK_SET);
+            }
+            else
+              break;
+          }
       }
-
       head = buffer;
       extract->GetDataIO().SetUnpackToMemory(buffer,0);
       inbuffer = -1;

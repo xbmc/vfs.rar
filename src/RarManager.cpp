@@ -214,8 +214,10 @@ bool CRarManager::GetFilesInRar(std::vector<kodi::vfs::CDirEntry>& vecpItems, co
   map<std::string,pair<ArchiveList_struct*,std::vector<CFileInfo> > >::iterator it = m_ExFiles.find(strRarPath);
   if (it == m_ExFiles.end())
   {
-    if( urarlib_list((char*) strRarPath.c_str(), &pFileList, NULL) )
-      m_ExFiles.insert(make_pair(strRarPath,make_pair(pFileList,vector<CFileInfo>())));
+    if (urarlib_list((char*)strRarPath.c_str(), &pFileList, NULL))
+    {
+      m_ExFiles.insert(make_pair(strRarPath, make_pair(pFileList, vector<CFileInfo>())));
+    }
     else
     {
       if( pFileList )
@@ -261,6 +263,14 @@ bool CRarManager::GetFilesInRar(std::vector<kodi::vfs::CDirEntry>& vecpItems, co
     /* replace back slashes into forward slashes */
     /* this could get us into troubles, file could two different files, one with / and one with \ */
     //StringUtils::Replace(strName, '\\', '/');
+    size_t index = 0;
+    std::string oldStr = "\\";
+    std::string newStr = "/";
+    while (index < strName.size() && (index = strName.find(oldStr, index)) != std::string::npos)
+    {
+      strName.replace(index, oldStr.size(), newStr);
+      index += newStr.size();
+    }
 
     if (bMask)
     {
@@ -272,44 +282,51 @@ bool CRarManager::GetFilesInRar(std::vector<kodi::vfs::CDirEntry>& vecpItems, co
       if (vec.size() < iDepth)
         continue;
     }
-
+    if (vec.size() > 0)
+    {
+      iDepth = vec.size() - 1;
+    }
     unsigned int iMask = (pIterator->item.HostOS==3 ? 0x0040000:16); // win32 or unix attribs?
-    if (((pIterator->item.FileAttr & iMask) == iMask) || (vec.size() > iDepth+1 && bMask)) // we have a directory
+    do
     {
-      if (!bMask) continue;
-      if (vec.size() == iDepth)
-        continue; // remove root of listing
+      if (((pIterator->item.FileAttr & iMask) == iMask) || (vec.size() > iDepth + 1 && bMask)) // we have a directory
+      {
+        if (!bMask) continue;
+        if (vec.size() == iDepth)
+          continue; // remove root of listing
 
-      if (dirSet.find(vec[iDepth]) == dirSet.end())
-      {
-        kodi::vfs::CDirEntry entry;
-        dirSet.insert(vec[iDepth]);
-        entry.SetLabel(vec[iDepth]);
-        entry.SetPath(vec[iDepth]+'/');
-        entry.SetFolder(true);
-        vecpItems.push_back(entry);
-      }
-    }
-    else
-    {
-      if (vec.size() == iDepth+1 || !bMask)
-      {
-        kodi::vfs::CDirEntry entry;
-        if (vec.size() == 0)
-          entry.SetLabel(strName);
-        else
+        if (dirSet.find(vec[iDepth]) == dirSet.end())
+        {
+          kodi::vfs::CDirEntry entry;
+          dirSet.insert(vec[iDepth]);
           entry.SetLabel(vec[iDepth]);
-        entry.SetPath(strName.c_str()+strPathInRar.size());
-        entry.SetSize(pIterator->item.UnpSize);
-        entry.SetFolder(false);
-
-        char tmp[16];
-        sprintf(tmp,"%i",pIterator->item.Method);
-        entry.AddProperty("rarcompressionmethod", tmp);
-
-        vecpItems.push_back(entry);
+          entry.SetPath(vec[iDepth] + '/');
+          entry.SetFolder(true);
+          vecpItems.push_back(entry);
+        }
       }
-    }
+      else
+      {
+        if (vec.size() == iDepth + 1 || !bMask)
+        {
+          kodi::vfs::CDirEntry entry;
+          if (vec.size() == 0)
+            entry.SetLabel(strName);
+          else
+            entry.SetLabel(vec[iDepth]);
+          entry.SetPath(strName.c_str() + strPathInRar.size());
+          entry.SetSize(pIterator->item.UnpSize);
+          entry.SetFolder(false);
+
+          char tmp[16];
+          sprintf(tmp, "%i", pIterator->item.Method);
+          entry.AddProperty("rarcompressionmethod", tmp);
+
+          vecpItems.push_back(entry);
+        }
+      }
+      iDepth++;
+    } while (iDepth < vec.size());
   }
 
   return true;

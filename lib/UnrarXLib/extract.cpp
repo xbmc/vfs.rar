@@ -183,7 +183,6 @@ EXTRACT_ARC_CODE CmdExtract::ExtractArchive(CommandData *Cmd)
 
 bool CmdExtract::ExtractCurrentFile(CommandData *Cmd,Archive &Arc,int HeaderSize,bool &Repeat)
 {
-  if (Arc.NotFirstVolume) return false;
   if (!Unp)
   {
     Unp=new Unpack(&DataIO);
