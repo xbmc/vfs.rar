@@ -2,6 +2,9 @@
 
 This is a [Kodi](http://kodi.tv) VFS addon to extract RAR archives or direct playback stored files in RAR archives.
 
+[![Build Status](https://travis-ci.org/notspiff/vfs.rar.svg?branch=master)](https://travis-ci.org/notspiff/vfs.rar)
+[![Build Status](https://ci.appveyor.com/api/projects/status/github/notspiff/vfs.rar?svg=true)](https://ci.appveyor.com/project/notspiff/vfs-rar)
+
 ## Build instructions
 
 When building the addon you have to use the correct branch depending on which version of Kodi you're building against. 
