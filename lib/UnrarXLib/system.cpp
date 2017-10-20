@@ -19,7 +19,7 @@ void InitSystemOptions(int SleepTime)
 
 void SetPriority(int Priority)
 {
-#if defined(_WIN_32)
+#if defined(_WIN_32) && (WINAPI_FAMILY != WINAPI_FAMILY_APP)
   uint PriorityClass;
   int PriorityLevel;
   if (Priority<1 || Priority>15)

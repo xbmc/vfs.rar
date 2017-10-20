@@ -13,6 +13,13 @@
 #define DBCS_SUPPORTED
 #endif
 
+#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
+BOOL OemToChar(const char *Src, char *Dst);
+BOOL OemToCharBuff(const char *Src, char *Dst, int len);
+BOOL CharToOem(const char *Src, char *Dst);
+BOOL CharToOemBuff(const char *Src, char *Dst, int len);
+#endif
+
 bool WideToChar(const wchar *Src,char *Dest,int DestSize=0x10000000);
 bool CharToWide(const char *Src,wchar *Dest,int DestSize=0x10000000);
 byte* WideToRaw(const wchar *Src,byte *Dest,int DestSize=0x10000000);

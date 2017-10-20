@@ -125,6 +125,9 @@ void CommandData::ParseDone()
   BareOutput=(CmdChar=='L' || CmdChar=='V') && Command[1]=='B';
 }
 
+#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
+#define getenv(x) NULL
+#endif
 
 #if !defined(SFX_MODULE) && !defined(_WIN_CE) && !defined(TARGET_POSIX)
 void CommandData::ParseEnvVar()

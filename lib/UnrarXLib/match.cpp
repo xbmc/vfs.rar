@@ -8,7 +8,16 @@ inline uint toupperc(byte ch)
 /*
 */
 #if defined(_WIN_32)
+#if !defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP)
   return((uint)CharUpper((LPTSTR)(ch)));
+#else
+  wchar chW[2], mapped_tmp[2];
+  char upper[2];
+  CharToWide((char*)&ch, chW, 1);
+  LCMapStringEx(LOCALE_NAME_INVARIANT, LCMAP_UPPERCASE, chW, 1, mapped_tmp, 2, nullptr, nullptr, 0);
+  WideToChar(chW, upper, 1);
+  return((uint)upper[0]);
+#endif
 #elif defined(_UNIX)
   return(ch);
 #else
