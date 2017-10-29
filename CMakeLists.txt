@@ -26,7 +26,8 @@ set(RAR_HEADERS src/RarExtractThread.h
 
 add_definitions(-D_LARGEFILE64_SOURCE
                 -D_FILE_OFFSET_BITS=64
-                -D__STDC_FORMAT_MACROS)
+                -D__STDC_FORMAT_MACROS
+                -D_CRT_NONSTDC_NO_DEPRECATE)
 
 set(DEPLIBS unrarxlib ${p8-platform_LIBRARIES} ${kodiplatform_LIBRARIES})
 

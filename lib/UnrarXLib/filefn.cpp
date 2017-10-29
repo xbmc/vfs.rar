@@ -9,8 +9,16 @@ void SetDirTime(const char *Name,RarTime *ftm,RarTime *ftc,RarTime *fta)
   bool sa=ftc!=NULL && fta->IsSet();
   if (!WinNT())
     return;
+#if !defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP)
   HANDLE hFile=CreateFile(Name,GENERIC_WRITE,FILE_SHARE_READ|FILE_SHARE_WRITE,
                           NULL,OPEN_EXISTING,FILE_FLAG_BACKUP_SEMANTICS,NULL);
+#else
+  CREATEFILE2_EXTENDED_PARAMETERS ext = {0};
+  ext.dwFileFlags = FILE_FLAG_BACKUP_SEMANTICS;
+  wchar wname[NM];
+  CharToWide(Name, wname);
+  HANDLE hFile = CreateFile2(wname, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, OPEN_EXISTING, &ext);
+#endif
   if (hFile==INVALID_HANDLE_VALUE)
     return;
   FILETIME fm,fc,fa;
@@ -35,10 +43,15 @@ bool IsRemovable(const char *Name)
   return false;
 //#ifdef _WIN_32
 #elif defined(_WIN_32)
+#if !defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP)
   char Root[NM];
-  GetPathRoot(Name,Root);
+  GetPathRoot(Name, Root);
   int Type=GetDriveType(*Root ? Root:NULL);
   return(Type==DRIVE_REMOVABLE || Type==DRIVE_CDROM);
+#else
+  char Drive = toupper(Name[0]);
+  return((Drive == 'A' || Drive == 'B') && Name[1] == ':');
+#endif
 #elif defined(_EMX)
   char Drive=toupper(Name[0]);
   return((Drive=='A' || Drive=='B') && Name[1]==':');
@@ -55,33 +68,13 @@ Int64 GetFreeDisk(const char *Name)
   char Root[NM];
   GetPathRoot(Name,Root);
 
-  typedef BOOL (WINAPI *GETDISKFREESPACEEX)(
-    LPCTSTR,PULARGE_INTEGER,PULARGE_INTEGER,PULARGE_INTEGER
-   );
-  static GETDISKFREESPACEEX pGetDiskFreeSpaceEx=NULL;
+  GetFilePath(Name,Root);
+  ULARGE_INTEGER uiTotalSize,uiTotalFree,uiUserFree;
+  uiUserFree.u.LowPart=uiUserFree.u.HighPart=0;
+  if (GetDiskFreeSpaceExA(*Root ? Root:NULL,&uiUserFree,&uiTotalSize,&uiTotalFree) &&
+      uiUserFree.u.HighPart<=uiTotalFree.u.HighPart)
+    return(int32to64(uiUserFree.u.HighPart,uiUserFree.u.LowPart));
 
-  if (pGetDiskFreeSpaceEx==NULL)
-  {
-  HMODULE hKernel=GetModuleHandle("kernel32.dll");
-    if (hKernel!=NULL)
-      pGetDiskFreeSpaceEx=(GETDISKFREESPACEEX)GetProcAddress(hKernel,"GetDiskFreeSpaceExA");
-  }
-  if (pGetDiskFreeSpaceEx!=NULL)
-  {
-    GetFilePath(Name,Root);
-    ULARGE_INTEGER uiTotalSize,uiTotalFree,uiUserFree;
-    uiUserFree.u.LowPart=uiUserFree.u.HighPart=0;
-    if (pGetDiskFreeSpaceEx(*Root ? Root:NULL,&uiUserFree,&uiTotalSize,&uiTotalFree) &&
-        uiUserFree.u.HighPart<=uiTotalFree.u.HighPart)
-      return(int32to64(uiUserFree.u.HighPart,uiUserFree.u.LowPart));
-  }
-
-  DWORD SectorsPerCluster,BytesPerSector,FreeClusters,TotalClusters;
-  if (!GetDiskFreeSpace(*Root ? Root:NULL,&SectorsPerCluster,&BytesPerSector,&FreeClusters,&TotalClusters))
-    return(1457664);
-  Int64 FreeSize=SectorsPerCluster*BytesPerSector;
-  FreeSize=FreeSize*FreeClusters;
-  return(FreeSize);
 #elif defined(_BEOS)
   char Root[NM];
   GetFilePath(Name,Root);
@@ -136,7 +129,7 @@ bool FileExist(const char *Name,const wchar *NameW)
       return(GetFileAttributesW(NameW)!=0xffffffff);
     else
 #endif
-      return(GetFileAttributes(Name)!=0xffffffff);
+      return(GetFileAttributesA(Name)!=0xffffffff);
 #elif defined(ENABLE_ACCESS)
   return(access(Name,0)==0);
 #else
@@ -232,7 +225,7 @@ uint GetFileAttr(const char *Name,const wchar *NameW)
       return(GetFileAttributesW(NameW));
     else
 #endif
-      return(GetFileAttributes(Name));
+      return(GetFileAttributesA(Name));
 #elif defined(_DJGPP)
   return(_chmod(Name,0));
 #else
@@ -257,7 +250,7 @@ bool SetFileAttr(const char *Name,const wchar *NameW,uint Attr)
       success=SetFileAttributesW(NameW,Attr)!=0;
     else
 #endif
-      success=SetFileAttributes(Name,Attr)!=0;
+      success=SetFileAttributesA(Name,Attr)!=0;
 #elif defined(_DJGPP)
   success=_chmod(Name,1,Attr)!=-1;
 #elif defined(_EMX)
@@ -276,9 +269,14 @@ void ConvertNameToFull(const char *Src,char *Dest)
 #ifdef _WIN_32
 //#ifndef _WIN_CE
 #if !defined(_WIN_CE) && !defined(TARGET_POSIX)
-  char FullName[NM],*NamePtr;
-  if (GetFullPathName(Src,sizeof(FullName),FullName,&NamePtr))
+  char FullName[NM];
+  wchar FullNameW[NM], *NameWPtr, SrcW[NM];
+  CharToWide(Src, SrcW);
+  if (GetFullPathNameW(SrcW,sizeof(FullNameW),FullNameW,&NameWPtr))
+  {
+    WideToChar(FullNameW, FullName);
     strcpy(Dest,FullName);
+  }
   else
 #endif
     if (Src!=Dest)

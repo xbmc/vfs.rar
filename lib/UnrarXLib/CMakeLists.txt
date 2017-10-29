@@ -44,8 +44,9 @@ set(SOURCES archive.cpp
 add_options(ALL_LANGUAGES ALL_BUILDS "-fPIC")
 
 add_library(unrarxlib STATIC ${SOURCES})
-if(NOT CORE_SYSTEM_NAME STREQUAL windows)
+if(NOT CORE_SYSTEM_NAME MATCHES windows)
   target_compile_definitions(unrarxlib PRIVATE -DSILENT)
 else()
   target_compile_definitions(unrarxlib PRIVATE -D_XBMC -Dstrcasecmp=_stricmp)
+  target_compile_options(unrarxlib PRIVATE /wd4146)
 endif()

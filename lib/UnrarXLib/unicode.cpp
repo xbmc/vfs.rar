@@ -364,6 +364,81 @@ SupportDBCS::SupportDBCS()
   Init();
 }
 
+#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
+// this code was taken from mingw codebase
+static BOOL
+IsDBCSLeadByte(BYTE TestChar)
+{
+	CPINFO lpCPInfo;
+	int i;
+
+	if (GetCPInfo(CP_ACP, &lpCPInfo) == 0)
+		return FALSE;
+
+	if (lpCPInfo.MaxCharSize == 2) {
+		for (i = 0; i < MAX_LEADBYTES && lpCPInfo.LeadByte[i]; i += 2) {
+			if (TestChar >= lpCPInfo.LeadByte[i] && TestChar <= lpCPInfo.LeadByte[i + 1])
+				return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+BOOL OemToChar(const char *Src, char *Dst)
+{
+  return OemToCharBuff(Src, Dst, -1);
+}
+
+BOOL OemToCharBuff(const char *Src, char *Dst, int len)
+{
+  int lenW = MultiByteToWideChar(CP_OEMCP, 0, Src, len, NULL, 0);
+  if (lenW == 0)
+    return false;
+  wchar_t * wide = new wchar_t[lenW + 1];
+  MultiByteToWideChar(CP_OEMCP, 0, Src, len, wide, len + 1);
+  int len2 = WideCharToMultiByte(CP_ACP, 0, wide, len + 1, NULL, 0, NULL, NULL);
+  if (len2 == 0)
+  {
+    delete[] wide;
+    return false;
+  }
+
+  char* ansi = new char[len2 + 1];
+  WideCharToMultiByte(CP_ACP, 0, wide, len + 1, ansi, len2 + 1, NULL, NULL);
+
+  memcpy(Dst, ansi, (len == -1 ? strlen(ansi) : len));
+  delete[] wide;
+  delete[] ansi;
+}
+
+BOOL CharToOem(const char *Src, char *Dst)
+{
+  return CharToOemBuff(Src, Dst, -1);
+}
+
+BOOL CharToOemBuff(const char *Src, char *Dst, int len)
+{
+  int lenW = MultiByteToWideChar(CP_ACP, 0, Src, len, NULL, 0);
+  if (lenW == 0)
+    return false;
+  wchar_t * wide = new wchar_t[lenW + 1];
+  MultiByteToWideChar(CP_ACP, 0, Src, len, wide, len + 1);
+  int len2 = WideCharToMultiByte(CP_OEMCP, 0, wide, len + 1, NULL, 0, NULL, NULL);
+  if (len2 == 0)
+  {
+    delete[] wide;
+    return false;
+  }
+
+  char* ansi = new char[len2 + 1];
+  WideCharToMultiByte(CP_OEMCP, 0, wide, len + 1, ansi, len2 + 1, NULL, NULL);
+
+  memcpy(Dst, ansi, (len == -1 ? strlen(ansi) : len));
+  delete[] wide;
+  delete[] ansi;
+}
+#endif
+
 
 void SupportDBCS::Init()
 {

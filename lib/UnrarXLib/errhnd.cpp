@@ -295,7 +295,9 @@ void ErrorHandler::SetSignalHandlers(bool Enable)
   EnableBreak=Enable;
 #if !defined(GUI) && !defined(_SFX_RTL_)
 #ifdef _WIN_32
+#if (WINAPI_FAMILY != WINAPI_FAMILY_APP)
   SetConsoleCtrlHandler(Enable ? ProcessSignal:NULL,TRUE);
+#endif
 #else
   signal(SIGINT,Enable ? ProcessSignal:SIG_IGN);
   signal(SIGTERM,Enable ? ProcessSignal:SIG_IGN);

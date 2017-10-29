@@ -184,9 +184,6 @@ bool FindFile::FastFind(const char *FindMask,const wchar *FindMaskW,struct FindD
 HANDLE FindFile::Win32Find(HANDLE hFind,const char *Mask,const wchar *MaskW,struct FindData *fd)
 {
 #if !defined(TARGET_POSIX)
-#ifndef _WIN_CE
-  if (WinNT())
-#endif
   {
     wchar WideMask[NM];
     if (MaskW!=NULL && *MaskW!=0)
@@ -233,52 +230,6 @@ HANDLE FindFile::Win32Find(HANDLE hFind,const char *Mask,const wchar *MaskW,stru
       if (LowAscii(fd->NameW))
         *fd->NameW=0;
 #endif
-    }
-  }
-#ifndef _WIN_CE
-  else
-#endif
-  {
-    char CharMask[NM];
-    if (Mask!=NULL && *Mask!=0)
-      strcpy(CharMask,Mask);
-    else
-      WideToChar(MaskW,CharMask);
-
-    WIN32_FIND_DATA FindData;
-    if (hFind==INVALID_HANDLE_VALUE)
-    {
-      hFind=FindFirstFile(CharMask,&FindData);
-      if (hFind==INVALID_HANDLE_VALUE)
-      {
-        int SysErr=GetLastError();
-        fd->Error=SysErr!=ERROR_FILE_NOT_FOUND && SysErr!=ERROR_PATH_NOT_FOUND;
-      }
-    }
-    else
-      if (!FindNextFile(hFind,&FindData))
-      {
-        hFind=INVALID_HANDLE_VALUE;
-        fd->Error=GetLastError()!=ERROR_NO_MORE_FILES;
-      }
-
-    if (hFind!=INVALID_HANDLE_VALUE)
-    {
-      strcpy(fd->Name,CharMask);
-      strcpy(PointToName(fd->Name),FindData.cFileName);
-      CharToWide(fd->Name,fd->NameW);
-      fd->Size=int32to64(FindData.nFileSizeHigh,FindData.nFileSizeLow);
-      fd->FileAttr=FindData.dwFileAttributes;
-      strcpy(fd->ShortName,FindData.cAlternateFileName);
-      fd->ftCreationTime=FindData.ftCreationTime;
-      fd->ftLastAccessTime=FindData.ftLastAccessTime;
-      fd->ftLastWriteTime=FindData.ftLastWriteTime;
-      fd->mtime=FindData.ftLastWriteTime;
-      fd->ctime=FindData.ftCreationTime;
-      fd->atime=FindData.ftLastAccessTime;
-      fd->FileTime=fd->mtime.GetDos();
-      if (LowAscii(fd->Name))
-        *fd->NameW=0;
     }
   }
 #endif

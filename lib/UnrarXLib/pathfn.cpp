@@ -346,6 +346,9 @@ bool EnumConfigPaths(char *Path,int Number)
   strcpy(Path,AltPath[Number]);
   return(true);
 #elif defined(_WIN_32)
+#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
+  return(false);
+#else
   if (Number!=0)
     return(false);
 #if !defined(TARGET_POSIX)
@@ -353,6 +356,7 @@ bool EnumConfigPaths(char *Path,int Number)
   RemoveNameFromPath(Path);
 #endif
   return(true);
+#endif // WINAPI_FAMILY 
 #else
   return(false);
 #endif
