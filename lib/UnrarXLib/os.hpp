@@ -151,6 +151,9 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#if defined(__ANDROID__)
+#include <endian.h>
+#endif
 #include <sys/file.h>
 #if defined(__QNXNTO__)
   #include <sys/param.h>
