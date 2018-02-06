@@ -22,17 +22,15 @@
 #include "rar.hpp"
 
 
-CRarFileExtractThread::CRarFileExtractThread() : hRunning(false), hQuit(false)
+CRarFileExtractThread::CRarFileExtractThread() : hRunning(false)
 {
   m_pArc = NULL;
   m_pCmd = NULL;
   m_pExtract = NULL;
-  CreateThread();
 }
 
 CRarFileExtractThread::~CRarFileExtractThread()
 {
-  hQuit.Signal();
   hRestart.Wait();
   StopThread();
 }
@@ -52,11 +50,12 @@ void CRarFileExtractThread::Start(Archive* pArc, CommandData* pCmd, CmdExtract* 
 
   hRunning.Signal();
   hRestart.Signal();
+  CreateThread();
 }
 
 void* CRarFileExtractThread::Process()
 {
-  while (!hQuit.Wait(1))
+  while (!m_pExtract->GetDataIO().hQuit->Wait(1))
   {
     if (hRestart.Wait(1))
     {

@@ -39,7 +39,6 @@ public:
 
   P8PLATFORM::CEvent hRunning;
   P8PLATFORM::CEvent hRestart;
-  P8PLATFORM::CEvent hQuit;
 
 protected:
   Archive* m_pArc;
