@@ -8,7 +8,7 @@
   <extension
     point="kodi.vfs"
     protocols="rar"
-    extensions=".rar|.001"
+    extensions=".rar|.001|.cbr"
     files="true"
     directories="true"
     filedirectories="true"
