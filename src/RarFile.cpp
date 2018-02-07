@@ -32,6 +32,7 @@
 #include <map>
 #include <sstream>
 #include <fcntl.h>
+#include <regex>
 
 #include "rar.hpp"
 #include "RarExtractThread.h"
@@ -813,115 +814,24 @@ bool CRARFile::GetDirectory(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>
 
 bool CRARFile::ContainsFiles(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>& items, std::string& rootpath)
 {
-  CommandData *cmd = NULL;
-  Archive *archive = NULL;
-  cmd = new CommandData;
-  if (!cmd)
+  // only list .part1.rar
+  std::string fname(url.filename);
+  size_t spos = fname.rfind('/');
+  if (spos == std::string::npos)
+    spos = fname.rfind('\\');
+  fname.erase(0, spos);
+  std::regex part_re("\\.part([0-9]+)\\.rar$");
+  std::smatch match;
+  if (std::regex_search(fname, match, part_re))
   {
-    if (archive)
-    {
-      delete archive;
-      archive = NULL;
-    }
-    if (cmd)
-    {
-      delete cmd;
-      cmd = NULL;
-    }
-    return false;
-  }
-
-  // Set the arguments for the extract command
-  strcpy(cmd->Command, "X");
-
-  cmd->AddArcName(const_cast<char*>(url.url), NULL);
-
-  strncpy(cmd->ExtrPath, "", sizeof(cmd->ExtrPath) - 2);
-  cmd->ExtrPath[sizeof(cmd->ExtrPath) - 2] = 0;
-  cmd->ExtrPath[sizeof(cmd->ExtrPath) - 1] = 0;
-  if (cmd->ExtrPath[strlen(cmd->ExtrPath) - 1] != '/')
-  {
-    int pos = strlen(cmd->ExtrPath) - 1;
-    cmd->ExtrPath[pos] = '/';
-    cmd->ExtrPath[pos + 1] = 0;
-  }
-
-  cmd->ParseDone();
-
-  // Open the archive
-  archive = new Archive(cmd);
-  if (!archive)
-  {
-    if (archive)
-    {
-      delete archive;
-      archive = NULL;
-    }
-    if (cmd)
-    {
-      delete cmd;
-      cmd = NULL;
-    }
-    return false;
-  }
-  if (!archive->WOpen(url.url, NULL)) {
-    if (archive)
-    {
-      delete archive;
-      archive = NULL;
-    }
-    if (cmd)
-    {
-      delete cmd;
-      cmd = NULL;
-    }
-    return false;
-  }
-
-  if (!archive->IsArchive(false)) {
-    if (archive)
-    {
-      delete archive;
-      archive = NULL;
-    }
-    if (cmd)
-    {
-      delete cmd;
-      cmd = NULL;
-    }
-    return false;
-  }
-  if (archive->NotFirstVolume)
-  {
-    if (archive)
-    {
-      delete archive;
-      archive = NULL;
-    }
-    if (cmd)
-    {
-      delete cmd;
-      cmd = NULL;
-    }
-    return false;
-  }
-  if (archive->Encrypted) {
-    if (archive)
-    {
-      delete archive;
-      archive = NULL;
-    }
-    if (cmd)
-    {
-      delete cmd;
-      cmd = NULL;
-    }
-    return false;
+    if (std::stoul(match[1].str()) != 1)
+      return false;
   }
 
   if (CRarManager::Get().GetFilesInRar(items, url.url))
   {
-    if (items[0].GetProperties().size() == 1 && atoi(items[0].GetProperties().begin()->second.c_str()) != 0x30)
+    if (items.size() ==1 && items[0].GetProperties().size() == 1 &&
+        atoi(items[0].GetProperties().begin()->second.c_str()) != 0x30)
       return false;
 
     // fill in paths
