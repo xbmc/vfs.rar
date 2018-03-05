@@ -365,6 +365,7 @@ SupportDBCS::SupportDBCS()
 }
 
 #if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
+#if !defined(NTDDI_WIN10_RS2) || (NTDDI_VERSION < NTDDI_WIN10_RS3)
 // this code was taken from mingw codebase
 static BOOL
 IsDBCSLeadByte(BYTE TestChar)
@@ -383,6 +384,7 @@ IsDBCSLeadByte(BYTE TestChar)
 	}
 	return FALSE;
 }
+#endif
 
 BOOL OemToChar(const char *Src, char *Dst)
 {
