@@ -32,3 +32,5 @@ add_definitions(-D_LARGEFILE64_SOURCE
 set(DEPLIBS unrarxlib ${p8-platform_LIBRARIES} ${kodiplatform_LIBRARIES})
 
 build_addon(vfs.rar RAR DEPLIBS)
+
+include(CPack)
