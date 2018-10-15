@@ -2,8 +2,8 @@
 
 This is a [Kodi](http://kodi.tv) VFS addon to extract RAR archives or direct playback stored files in RAR archives.
 
-[![Build Status](https://travis-ci.org/notspiff/vfs.rar.svg?branch=master)](https://travis-ci.org/notspiff/vfs.rar)
-[![Build Status](https://ci.appveyor.com/api/projects/status/github/notspiff/vfs.rar?svg=true)](https://ci.appveyor.com/project/notspiff/vfs-rar)
+[![Build Status](https://travis-ci.org/xbmc/vfs.rar.svg?branch=master)](https://travis-ci.org/xbmc/vfs.rar)
+[![Build Status](https://ci.appveyor.com/api/projects/status/github/xbmc/vfs.rar?svg=true)](https://ci.appveyor.com/project/xbmc/vfs-rar)
 
 ## Build instructions
 
@@ -17,7 +17,7 @@ The following instructions assume you will have built Kodi already in the `kodi-
 suggested by the README.
 
 1. `git clone https://github.com/xbmc/xbmc.git`
-2. `git clone https://github.com/notspiff/vfs.rar.git`
+2. `git clone https://github.com/xbmc/vfs.rar.git`
 3. `cd vfs.rar && mkdir build && cd build`
 4. `cmake -DADDONS_TO_BUILD=vfs.rar -DADDON_SRC_PREFIX=../.. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../../xbmc/kodi-build/addons -DPACKAGE_ZIP=1 ../../xbmc/cmake/addons`
 5. `make`
