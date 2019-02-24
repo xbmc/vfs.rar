@@ -8,10 +8,8 @@ enable_language(CXX)
 
 find_package(Kodi REQUIRED)
 find_package(p8-platform REQUIRED)
-find_package(kodiplatform REQUIRED)
 
 include_directories(${KODI_INCLUDE_DIR}/.. # Hack way with "/..", need bigger Kodi cmake rework to match right include ways
-                    ${kodiplatform_INCLUDE_DIRS}
                     ${p8-platform_INCLUDE_DIRS}
                     ${PROJECT_SOURCE_DIR}/lib/UnrarXLib)
 
@@ -29,7 +27,7 @@ add_definitions(-D_LARGEFILE64_SOURCE
                 -D__STDC_FORMAT_MACROS
                 -D_CRT_NONSTDC_NO_DEPRECATE)
 
-set(DEPLIBS unrarxlib ${p8-platform_LIBRARIES} ${kodiplatform_LIBRARIES})
+set(DEPLIBS unrarxlib ${p8-platform_LIBRARIES})
 
 build_addon(vfs.rar RAR DEPLIBS)
 
