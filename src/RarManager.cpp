@@ -20,6 +20,8 @@
 
 #include "RarManager.h"
 #include <kodi/General.h>
+#include <codecvt>
+#include <locale>
 #include <set>
 
 using namespace std;
@@ -140,12 +142,14 @@ bool CRarManager::CacheRarredFile(std::string& strPathInCache, const std::string
         std::string strName;
 
         /* convert to utf8 */
-        //if( pIterator->item.NameW && wcslen(pIterator->item.NameW) > 0)
-        //  ;//g_charsetConverter.wToUTF8(pIterator->item.NameW, strName); // TODO
-       // else
+        if (pIterator->item.NameW && wcslen(pIterator->item.NameW) > 0)
         {
-          kodi::UnknownToUTF8(pIterator->item.Name, strName);
+          std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
+          strName = conv.to_bytes(pIterator->item.NameW);
         }
+        else
+          kodi::UnknownToUTF8(pIterator->item.Name, strName);
+
         if (strName == strPath)
         {
           iOffset = pIterator->item.iOffset;
@@ -245,20 +249,11 @@ bool CRarManager::GetFilesInRar(std::vector<kodi::vfs::CDirEntry>& vecpItems, co
     /* convert to utf8 */
     if (pIterator->item.NameW && wcslen(pIterator->item.NameW) > 0)
     {
-      //use Name instead if we have it
-      if (pIterator->item.Name && strlen(pIterator->item.Name) > 0)
-      {
-        kodi::UnknownToUTF8(pIterator->item.Name, strName);
-      }
-      else
-      {
-        ;//g_charsetConverter.wToUTF8(pIterator->item.NameW, strName); // TODO
-      }
+      std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
+      strName = conv.to_bytes(pIterator->item.NameW);
     }
     else
-    {
       kodi::UnknownToUTF8(pIterator->item.Name, strName);
-    }
 
     /* replace back slashes into forward slashes */
     /* this could get us into troubles, file could two different files, one with / and one with \ */
