@@ -104,7 +104,7 @@ bool File::Open(const char *Name,const wchar *NameW,bool OpenShared,bool Update)
   bool success=hNewFile!=BAD_HANDLE;*/
   char name[NM];
   if (NameW)
-    WideToUtf(NameW, name, NM);
+    WideToChar(NameW, name, NM);
   else
     strcpy(name, Name);
   bool success;
@@ -175,7 +175,7 @@ bool File::Create(const char *Name,const wchar *NameW)
 #endif*/
   char name[NM];
   if (NameW)
-    WideToUtf(NameW, name, NM);
+    WideToChar(NameW, name, NM);
   else
     strcpy(name, Name);
   char* lastslash = strrchr(name, '\\');

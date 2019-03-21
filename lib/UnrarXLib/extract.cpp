@@ -617,7 +617,7 @@ bool CmdExtract::ExtractCurrentFile(CommandData *Cmd,Archive &Arc,int HeaderSize
         }
         char name[NM];
         if (WideName)
-          WideToUtf(DestFileNameW, name, NM);
+          WideToChar(DestFileNameW, name, NM);
         else
           strcpy(name, DestFileName);
         if (kodi::vfs::CreateDirectory(name))
