@@ -220,11 +220,13 @@ struct RARContext
             {
               std::string strFileName;
 
-              //          if (wcslen(archive->NewLhd.FileNameW) > 0)
-              //          {
-              //            g_charsetConverter.wToUTF8(m_pArc->NewLhd.FileNameW, strFileName);
-              //          }
-              //          else
+              if (wcslen(archive->NewLhd.FileNameW) > 0)
+              {
+                char name[NM];
+                WideToChar(archive->NewLhd.FileNameW, name, NM);
+                strFileName = name;
+              }
+              else
               {
                 kodi::UnknownToUTF8(archive->NewLhd.FileName, strFileName);
               }
@@ -275,11 +277,13 @@ struct RARContext
                   {
                     std::string check;
 
-                    //          if (wcslen(archive->NewLhd.FileNameW) > 0)
-                    //          {
-                    //            g_charsetConverter.wToUTF8(m_pArc->NewLhd.FileNameW, strFileName);
-                    //          }
-                    //          else
+                    if (wcslen(arc.NewLhd.FileNameW) > 0)
+                    {
+                      char name[NM];
+                      WideToChar(arc.NewLhd.FileNameW, name, NM);
+                      check = name;
+                    }
+                    else
                     {
                       kodi::UnknownToUTF8(arc.NewLhd.FileName, check);
                     }

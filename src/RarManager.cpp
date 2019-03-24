@@ -140,9 +140,13 @@ bool CRarManager::CacheRarredFile(std::string& strPathInCache, const std::string
         std::string strName;
 
         /* convert to utf8 */
-        //if( pIterator->item.NameW && wcslen(pIterator->item.NameW) > 0)
-        //  ;//g_charsetConverter.wToUTF8(pIterator->item.NameW, strName); // TODO
-       // else
+        if (pIterator->item.NameW && wcslen(pIterator->item.NameW) > 0)
+        {
+          char name[NM];
+          WideToChar(pIterator->item.NameW, name, NM);
+          strName = name;
+        }
+        else
         {
           kodi::UnknownToUTF8(pIterator->item.Name, strName);
         }
@@ -252,7 +256,9 @@ bool CRarManager::GetFilesInRar(std::vector<kodi::vfs::CDirEntry>& vecpItems, co
       }
       else
       {
-        ;//g_charsetConverter.wToUTF8(pIterator->item.NameW, strName); // TODO
+        char name[NM];
+        WideToChar(pIterator->item.NameW, name, NM);
+        strName = name;
       }
     }
     else
