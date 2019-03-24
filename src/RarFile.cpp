@@ -256,7 +256,10 @@ struct RARContext
             {
               char NextName[NM];
               char LastName[NM];
-              strcpy(NextName, archive->FileName);
+              if (archive->FileName != NULL)
+                strcpy(NextName, archive->FileName);
+              else
+                WideToChar(archive->FileNameW, NextName, NM);
               while (kodi::vfs::FileExists(NextName, true))
               {
                 strcpy(LastName, NextName);
