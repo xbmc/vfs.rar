@@ -18,6 +18,7 @@
  *
  */
 
+#include "rar.hpp"
 #include "RarManager.h"
 #include <kodi/General.h>
 #include <set>
