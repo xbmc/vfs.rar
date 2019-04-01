@@ -32,6 +32,8 @@
 #include <map>
 #include <sstream>
 #include <fcntl.h>
+#include <codecvt>
+#include <locale>
 #include <regex>
 
 #include "rar.hpp"
@@ -220,14 +222,13 @@ struct RARContext
             {
               std::string strFileName;
 
-              //          if (wcslen(archive->NewLhd.FileNameW) > 0)
-              //          {
-              //            g_charsetConverter.wToUTF8(m_pArc->NewLhd.FileNameW, strFileName);
-              //          }
-              //          else
+              if (wcslen(archive->NewLhd.FileNameW) > 0)
               {
-                kodi::UnknownToUTF8(archive->NewLhd.FileName, strFileName);
+                std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
+                strFileName = conv.to_bytes(archive->NewLhd.FileNameW);
               }
+              else
+                kodi::UnknownToUTF8(archive->NewLhd.FileName, strFileName);
 
               /* replace back slashes into forward slashes */
               /* this could get us into troubles, file could two different files, one with / and one with \ */
@@ -272,14 +273,13 @@ struct RARContext
                   {
                     std::string check;
 
-                    //          if (wcslen(archive->NewLhd.FileNameW) > 0)
-                    //          {
-                    //            g_charsetConverter.wToUTF8(m_pArc->NewLhd.FileNameW, strFileName);
-                    //          }
-                    //          else
+                    if (wcslen(arc.NewLhd.FileNameW) > 0)
                     {
-                      kodi::UnknownToUTF8(arc.NewLhd.FileName, check);
+                      std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
+                      check = conv.to_bytes(arc.NewLhd.FileNameW);
                     }
+                    else
+                      kodi::UnknownToUTF8(arc.NewLhd.FileName, check);
 
                     /* replace back slashes into forward slashes */
                     /* this could get us into troubles, file could two different files, one with / and one with \ */
@@ -858,7 +858,7 @@ bool CRARFile::ContainsFiles(const VFSURL& url, std::vector<kodi::vfs::CDirEntry
 }
 
 
-class CMyAddon : public kodi::addon::CAddonBase
+class ATTRIBUTE_HIDDEN CMyAddon : public kodi::addon::CAddonBase
 {
 public:
   CMyAddon() { }
