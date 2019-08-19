@@ -41,9 +41,8 @@ set(SOURCES archive.cpp
             unpack.cpp
             volume.cpp)
 
-add_options(ALL_LANGUAGES ALL_BUILDS "-fPIC")
-
 add_library(unrarxlib STATIC ${SOURCES})
+set_property(TARGET unrarxlib PROPERTY POSITION_INDEPENDENT_CODE ON)
 if(NOT CORE_SYSTEM_NAME MATCHES windows)
   target_compile_definitions(unrarxlib PRIVATE -DSILENT)
 else()
