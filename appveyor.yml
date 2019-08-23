@@ -16,14 +16,14 @@ environment:
       CONFIG: Release
     - GENERATOR: "Visual Studio 15 Win64"
       CONFIG: Release
-      WINSTORE: -DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION="10.0.16299.0"
+      WINSTORE: -DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION="10.0.17763.0"
     - GENERATOR: "Visual Studio 15 ARM"
       CONFIG: Release
-      WINSTORE: -DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION="10.0.16299.0"
+      WINSTORE: -DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION="10.0.17763.0"
 
 build_script:
   - cd ..
-  - git clone --branch Leia --depth=1 https://github.com/xbmc/xbmc.git
+  - git clone --branch master --depth=1 https://github.com/xbmc/xbmc.git
   - cd %app_id%
   - mkdir build
   - cd build
