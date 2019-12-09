@@ -201,7 +201,7 @@ void CryptData::SetCryptKeys(char *Password,byte *Salt,bool Encrypt,bool OldOnly
     Key[2]=0x7515A235L;
     Key[3]=0xA4E7F123L;
     memset(Psw,0,sizeof(Psw));
-#if defined(_WIN_32) && !defined(GUI) && !defined(TARGET_POSIX)
+#if defined(_WIN_32) && !defined(GUI)
     CharToOemBuff(Password,(char*)Psw,strlen(Password));
 #else
     strncpy((char *)Psw,Password,MAXPASSWORD-1);
@@ -223,10 +223,10 @@ void CryptData::SetCryptKeys(char *Password,byte *Salt,bool Encrypt,bool OldOnly
   }
 
   bool Cached=false;
-  for (unsigned int I=0;I<sizeof(Cache)/sizeof(Cache[0]);I++)
+  for (int I=0;I<sizeof(Cache)/sizeof(Cache[0]);I++)
     if (strcmp(Cache[I].Password,Password)==0 &&
-       ((Salt==NULL && !Cache[I].SaltPresent) || 
-        (Salt!=NULL && Cache[I].SaltPresent && memcmp(Cache[I].Salt,Salt,SALT_SIZE)==0)))
+        (Salt==NULL && !Cache[I].SaltPresent || Salt!=NULL &&
+        Cache[I].SaltPresent && memcmp(Cache[I].Salt,Salt,SALT_SIZE)==0))
     {
       memcpy(AESKey,Cache[I].AESKey,sizeof(AESKey));
       memcpy(AESInit,Cache[I].AESInit,sizeof(AESInit));
@@ -375,3 +375,5 @@ void CryptData::Crypt15(byte *Data,uint Count)
   }
 }
 #endif
+
+

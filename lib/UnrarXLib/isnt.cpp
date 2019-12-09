@@ -3,9 +3,6 @@
 #ifdef _WIN_32
 int WinNT()
 {
-#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
-  return true;
-#else
   static int dwPlatformId=-1,dwMajorVersion;
   if (dwPlatformId==-1)
   {
@@ -16,6 +13,5 @@ int WinNT()
     dwMajorVersion=WinVer.dwMajorVersion;
   }
   return(dwPlatformId==VER_PLATFORM_WIN32_NT ? dwMajorVersion:0);
-#endif
 }
 #endif

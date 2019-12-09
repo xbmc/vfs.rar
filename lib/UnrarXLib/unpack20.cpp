@@ -51,8 +51,6 @@ void Unpack::Unpack20(bool Solid)
 
   while (is64plus(DestUnpSize))
   {
-    if (UnpIO->bQuit) return;
-
     UnpPtr&=MAXWINMASK;
 
     if (InAddr>ReadTop-30)
@@ -256,15 +254,14 @@ bool Unpack::ReadTables20()
 void Unpack::ReadLastTables()
 {
   if (ReadTop>=InAddr+5)
-  {
     if (UnpAudioBlock)
     {
       if (DecodeNumber((struct Decode *)&MD[UnpCurChannel])==256)
         ReadTables20();
     }
-    else if (DecodeNumber((struct Decode *)&LD)==269)
-      ReadTables20();
-  }
+    else
+      if (DecodeNumber((struct Decode *)&LD)==269)
+        ReadTables20();
 }
 
 
@@ -314,7 +311,7 @@ byte Unpack::DecodeAudio(int Delta)
   {
     unsigned int MinDif=V->Dif[0],NumMinDif=0;
     V->Dif[0]=0;
-    for (unsigned int I=1;I<sizeof(V->Dif)/sizeof(V->Dif[0]);I++)
+    for (int I=1;I<sizeof(V->Dif)/sizeof(V->Dif[0]);I++)
     {
       if (V->Dif[I]<MinDif)
       {

@@ -121,7 +121,7 @@ int Archive::ReadHeader()
       *(BaseBlock *)&EndArcHead=ShortBlock;
       if (EndArcHead.Flags & EARC_DATACRC)
         Raw.Get(EndArcHead.ArcDataCRC);
-    if (EndArcHead.Flags & EARC_VOLNUMBER)
+      if (EndArcHead.Flags & EARC_VOLNUMBER)
         Raw.Get(EndArcHead.VolNumber);
       break;
     case FILE_HEAD:
@@ -144,7 +144,7 @@ int Archive::ReadHeader()
           Raw.Get(hd->HighUnpSize);
         }
         else 
-    {
+        {
           hd->HighPackSize=hd->HighUnpSize=0;
           if (hd->UnpSize==0xffffffff)
           {
@@ -244,7 +244,7 @@ int Archive::ReadHeader()
         }
         NextBlockPos+=hd->FullPackSize;
         bool CRCProcessedOnly=(hd->Flags & LHD_COMMENT)!=0;
-        HeaderCRC = ~Raw.GetCRC(CRCProcessedOnly) & 0xffff;
+        HeaderCRC=~Raw.GetCRC(CRCProcessedOnly)&0xffff;
         if (hd->HeadCRC!=HeaderCRC)
         {
           if (hd->HeadType==NEWSUB_HEAD)
@@ -577,6 +577,7 @@ void Archive::ConvertUnknownHeader()
       *s=CPATHDIVIDER;
 }
 
+
 #ifndef SHELL_EXT
 bool Archive::ReadSubData(Array<byte> *UnpData,File *DestFile)
 {
@@ -609,13 +610,11 @@ bool Archive::ReadSubData(Array<byte> *UnpData,File *DestFile)
     SubDataIO.SetUnpackToMemory(&(*UnpData)[0],SubHead.UnpSize);
   }
   if (SubHead.Flags & LHD_PASSWORD)
-  {
     if (*Cmd->Password)
       SubDataIO.SetEncryption(SubHead.UnpVer,Cmd->Password,
              (SubHead.Flags & LHD_SALT) ? SubHead.Salt:NULL,false);
     else
       return(false);
-  }
   SubDataIO.SetPackedSizeToRead(SubHead.PackSize);
   SubDataIO.EnableShowProgress(false);
   SubDataIO.SetFiles(this,DestFile);
