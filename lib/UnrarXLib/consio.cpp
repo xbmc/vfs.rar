@@ -1,3 +1,4 @@
+#if !defined(TARGET_POSIX) && !defined(_XBMC)
 #include "rar.hpp"
 
 #ifndef GUI
@@ -289,3 +290,11 @@ void OutComment(char *Comment,int Size)
   mprintf("\n");
 #endif
 }
+
+#else
+
+void OutComment(char *Comment,int Size)
+{
+}
+
+#endif

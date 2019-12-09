@@ -1,5 +1,4 @@
-
-
+// THIS FILE IS SLIGHTLY MODIFIED TO WORK WITH XBMC
 
 #ifndef SFX_MODULE
 void ExtractStreams(Archive &Arc,char *FileName,wchar *FileNameW)
@@ -76,8 +75,8 @@ void ExtractStreams(Archive &Arc,char *FileName,wchar *FileNameW)
   }
   File HostFile;
   if (Found && HostFile.Open(FileName,FileNameW,true,true))
-    SetFileTime(HostFile.GetHandle(),&fd.ftCreationTime,&fd.ftLastAccessTime,
-                &fd.ftLastWriteTime);
+    /*SetFileTime(HostFile.GetHandle(),&fd.ftCreationTime,&fd.ftLastAccessTime,
+                &fd.ftLastWriteTime);*/
   if (fd.FileAttr & FILE_ATTRIBUTE_READONLY)
     SetFileAttr(FileName,FileNameW,fd.FileAttr);
 }
@@ -131,8 +130,8 @@ void ExtractStreamsNew(Archive &Arc,char *FileName,wchar *FileNameW)
     CurFile.Close();
   File HostFile;
   if (Found && HostFile.Open(FileName,FileNameW,true,true))
-    SetFileTime(HostFile.GetHandle(),&fd.ftCreationTime,&fd.ftLastAccessTime,
-                &fd.ftLastWriteTime);
+/*    SetFileTime(HostFile.GetHandle(),&fd.ftCreationTime,&fd.ftLastAccessTime,
+                &fd.ftLastWriteTime);*/
   if (fd.FileAttr & FILE_ATTRIBUTE_READONLY)
     SetFileAttr(FileName,FileNameW,fd.FileAttr);
 }

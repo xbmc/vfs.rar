@@ -265,7 +265,7 @@ extern "C"
 void _stdfunction ProcessSignal(int SigType)
 #endif
 {
-#ifdef _WIN_32
+#if defined(_WIN_32) && !defined(TARGET_POSIX)
   if (SigType==CTRL_LOGOFF_EVENT)
     return(TRUE);
 #endif
@@ -280,7 +280,9 @@ void _stdfunction ProcessSignal(int SigType)
 #if defined(USE_RC) && !defined(SFX_MODULE) && !defined(_WIN_CE)
   ExtRes.UnloadDLL();
 #endif
+#if !defined(TARGET_POSIX)
   exit(USER_BREAK);
+#endif
 #ifdef _WIN_32
   return(TRUE);
 #endif
@@ -293,8 +295,9 @@ void ErrorHandler::SetSignalHandlers(bool Enable)
   EnableBreak=Enable;
 #if !defined(GUI) && !defined(_SFX_RTL_)
 #ifdef _WIN_32
+#if (WINAPI_FAMILY != WINAPI_FAMILY_APP)
   SetConsoleCtrlHandler(Enable ? ProcessSignal:NULL,TRUE);
-//  signal(SIGBREAK,Enable ? ProcessSignal:SIG_IGN);
+#endif
 #else
   signal(SIGINT,Enable ? ProcessSignal:SIG_IGN);
   signal(SIGTERM,Enable ? ProcessSignal:SIG_IGN);
@@ -312,7 +315,9 @@ void ErrorHandler::Throw(int Code)
   throw Code;
 #else
   File::RemoveCreated();
+#if !defined(_XBMC) && !defined(TARGET_POSIX)
   exit(Code);
+#endif
 #endif
 }
 

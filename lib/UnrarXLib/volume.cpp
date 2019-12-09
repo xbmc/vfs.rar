@@ -1,10 +1,5 @@
 #include "rar.hpp"
 
-static void GetFirstNewVolName(const char *ArcName,char *VolName,
-  Int64 VolSize,Int64 TotalSize);
-
-
-
 bool MergeArchive(Archive &Arc,ComprDataIO *DataIO,bool ShowFileName,char Command)
 {
   RAROptions *Cmd=Arc.GetRAROptions();
@@ -20,6 +15,7 @@ bool MergeArchive(Archive &Arc,ComprDataIO *DataIO,bool ShowFileName,char Comman
     Log(Arc.FileName,St(MDataBadCRC),hd->FileName,Arc.FileName);
   }
 
+  Int64 PrevFullUnpSize = hd->FullUnpSize;
   Int64 PosBeforeClose=Arc.Tell();
   Arc.Close();
 
@@ -125,11 +121,15 @@ bool MergeArchive(Archive &Arc,ComprDataIO *DataIO,bool ShowFileName,char Comman
 #endif
 
   if (Command=='T' || Command=='X' || Command=='E')
+  {
     mprintf(St(Command=='T' ? MTestVol:MExtrVol),Arc.FileName);
+  }
+
   if (SplitHeader)
     Arc.SearchBlock(HeaderType);
   else
     Arc.ReadHeader();
+
   if (Arc.GetHeaderType()==FILE_HEAD)
   {
     Arc.ConvertAttributes();
@@ -140,9 +140,18 @@ bool MergeArchive(Archive &Arc,ComprDataIO *DataIO,bool ShowFileName,char Comman
   {
     mprintf(St(MExtrPoints),IntNameToExt(Arc.NewLhd.FileName));
     if (!Cmd->DisablePercentage)
+    {
       mprintf("     ");
+    }
   }
 #endif
+
+  if (hd->FullUnpSize == 0)
+  {
+    // some archives only have correct UnpSize in the first volume
+    hd->FullUnpSize = PrevFullUnpSize;
+  }
+
   if (DataIO!=NULL)
   {
     if (HeaderType==ENDARC_HEAD)

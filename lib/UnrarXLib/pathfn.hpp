@@ -28,7 +28,7 @@ void GetConfigName(const char *Name,char *FullName,bool CheckExist);
 char* GetVolNumPart(char *ArcName);
 void NextVolumeName(char *ArcName,bool OldNumbering);
 bool IsNameUsable(const char *Name);
-void MakeNameUsable(char *Name,bool Extended);
+void MakeNameUsable(char *Name,bool KeepExtension, bool IsFatx);
 char* UnixSlashToDos(char *SrcName,char *DestName=NULL,uint MaxLength=NM);
 char* DosSlashToUnix(char *SrcName,char *DestName=NULL,uint MaxLength=NM);
 bool IsFullPath(const char *Path);
@@ -38,7 +38,8 @@ int ParseVersionFileName(char *Name,wchar *NameW,bool Truncate);
 char* VolNameToFirstName(const char *VolName,char *FirstName,bool NewNumbering);
 wchar* GetWideName(const char *Name,const wchar *NameW,wchar *DestW);
 
+void MakeSubRar(char * destname, char * rarname);
 
-inline char* GetOutputName(const char *Name) {return((char *)Name);};
+inline char* GetOutputName(const char *Name) {return((char *)Name);}
 
 #endif

@@ -7,8 +7,7 @@
 
 enum PathExclMode {
   EXCL_NONE,EXCL_BASEPATH,EXCL_SKIPWHOLEPATH,EXCL_SAVEFULLPATH,
-  EXCL_SKIPABSPATH,EXCL_ABSPATH
-};
+  EXCL_SKIPABSPATH,EXCL_ABSPATH};
 enum {SOLID_NONE=0,SOLID_NORMAL=1,SOLID_COUNT=2,SOLID_FILEEXT=4,
       SOLID_VOLUME_DEPENDENT=8,SOLID_VOLUME_INDEPENDENT=16};
 enum {ARCTIME_NONE,ARCTIME_KEEP,ARCTIME_LATEST};
@@ -21,7 +20,6 @@ enum OVERWRITE_MODE { OVERWRITE_ASK,OVERWRITE_ALL,OVERWRITE_NONE};
 
 #define     MAX_FILTERS           16
 enum FilterState {FILTER_DEFAULT=0,FILTER_AUTO,FILTER_FORCE,FILTER_DISABLE};
-
 
 struct FilterMode
 {
@@ -44,7 +42,7 @@ class RAROptions
     uint WinSize;
     char TempPath[NM];
     char SFXModule[NM];
-    char ExtrPath[NM];
+    char ExtrPath[NM+16];
     wchar ExtrPathW[NM];
     char CommentFile[NM];
     char ArcPath[NM];
@@ -115,7 +113,7 @@ class RAROptions
 
 
 
-#ifdef RARDLL
+#if defined(RARDLL)
     char DllDestName[NM];
     wchar DllDestNameW[NM];
     int DllOpMode;
@@ -127,3 +125,4 @@ class RAROptions
 #endif
 };
 #endif
+

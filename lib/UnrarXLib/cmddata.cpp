@@ -125,8 +125,11 @@ void CommandData::ParseDone()
   BareOutput=(CmdChar=='L' || CmdChar=='V') && Command[1]=='B';
 }
 
+#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
+#define getenv(x) NULL
+#endif
 
-#if !defined(SFX_MODULE) && !defined(_WIN_CE)
+#if !defined(SFX_MODULE) && !defined(_WIN_CE) && !defined(TARGET_POSIX)
 void CommandData::ParseEnvVar()
 {
   char *EnvStr=getenv("RAR");
@@ -151,8 +154,7 @@ bool CommandData::IsConfigEnabled(int argc,char *argv[])
         InitLogOptions(LogName);
       }
     }
-  return(ConfigEnabled);
-}
+  return(ConfigEnabled);}
 #endif
 
 
@@ -160,7 +162,7 @@ bool CommandData::IsConfigEnabled(int argc,char *argv[])
 void CommandData::ReadConfig(int argc,char *argv[])
 {
   StringList List;
-  if (ReadTextFile(DefConfigName,&List,true))
+  if (ReadTextFile((char*)DefConfigName,&List,true))
   {
     char *Str;
     while ((Str=List.GetString())!=NULL)
@@ -385,7 +387,7 @@ void CommandData::ProcessSwitch(char *Switch)
         case 'S':
           SaveStreams=true;
           break;
-        case 'C':
+    case 'C':
           SetCompressedAttr=true;
           break;
 #endif
@@ -411,7 +413,7 @@ void CommandData::ProcessSwitch(char *Switch)
             Priority=atoi(Switch+2);
             char *ChPtr=strchr(Switch+2,':');
             if (ChPtr!=NULL)
-            {
+      {
               SleepTime=atoi(ChPtr+1);
               InitSystemOptions(SleepTime);
             }
@@ -432,8 +434,8 @@ void CommandData::ProcessSwitch(char *Switch)
           ReadTextFile(Switch+2,Args,false,true,true,true,true);
         else
           Args->AddString(Switch+1);
-      }
-      break;
+     }
+     break;
     case 'E':
       switch(toupper(Switch[1]))
       {
@@ -507,7 +509,7 @@ void CommandData::ProcessSwitch(char *Switch)
           {
             char *Str=Switch+2;
             if (*Str=='-')
-              for (int I=0;I<sizeof(FilterModes)/sizeof(FilterModes[0]);I++)
+              for (unsigned int I=0;I<sizeof(FilterModes)/sizeof(FilterModes[0]);I++)
                 FilterModes[I].State=FILTER_DISABLE;
             else
               while (*Str)
@@ -855,8 +857,7 @@ void CommandData::OutHelp()
         Found=true;
         break;
       }
-    if (Found)
-      continue;
+    if (Found)      continue;
 #endif
 #if !defined(_UNIX) && !defined(_WIN_32)
     if (Help[I]==MCHelpSwOW)
@@ -866,7 +867,7 @@ void CommandData::OutHelp()
     if (Help[I]==MCHelpSwOL)
       continue;
 #endif
-#if !defined(_WIN_32)
+#if defined(_WIN_32)
     if (Help[I]==MCHelpSwRI)
       continue;
 #endif
@@ -1015,7 +1016,7 @@ int CommandData::IsProcessFile(FileHeader &NewLhd,bool *ExactMatch,int MatchType
 void CommandData::ProcessCommand()
 {
 #ifndef SFX_MODULE
-  if (Command[1] && strchr("FUADPXETK",*Command)!=NULL || *ArcName==0)
+  if ((Command[1] && (strchr("FUADPXETK",*Command)!=NULL)) || *ArcName==0)
     OutHelp();
 
 #ifdef _UNIX
@@ -1062,7 +1063,9 @@ void CommandData::ProcessCommand()
   }
 #ifndef GUI
   if (!BareOutput)
+  {
     mprintf("\n");
+  }
 #endif
 }
 #endif
@@ -1133,16 +1136,13 @@ uint CommandData::GetExclAttr(char *Str)
 }
 #endif
 
-
-
-
 #ifndef SFX_MODULE
 bool CommandData::CheckWinSize()
 {
-  static int ValidSize[]={
+  static unsigned int ValidSize[]={
     0x10000,0x20000,0x40000,0x80000,0x100000,0x200000,0x400000
   };
-  for (int I=0;I<sizeof(ValidSize)/sizeof(ValidSize[0]);I++)
+  for (unsigned int I=0;I<sizeof(ValidSize)/sizeof(ValidSize[0]);I++)
     if (WinSize==ValidSize[I])
       return(true);
   WinSize=0x400000;

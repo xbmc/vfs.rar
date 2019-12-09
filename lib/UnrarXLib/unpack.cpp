@@ -31,7 +31,10 @@ void Unpack::Init(byte *Window)
 {
   if (Window==NULL)
   {
-    Unpack::Window=new byte[MAXWINSIZE];
+    if (UnpIO->UnpackToMemorySize > -1)
+      Unpack::Window = new byte[MAXWINMEMSIZE];
+    else
+      Unpack::Window=new byte[MAXWINSIZE];
 #ifndef ALLOW_EXCEPTIONS
     if (Unpack::Window==NULL)
       ErrHandler.MemoryError();
@@ -162,7 +165,7 @@ void Unpack::Unpack29(bool Solid)
   static unsigned char LBits[]=  {0,0,0,0,0,0,0,0,1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4,  4,  5,  5,  5,  5};
   static int DDecode[DC];
   static byte DBits[DC];
-  static int DBitLengthCounts[]= {4,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,14,0,12};
+  static unsigned int DBitLengthCounts[]= {4,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,14,0,12};
   static unsigned char SDDecode[]={0,4,8,16,32,64,128,192};
   static unsigned char SDBits[]=  {2,2,3, 4, 5, 6,  6,  6};
   unsigned int Bits;
@@ -170,8 +173,8 @@ void Unpack::Unpack29(bool Solid)
   if (DDecode[1]==0)
   {
     int Dist=0,BitLength=0,Slot=0;
-    for (int I=0;I<sizeof(DBitLengthCounts)/sizeof(DBitLengthCounts[0]);I++,BitLength++)
-      for (int J=0;J<DBitLengthCounts[I];J++,Slot++,Dist+=(1<<BitLength))
+    for (unsigned int I=0;I<sizeof(DBitLengthCounts)/sizeof(DBitLengthCounts[0]);I++,BitLength++)
+      for (unsigned int J=0;J<DBitLengthCounts[I];J++,Slot++,Dist+=(1<<BitLength))
       {
         DDecode[Slot]=Dist;
         DBits[Slot]=BitLength;
@@ -185,8 +188,14 @@ void Unpack::Unpack29(bool Solid)
     UnpInitData(Solid);
     if (!UnpReadBuf())
       return;
-    if ((!Solid || !TablesRead) && !ReadTables())
-      return;
+    if (!TablesRead)
+      if (!ReadTables())
+        return;
+//    if (!TablesRead && Solid)
+  //    if (!ReadTables())
+  //      return;
+    //if ((!Solid || !TablesRead) && !ReadTables())
+    //  return;
   }
 
   if (PPMError)
@@ -194,6 +203,12 @@ void Unpack::Unpack29(bool Solid)
 
   while (true)
   {
+    if (UnpIO->bQuit) 
+    {
+      FileExtracted=false;
+      return;
+    }
+
     UnpPtr&=MAXWINMASK;
 
     if (InAddr>ReadBorder)
@@ -239,7 +254,7 @@ void Unpack::Unpack29(bool Solid)
         }
         if (NextCh==4)
         {
-          unsigned int Distance=0,Length;
+          unsigned int Distance=0,Length=0;
           bool Failed=false;
           for (int I=0;I<4 && !Failed;I++)
           {
@@ -387,8 +402,15 @@ void Unpack::Unpack29(bool Solid)
     }
   }
   UnpWriteBuf();
-}
 
+  if (UnpIO->UnpackToMemorySize > -1)
+  {
+    UnpIO->hBufferEmpty->Signal();
+    while (! UnpIO->hBufferFilled->Wait(1))
+      if (UnpIO->hQuit->Wait(1))
+        return;
+  }
+}
 
 bool Unpack::ReadEndOfBlock()
 {
@@ -406,7 +428,7 @@ bool Unpack::ReadEndOfBlock()
     addbits(2);
   }
   TablesRead=!NewTable;
-  return !(NewFile || NewTable && !ReadTables());
+  return !(NewFile || (NewTable && !ReadTables()));
 }
 
 
@@ -445,7 +467,7 @@ bool Unpack::ReadVMCodePPM()
     return(false);
   int Length=(FirstByte & 7)+1;
   if (Length==7)
-  {
+      {
     int B1=PPM.DecodeChar();
     if (B1==-1)
       return(false);
@@ -461,7 +483,7 @@ bool Unpack::ReadVMCodePPM()
       if (B2==-1)
         return(false);
       Length=B1*256+B2;
-    }
+    }  
   Array<byte> VMCode(Length);
   for (int I=0;I<Length;I++)
   {
@@ -481,7 +503,7 @@ bool Unpack::AddVMCode(unsigned int FirstByte,byte *Code,int CodeSize)
   memcpy(Inp.InBuf,Code,Min(BitInput::MAX_SIZE,CodeSize));
   VM.Init();
 
-  uint FiltPos;
+  int FiltPos;
   if (FirstByte & 0x80)
   {
     FiltPos=RarVM::ReadData(Inp);
@@ -563,7 +585,7 @@ bool Unpack::AddVMCode(unsigned int FirstByte,byte *Code,int CodeSize)
     if (VMCodeSize>=0x10000 || VMCodeSize==0)
       return(false);
     Array<byte> VMCode(VMCodeSize);
-    for (int I=0;I<VMCodeSize;I++)
+    for (uint I=0;I<VMCodeSize;I++)
     {
       VMCode[I]=Inp.fgetbits()>>8;
       Inp.faddbits(8);
@@ -602,7 +624,7 @@ bool Unpack::AddVMCode(unsigned int FirstByte,byte *Code,int CodeSize)
     if (CurSize<DataSize+VM_FIXEDGLOBALSIZE)
       StackFilter->Prg.GlobalData.Add(DataSize+VM_FIXEDGLOBALSIZE-CurSize);
     byte *GlobalData=&StackFilter->Prg.GlobalData[VM_FIXEDGLOBALSIZE];
-    for (int I=0;I<DataSize;I++)
+    for (uint I=0;I<DataSize;I++)
     {
       GlobalData[I]=Inp.fgetbits()>>8;
       Inp.faddbits(8);
@@ -711,7 +733,7 @@ void Unpack::UnpWriteBuf()
       }
     }
   }
-      
+   
   UnpWriteArea(WrittenBorder,UnpPtr);
   WrPtr=UnpPtr;
 }
@@ -780,7 +802,7 @@ bool Unpack::ReadTables()
     memset(UnpOldTable,0,sizeof(UnpOldTable));
   faddbits(2);
 
-  for (int I=0;I<BC;I++)
+  for (uint I=0;I<BC;I++)
   {
     int Length=(byte)(fgetbits() >> 12);
     faddbits(4);
@@ -872,7 +894,10 @@ void Unpack::UnpInitData(int Solid)
     memset(OldDist,0,sizeof(OldDist));
     OldDistPtr=0;
     LastDist=LastLength=0;
-//    memset(Window,0,MAXWINSIZE);
+    if (UnpIO->UnpackToMemorySize > -1)
+      memset(Window,0,MAXWINMEMSIZE);
+    else
+      memset(Window,0,MAXWINSIZE);
     memset(UnpOldTable,0,sizeof(UnpOldTable));
     UnpPtr=WrPtr=0;
     PPMEscChar=2;

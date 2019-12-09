@@ -13,9 +13,11 @@
 #define DBCS_SUPPORTED
 #endif
 
-#ifdef _EMX
-int uni_init(int codepage);
-int uni_done();
+#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
+BOOL OemToChar(const char *Src, char *Dst);
+BOOL OemToCharBuff(const char *Src, char *Dst, int len);
+BOOL CharToOem(const char *Src, char *Dst);
+BOOL CharToOemBuff(const char *Src, char *Dst, int len);
 #endif
 
 bool WideToChar(const wchar *Src,char *Dest,int DestSize=0x10000000);
