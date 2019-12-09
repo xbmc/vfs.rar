@@ -10,7 +10,7 @@ void InitLogOptions(char *LogName)
 
 
 #ifndef SILENT
-void RarLog(const char *ArcName,const char *Format,...)
+void Log(const char *ArcName,const char *Format,...)
 {
   safebuf char Msg[2*NM+1024];
   va_list ArgPtr;

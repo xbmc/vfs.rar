@@ -376,7 +376,7 @@ bool CmdExtract::ExtractCurrentFile(CommandData *Cmd,Archive &Arc,int HeaderSize
   {
     if (ExactMatch)
     {
-      RarLog(Arc.FileName,St(MUnpCannotMerge),(char*) ArcFileName);
+      Log(Arc.FileName,St(MUnpCannotMerge),(char*) ArcFileName);
 #ifdef RARDLL
       Cmd->DllError=ERAR_BAD_DATA;
 #endif
@@ -579,9 +579,9 @@ bool CmdExtract::ExtractCurrentFile(CommandData *Cmd,Archive &Arc,int HeaderSize
 #endif
     {
 #ifndef SILENT
-      RarLog(Arc.FileName,St(MUnknownMeth),(char*) ArcFileName);
+      Log(Arc.FileName,St(MUnknownMeth),(char*) ArcFileName);
 #ifndef SFX_MODULE
-      RarLog(Arc.FileName,St(MVerRequired),Arc.NewLhd.UnpVer/10,Arc.NewLhd.UnpVer%10);
+      Log(Arc.FileName,St(MVerRequired),Arc.NewLhd.UnpVer/10,Arc.NewLhd.UnpVer%10);
 #endif
 #endif
       ExtrFile=false;
@@ -632,7 +632,7 @@ bool CmdExtract::ExtractCurrentFile(CommandData *Cmd,Archive &Arc,int HeaderSize
         }
         else
         {
-          RarLog(Arc.FileName,St(MExtrErrMkDir),DestFileName);
+          Log(Arc.FileName,St(MExtrErrMkDir),DestFileName);
           ErrHandler.SysErrMsg();
 #ifdef RARDLL
           Cmd->DllError=ERAR_ECREATE;
@@ -688,7 +688,7 @@ bool CmdExtract::ExtractCurrentFile(CommandData *Cmd,Archive &Arc,int HeaderSize
       {
         if (!TestMode && Command!='P' && CurFile.IsDevice())
         {
-          RarLog(Arc.FileName,St(MInvalidName),DestFileName);
+          Log(Arc.FileName,St(MInvalidName),DestFileName);
           ErrHandler.WriteError(Arc.FileName,DestFileName);
         }
         TotalFileCount++;

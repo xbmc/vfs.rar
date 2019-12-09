@@ -67,7 +67,7 @@ bool ErrorHandler::AskRepeatRead(const char *FileName)
   if (!Silent)
   {
     mprintf("\n");
-    RarLog(NULL,St(MErrRead),FileName);
+    Log(NULL,St(MErrRead),FileName);
     return(Ask(St(MRetryAbort))==1);
   }
 #endif
@@ -106,7 +106,7 @@ bool ErrorHandler::AskRepeatWrite(const char *FileName)
   if (!Silent)
   {
     mprintf("\n");
-    RarLog(NULL,St(MErrWrite),FileName);
+    Log(NULL,St(MErrWrite),FileName);
     return(Ask(St(MRetryAbort))==1);
   }
 #endif
@@ -146,7 +146,7 @@ void ErrorHandler::OpenErrorMsg(const char *FileName)
 void ErrorHandler::OpenErrorMsg(const char *ArcName,const char *FileName)
 {
 #ifndef SILENT
-  RarLog(ArcName && *ArcName ? ArcName:NULL,St(MCannotOpen),FileName);
+  Log(ArcName && *ArcName ? ArcName:NULL,St(MCannotOpen),FileName);
   Alarm();
   SysErrMsg();
 #endif
@@ -162,7 +162,7 @@ void ErrorHandler::CreateErrorMsg(const char *FileName)
 void ErrorHandler::CreateErrorMsg(const char *ArcName,const char *FileName)
 {
 #ifndef SILENT
-  RarLog(ArcName && *ArcName ? ArcName:NULL,St(MCannotCreate),FileName);
+  Log(ArcName && *ArcName ? ArcName:NULL,St(MCannotCreate),FileName);
   Alarm();
 #if defined(_WIN_32) && !defined(_WIN_CE) && !defined(SFX_MODULE) && defined(MAXPATH)
   if (GetLastError()==ERROR_PATH_NOT_FOUND)
@@ -176,7 +176,7 @@ void ErrorHandler::CreateErrorMsg(const char *ArcName,const char *FileName)
     }
     if (NameLength>MAXPATH)
     {
-      RarLog(ArcName && *ArcName ? ArcName:NULL,St(MMaxPathLimit),MAXPATH);
+      Log(ArcName && *ArcName ? ArcName:NULL,St(MMaxPathLimit),MAXPATH);
     }
   }
 #endif
@@ -227,7 +227,7 @@ void ErrorHandler::ErrMsg(const char *ArcName,const char *fmt,...)
   Alarm();
   if (*Msg)
   {
-    RarLog(ArcName,"\n%s",Msg);
+    Log(ArcName,"\n%s",Msg);
     mprintf("\n%s\n",St(MProgAborted));
   }
 }
@@ -348,7 +348,7 @@ void ErrorHandler::SysErrMsg()
         *EndMsg=0;
         EndMsg++;
       }
-      RarLog(NULL,"\n%s",CurMsg);
+      Log(NULL,"\n%s",CurMsg);
       CurMsg=EndMsg;
     }
   }

@@ -12,7 +12,7 @@ bool MergeArchive(Archive &Arc,ComprDataIO *DataIO,bool ShowFileName,char Comman
   if (DataIO!=NULL && SplitHeader && hd->UnpVer>=20 &&
       hd->FileCRC!=0xffffffff && DataIO->PackedCRC!=~hd->FileCRC)
   {
-    RarLog(Arc.FileName,St(MDataBadCRC),hd->FileName,Arc.FileName);
+    Log(Arc.FileName,St(MDataBadCRC),hd->FileName,Arc.FileName);
   }
 
   Int64 PrevFullUnpSize = hd->FullUnpSize;
@@ -81,7 +81,7 @@ bool MergeArchive(Archive &Arc,ComprDataIO *DataIO,bool ShowFileName,char Comman
 #ifndef GUI
     if (!Cmd->VolumePause && !IsRemovable(NextName))
     {
-      RarLog(Arc.FileName,St(MAbsNextVol),NextName);
+      Log(Arc.FileName,St(MAbsNextVol),NextName);
       FailedOpen=true;
       break;
     }

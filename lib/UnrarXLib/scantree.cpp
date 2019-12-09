@@ -161,7 +161,7 @@ int ScanTree::FindProc(FindData *FindData)
 #ifndef SILENT
     if (Error)
     {
-      RarLog(NULL,St(MScanError),CurMask);
+      Log(NULL,St(MScanError),CurMask);
     }
 #endif
 
@@ -239,8 +239,8 @@ int ScanTree::FindProc(FindData *FindData)
     if (strlen(CurMask)+strlen(Mask)+1>=NM || Depth>=MAXSCANDEPTH-1)
     {
 #ifndef SILENT
-      RarLog(NULL,"\n%s%c%s",CurMask,CPATHDIVIDER,Mask);
-      RarLog(NULL,St(MPathTooLong));
+      Log(NULL,"\n%s%c%s",CurMask,CPATHDIVIDER,Mask);
+      Log(NULL,St(MPathTooLong));
 #endif
       return(SCAN_ERROR);
     }

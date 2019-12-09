@@ -17,10 +17,10 @@ int ExtractLink(ComprDataIO &DataIO,Archive &Arc,char *DestName,uint &LinkCRC,bo
       if (symlink(FileName,DestName)==-1)
       {
         if (errno==EEXIST)
-          RarLog(Arc.FileName,St(MSymLinkExists),DestName);
+          Log(Arc.FileName,St(MSymLinkExists),DestName);
         else
         {
-          RarLog(Arc.FileName,St(MErrCreateLnk),DestName);
+          Log(Arc.FileName,St(MErrCreateLnk),DestName);
           ErrHandler.SetErrorCode(WARNING);
         }
       }

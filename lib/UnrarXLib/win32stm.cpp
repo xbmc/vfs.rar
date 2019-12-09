@@ -9,7 +9,7 @@ void ExtractStreams(Archive &Arc,char *FileName,wchar *FileNameW)
   if (Arc.HeaderCRC!=Arc.StreamHead.HeadCRC)
   {
 #ifndef SILENT
-    RarLog(Arc.FileName,St(MStreamBroken),FileName);
+    Log(Arc.FileName,St(MStreamBroken),FileName);
 #endif
     ErrHandler.SetErrorCode(CRC_ERROR);
     return;
@@ -18,7 +18,7 @@ void ExtractStreams(Archive &Arc,char *FileName,wchar *FileNameW)
   if (Arc.StreamHead.Method<0x31 || Arc.StreamHead.Method>0x35 || Arc.StreamHead.UnpVer>PACK_VER)
   {
 #ifndef SILENT
-    RarLog(Arc.FileName,St(MStreamUnknown),FileName);
+    Log(Arc.FileName,St(MStreamUnknown),FileName);
 #endif
     ErrHandler.SetErrorCode(WARNING);
     return;
@@ -35,7 +35,7 @@ void ExtractStreams(Archive &Arc,char *FileName,wchar *FileNameW)
   if (strlen(StreamName)+strlen((char *)Arc.StreamHead.StreamName)>=sizeof(StreamName))
   {
 #ifndef SILENT
-    RarLog(Arc.FileName,St(MStreamBroken),FileName);
+    Log(Arc.FileName,St(MStreamBroken),FileName);
 #endif
     ErrHandler.SetErrorCode(CRC_ERROR);
     return;
@@ -66,7 +66,7 @@ void ExtractStreams(Archive &Arc,char *FileName,wchar *FileNameW)
     if (Arc.StreamHead.StreamCRC!=~DataIO.UnpFileCRC)
     {
 #ifndef SILENT
-      RarLog(Arc.FileName,St(MStreamBroken),StreamName);
+      Log(Arc.FileName,St(MStreamBroken),StreamName);
 #endif
       ErrHandler.SetErrorCode(CRC_ERROR);
     }
@@ -109,7 +109,7 @@ void ExtractStreamsNew(Archive &Arc,char *FileName,wchar *FileNameW)
   if (strlenw(StreamNameW)+DestSize>=sizeof(StreamNameW)/sizeof(StreamNameW[0]))
   {
 #if !defined(SILENT) && !defined(SFX_MODULE)
-    RarLog(Arc.FileName,St(MStreamBroken),FileName);
+    Log(Arc.FileName,St(MStreamBroken),FileName);
 #endif
     ErrHandler.SetErrorCode(CRC_ERROR);
     return;

@@ -65,7 +65,7 @@ bool RecVolumes::Restore(RAROptions *Cmd,const char *Name,
   if (!Arc.Volume)
   {
 #ifndef SILENT
-    RarLog(ArcName,St(MNotVolume),ArcName);
+    Log(ArcName,St(MNotVolume),ArcName);
 #endif
     return(false);
   }
@@ -151,7 +151,7 @@ bool RecVolumes::Restore(RAROptions *Cmd,const char *Name,
     if ((RecVolNumber!=0 && RecVolNumber!=P[1]) || (FileNumber!=0 && FileNumber!=P[2]))
     {
 #ifndef SILENT
-      RarLog(NULL,St(MRecVolDiffSets),Name,PrevName);
+      Log(NULL,St(MRecVolDiffSets),Name,PrevName);
 #endif
       return(false);
     }
