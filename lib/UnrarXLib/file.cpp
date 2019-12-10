@@ -529,7 +529,7 @@ bool File::RawSeek(Int64 Offset,int Method)
   }
 #else
   LastWrite=false;
-#if defined(_LARGEFILE_SOURCE) && !defined(_OSF_SOURCE)
+#if defined(_LARGEFILE_SOURCE) && !defined(_OSF_SOURCE) && !defined(__VMS)
   if (fseeko(hFile,Offset,Method)!=0)
 #else
   if (fseek(hFile,(long)int64to32(Offset),Method)!=0)
