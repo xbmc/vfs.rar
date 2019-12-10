@@ -43,6 +43,9 @@ int main(int argc, char *argv[])
 #ifdef _WIN_32
   SetErrorMode(SEM_NOALIGNMENTFAULTEXCEPT|SEM_FAILCRITICALERRORS|SEM_NOOPENFILEERRORBOX);
 
+#if defined(_WIN_32) && !defined(SFX_MODULE) && !defined(SHELL_EXT)
+  bool ShutdownOnClose;
+#endif
 
 #endif
 
@@ -94,6 +97,9 @@ int main(int argc, char *argv[])
 #endif
     Cmd.ParseDone();
 
+#if defined(_WIN_32) && !defined(SFX_MODULE) && !defined(SHELL_EXT)
+    ShutdownOnClose=Cmd.Shutdown;
+#endif
 
     InitConsoleOptions(Cmd.MsgStream,Cmd.Sound);
     InitSystemOptions(Cmd.SleepTime);
@@ -123,6 +129,13 @@ int main(int argc, char *argv[])
   File::RemoveCreated();
 #if defined(SFX_MODULE) && defined(_DJGPP)
   _chmod(ModuleName,1,0x20);
+#endif
+#if defined(_EMX) && !defined(_DJGPP)
+  uni_done();
+#endif
+#if defined(_WIN_32) && !defined(SFX_MODULE) && !defined(SHELL_EXT)
+  if (ShutdownOnClose)
+    Shutdown();
 #endif
   return(ErrHandler.GetErrorCode());
 }
