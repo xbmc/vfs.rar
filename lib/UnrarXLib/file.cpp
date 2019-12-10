@@ -578,6 +578,11 @@ int64 File::Tell()
 
 void File::Prealloc(int64 Size)
 {
+  if (hFile==BAD_HANDLE)
+    if (AllowExceptions)
+      ErrHandler.SeekError(FileName,FileNameW);
+    else
+      return(-1);
 #ifdef _WIN_ALL
   if (RawSeek(Size,SEEK_SET))
   {
