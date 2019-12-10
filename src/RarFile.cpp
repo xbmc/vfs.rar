@@ -170,7 +170,7 @@ struct RARContext
       if ((!password.empty()) &&
           (password.size() < sizeof (cmd->Password)))
       {
-        strcpy(cmd->Password, password.c_str());
+        GetWideName(password.c_str(),NULL,cmd->Password,ASIZE(cmd->Password));
       }
 
       cmd->ParseDone();
