@@ -15,7 +15,6 @@ set(SOURCES archive.cpp
             find.cpp
             getbits.cpp
             global.cpp
-            int64.cpp
             isnt.cpp
             log.cpp
             match.cpp
@@ -32,6 +31,7 @@ set(SOURCES archive.cpp
             savepos.cpp
             scantree.cpp
             sha1.cpp
+            smallfn.cpp
             strfn.cpp
             strlist.cpp
             system.cpp

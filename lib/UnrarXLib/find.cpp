@@ -226,7 +226,7 @@ HANDLE FindFile::Win32Find(HANDLE hFind,const char *Mask,const wchar *MaskW,stru
       strcpyw(fd->NameW,WideMask);
       strcpyw(PointToName(fd->NameW),FindData.cFileName);
       WideToChar(fd->NameW,fd->Name);
-      fd->Size=int32to64(FindData.nFileSizeHigh,FindData.nFileSizeLow);
+      fd->Size=INT32TO64(FindData.nFileSizeHigh,FindData.nFileSizeLow);
       fd->FileAttr=FindData.dwFileAttributes;
       WideToChar(FindData.cAlternateFileName,fd->ShortName);
       fd->ftCreationTime=FindData.ftCreationTime;

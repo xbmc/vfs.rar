@@ -3,14 +3,7 @@
 #include <kodi/Filesystem.h>
 #include <memory>
 
-#include "smallfn.cpp"
-
 using namespace std;
-
-#ifdef _DJGPP
-extern "C" char **__crt0_glob_function (char *arg) { return 0; }
-extern "C" void   __crt0_load_environment_file (char *progname) { }
-#endif
 
 #if !defined(GUI) && !defined(RARDLL) && !defined(TARGET_POSIX) && !defined(_XBMC)
 int main(int argc, char *argv[])
@@ -376,7 +369,7 @@ int urarlib_list(char *rarfile, ArchiveList_struct **ppList, char *libpassword, 
               pCurr->item.NameW = (wchar *)malloc((pCurr->item.NameSize + 1)*sizeof(wchar));
               wcscpy(pCurr->item.NameW, pArc->NewLhd.FileNameW);
               pCurr->item.PackSize = pArc->NewLhd.PackSize;
-              pCurr->item.UnpSize = int32to64(pArc->NewLhd.HighUnpSize,pArc->NewLhd.UnpSize);
+              pCurr->item.UnpSize = INT32TO64(pArc->NewLhd.HighUnpSize,pArc->NewLhd.UnpSize);
               pCurr->item.HostOS = pArc->NewLhd.HostOS;
               pCurr->item.FileCRC = pArc->NewLhd.FileCRC;
               pCurr->item.FileTime = pArc->NewLhd.FileTime;

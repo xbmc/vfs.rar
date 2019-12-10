@@ -36,7 +36,7 @@ void ComprDataIO::Init()
   //m_pDlgProgress = NULL;
  }
 
-int ComprDataIO::UnpRead(byte *Addr,uint Count)
+int ComprDataIO::UnpRead(byte *Addr,size_t Count)
 {
   int RetCode=0,TotalRead=0;
   byte *ReadAddr;
@@ -45,11 +45,11 @@ int ComprDataIO::UnpRead(byte *Addr,uint Count)
   {
     Archive *SrcArc=(Archive *)SrcFile;
 
-    uint ReadSize=(Count>UnpPackedSize) ? int64to32(UnpPackedSize):Count;
+    size_t ReadSize=((int64)Count>UnpPackedSize) ? (size_t)UnpPackedSize:Count;
     if (UnpackFromMemory)
     {
       memcpy(Addr,UnpackFromMemoryAddr,UnpackFromMemorySize);
-      RetCode=UnpackFromMemorySize;
+      RetCode=(int)UnpackFromMemorySize;
       UnpackFromMemorySize=0;
     }
     else
@@ -73,9 +73,9 @@ int ComprDataIO::UnpRead(byte *Addr,uint Count)
           }
           else
           {
-            Int64 iStartOfFile = SrcArc->NextBlockPos-SrcArc->NewLhd.FullPackSize;
+            int64 iStartOfFile = SrcArc->NextBlockPos-SrcArc->NewLhd.FullPackSize;
             m_iStartOfBuffer = CurUnpStart;
-            Int64 iSeekTo=m_iSeekTo-CurUnpStart<MAXWINMEMSIZE/2?iStartOfFile:iStartOfFile+m_iSeekTo-CurUnpStart-MAXWINMEMSIZE/2;
+            int64 iSeekTo=m_iSeekTo-CurUnpStart<MAXWINMEMSIZE/2?iStartOfFile:iStartOfFile+m_iSeekTo-CurUnpStart-MAXWINMEMSIZE/2;
             if (iSeekTo == iStartOfFile) // front
             {
               if (CurUnpStart+MAXWINMEMSIZE>SrcArc->NewLhd.FullUnpSize)
@@ -117,7 +117,7 @@ int ComprDataIO::UnpRead(byte *Addr,uint Count)
         }
       if (bRead)
       {
-        ReadSize=(Count>UnpPackedSize) ? int64to32(UnpPackedSize):Count;
+        ReadSize=(Count>UnpPackedSize) ? UnpPackedSize:Count;
         RetCode=SrcFile->Read(ReadAddr,ReadSize);
         FileHeader *hd=SubHead!=NULL ? SubHead:&SrcArc->NewLhd;
         if (hd->Flags & LHD_SPLIT_AFTER)
@@ -183,7 +183,7 @@ int ComprDataIO::UnpRead(byte *Addr,uint Count)
   return(RetCode);
 }
 
-void ComprDataIO::UnpWrite(byte *Addr,uint Count)
+void ComprDataIO::UnpWrite(byte *Addr,size_t Count)
 {
 #ifdef RARDLL
   RAROptions *Cmd=((Archive *)SrcFile)->GetRAROptions();
@@ -197,7 +197,7 @@ void ComprDataIO::UnpWrite(byte *Addr,uint Count)
 #if defined(_WIN_32) && !defined(_MSC_VER) && !defined(__MINGW32__)
       _EBX=_ESP;
 #endif
-      int RetCode=Cmd->ProcessDataProc(Addr,Count);
+      int RetCode=Cmd->ProcessDataProc(Addr,(int)Count);
 #if defined(_WIN_32) && !defined(_MSC_VER) && !defined(__MINGW32__)
       _ESP=_EBX;
 #endif
@@ -260,7 +260,7 @@ void ComprDataIO::UnpWrite(byte *Addr,uint Count)
 
 
 
-void ComprDataIO::ShowUnpRead(Int64 ArcPos,Int64 ArcSize)
+void ComprDataIO::ShowUnpRead(int64 ArcPos,int64 ArcSize)
 {
   if (ShowProgress && SrcFile!=NULL)
   {
@@ -305,7 +305,7 @@ void ComprDataIO::SetFiles(File *SrcFile,File *DestFile)
 }
 
 
-void ComprDataIO::GetUnpackedData(byte **Data,uint *Size)
+void ComprDataIO::GetUnpackedData(byte **Data,size_t *Size)
 {
   *Data=UnpWrAddr;
   *Size=UnpWrSize;

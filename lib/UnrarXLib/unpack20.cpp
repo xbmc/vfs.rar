@@ -49,7 +49,7 @@ void Unpack::Unpack20(bool Solid)
     --DestUnpSize;
   }
 
-  while (is64plus(DestUnpSize))
+  while (DestUnpSize>=0)
   {
     if (UnpIO->bQuit) return;
 

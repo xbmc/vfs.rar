@@ -21,7 +21,7 @@ struct FileStat
 {
   uint FileAttr;
   uint FileTime;
-  Int64 FileSize;
+  int64 FileSize;
   bool IsDir;
 };
 
@@ -64,25 +64,23 @@ class File
     void Flush();
     bool Delete();
     bool Rename(const char *NewName,const wchar *NewNameW=NULL);
-    void Write(const void *Data,int Size);
-    int Read(void *Data,int Size);
-    int DirectRead(void *Data,int Size);
-    void Seek(Int64 Offset,int Method);
-    bool RawSeek(Int64 Offset,int Method);
-    Int64 Tell();
-    void Prealloc(Int64 Size);
+    void Write(const void *Data,size_t Size);
+    int Read(void *Data,size_t Size);
+    int DirectRead(void *Data,size_t Size);
+    void Seek(int64 Offset,int Method);
+    bool RawSeek(int64 Offset,int Method);
+    int64 Tell();
+    void Prealloc(int64 Size);
     byte GetByte();
     void PutByte(byte Byte);
     bool Truncate();
     void SetOpenFileTime(RarTime *ftm,RarTime *ftc=NULL,RarTime *fta=NULL);
     void SetCloseFileTime(RarTime *ftm,RarTime *fta=NULL);
     static void SetCloseFileTimeByName(const char *Name,RarTime *ftm,RarTime *fta);
-    void SetOpenFileStat(RarTime *ftm,RarTime *ftc,RarTime *fta);
-    void SetCloseFileStat(RarTime *ftm,RarTime *fta,uint FileAttr);
     void GetOpenFileTime(RarTime *ft);
     //bool IsOpened() {return(hFile!=BAD_HANDLE);};
     bool IsOpened() {return true;}; // wtf
-    Int64 FileLength();
+    int64 FileLength();
     void SetHandleType(FILE_HANDLETYPE Type);
     FILE_HANDLETYPE GetHandleType() {return(HandleType);};
     bool IsDevice();
@@ -91,7 +89,7 @@ class File
     //FileHandle GetHandle() {return(hFile);};
     void SetIgnoreReadErrors(bool Mode) {IgnoreReadErrors=Mode;};
     char *GetName() {return(FileName);}
-    long Copy(File &Dest,Int64 Length=INT64ERR);
+    int64 Copy(File &Dest,int64 Length=INT64NDF);
     void SetAllowDelete(bool Allow) {AllowDelete=Allow;}
     void SetExceptions(bool Allow) {AllowExceptions=Allow;}
 };
