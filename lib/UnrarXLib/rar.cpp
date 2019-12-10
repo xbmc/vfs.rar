@@ -408,7 +408,7 @@ int urarlib_list(char *rarfile, ArchiveList_struct **ppList, char *libpassword, 
               while (kodi::vfs::FileExists(NextName, true))
               {
                 strcpy(LastName,NextName);
-                NextVolumeName(NextName,(pArc->NewMhd.Flags & MHD_NEWNUMBERING)==0 || pArc->OldFormat);
+                NextVolumeName(NextName,NULL,ASIZE(NextName),(pArc->NewMhd.Flags & MHD_NEWNUMBERING)==0 || pArc->OldFormat);
               }
                Archive arc;
               if (arc.WOpen(LastName,NULL))

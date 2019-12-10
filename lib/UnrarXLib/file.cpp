@@ -163,17 +163,18 @@ bool File::WOpen(const char *Name,const wchar *NameW)
 }
 
 
-bool File::Create(const char *Name,const wchar *NameW)
+bool File::Create(const char *Name,const wchar *NameW,bool ShareRead)
 {
 // Below commented code was left behind on spiffs request for possible later usage 
 /*#ifdef _WIN_32
 #ifndef _XBOX
+  DWORD ShareMode=(ShareRead || File::OpenShared) ? FILE_SHARE_READ:0;
   if (WinNT() && NameW!=NULL && *NameW!=0)
-    hFile=CreateFileW(NameW,GENERIC_READ|GENERIC_WRITE,FILE_SHARE_READ,NULL,
+    hFile=CreateFileW(NameW,GENERIC_READ|GENERIC_WRITE,ShareMode,NULL,
                       CREATE_ALWAYS,0,NULL);
   else
 #endif
-    hFile=CreateFile(Name,GENERIC_READ|GENERIC_WRITE,FILE_SHARE_READ,NULL,
+    hFile=CreateFile(Name,GENERIC_READ|GENERIC_WRITE,ShareMode,NULL,
                      CREATE_ALWAYS,0,NULL);
 #else
   hFile=fopen(Name,CREATEBINARY);
@@ -233,17 +234,17 @@ void File::AddFileToList()
 
 
 #if !defined(SHELL_EXT) && !defined(SFX_MODULE)
-void File::TCreate(const char *Name,const wchar *NameW)
+void File::TCreate(const char *Name,const wchar *NameW,bool ShareRead)
 {
-  if (!WCreate(Name,NameW))
+  if (!WCreate(Name,NameW,ShareRead))
     ErrHandler.Exit(FATAL_ERROR);
 }
 #endif
 
 
-bool File::WCreate(const char *Name,const wchar *NameW)
+bool File::WCreate(const char *Name,const wchar *NameW,bool ShareRead)
 {
-  if (Create(Name,NameW))
+  if (Create(Name,NameW,ShareRead))
     return(true);
   ErrHandler.SetErrorCode(CREATE_ERROR);
   ErrHandler.CreateErrorMsg(Name);
@@ -353,26 +354,26 @@ void File::Write(const void *Data,int Size)
 #endif*/
   while (1)
   {
-    bool success = true;
+    bool Success=false;
 #if defined(_WIN_32) || defined(TARGET_POSIX)
     int32_t Written=0;
     if (HandleType!=FILE_HANDLENORMAL)
     {
       const int MaxSize=0x4000;
       for (int I=0;I<Size;I+=MaxSize)
-        //if (!(success=WriteFile(hFile,(byte *)Data+I,Min(Size-I,MaxSize),&Written,NULL) != FALSE))
+        //if (!(Success=WriteFile(hFile,(byte *)Data+I,Min(Size-I,MaxSize),&Written,NULL) != FALSE))
         m_File->Write((byte*)Data+I,Min(Size-I,MaxSize));
         //  break;
     }
     else
     {
-      //success=WriteFile(hFile,Data,Size,&Written,NULL) != FALSE;
+      //Success=WriteFile(hFile,Data,Size,&Written,NULL) != FALSE;
       m_File->Write(Data, Size);
     }
 #else
-    success=fwrite(Data,1,Size,hFile)==Size && !ferror(hFile);
+    Success=fwrite(Data,1,Size,hFile)==Size && !ferror(hFile);
 #endif
-    if (!success && AllowExceptions && HandleType==FILE_HANDLENORMAL)
+    if (!Success && AllowExceptions && HandleType==FILE_HANDLENORMAL)
     {
 #if defined(_WIN_32) && !defined(SFX_MODULE) && !defined(RARDLL)
       int ErrCode=GetLastError();
@@ -401,7 +402,7 @@ void File::Write(const void *Data,int Size)
 
 int File::Read(void *Data,int Size)
 {
-  Int64 FilePos = 0;
+  Int64 FilePos=0; //initialized only to suppress some compilers warning
   if (IgnoreReadErrors)
     FilePos=Tell();
   int ReadSize;

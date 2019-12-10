@@ -261,7 +261,7 @@ struct RARContext
               while (kodi::vfs::FileExists(NextName, true))
               {
                 strcpy(LastName, NextName);
-                NextVolumeName(NextName, (archive->NewMhd.Flags & MHD_NEWNUMBERING) == 0 || archive->OldFormat);
+                NextVolumeName(NextName, nullptr, ASIZE(NextName), (archive->NewMhd.Flags & MHD_NEWNUMBERING) == 0 || archive->OldFormat);
               }
               Archive arc;
               if (arc.WOpen(LastName, NULL))
