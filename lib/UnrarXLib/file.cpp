@@ -312,17 +312,23 @@ bool File::Delete()
 }
 
 
-bool File::Rename(const char *NewName)
+bool File::Rename(const char *NewName,const wchar *NewNameW)
 {
-  bool success=strcmp(FileName,NewName)==0;
-  if (!success)
-    success=rename(FileName,NewName)==0;
-  if (success)
+  // we do not need to rename if names are already same
+  bool Success=strcmp(FileName,NewName)==0;
+  if (Success && *FileNameW!=0 && *NullToEmpty(NewNameW)!=0)
+    Success=strcmpw(FileNameW,NewNameW)==0;
+
+  if (!Success)
+    Success=RenameFile(FileName,FileNameW,NewName,NewNameW);
+
+  if (Success)
   {
+    // renamed successfully, storing the new name
     strcpy(FileName,NewName);
-    *FileNameW=0;
+    strcpyw(FileNameW,NullToEmpty(NewNameW));
   }
-  return(success);
+  return(Success);
 }
 
 
