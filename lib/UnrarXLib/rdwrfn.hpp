@@ -38,7 +38,7 @@ class ComprDataIO
     FileHeader *SubHead;
     int64 *SubHeadPos;
 
-#ifndef NOCRYPT
+#ifndef RAR_NOCRYPT
     CryptData Crypt;
     CryptData Decrypt;
 #endif
