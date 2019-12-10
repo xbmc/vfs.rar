@@ -204,8 +204,8 @@ void Unpack::Unpack29(bool Solid)
   if (DDecode[1]==0)
   {
     int Dist=0,BitLength=0,Slot=0;
-    for (unsigned int I=0;I<sizeof(DBitLengthCounts)/sizeof(DBitLengthCounts[0]);I++,BitLength++)
-      for (unsigned int J=0;J<DBitLengthCounts[I];J++,Slot++,Dist+=(1<<BitLength))
+    for (int I=0;I<ASIZE(DBitLengthCounts);I++,BitLength++)
+      for (int J=0;J<DBitLengthCounts[I];J++,Slot++,Dist+=(1<<BitLength))
       {
         DDecode[Slot]=Dist;
         DBits[Slot]=BitLength;
@@ -278,7 +278,7 @@ void Unpack::Unpack29(bool Solid)
         }
         if (NextCh==-1) // Corrupt PPM data found.
           break;
-        if (NextCh==2)  // End of file in PPM mode..
+        if (NextCh==2)  // End of file in PPM mode.
           break;
         if (NextCh==3)  // Read VM code.
         {
@@ -449,11 +449,17 @@ void Unpack::Unpack29(bool Solid)
   }
 }
 
+// Return 'false' to quit unpacking the current file or 'true' to continue.
 bool Unpack::ReadEndOfBlock()
 {
   unsigned int BitField=getbits();
   bool NewTable,NewFile=false;
-  if (BitField & 0x8000)
+
+  // "1"  - no new file, new table just here.
+  // "00" - new file,    no new table.
+  // "01" - new file,    new table (in beginning of next file).
+  
+  if ((BitField & 0x8000)!=0)
   {
     NewTable=true;
     addbits(1);
@@ -465,12 +471,21 @@ bool Unpack::ReadEndOfBlock()
     addbits(2);
   }
   TablesRead=!NewTable;
-  return !(NewFile || (NewTable && !ReadTables()));
+
+  // Quit immediately if "new file" flag is set. If "new table" flag
+  // is present, we'll read the table in beginning of next file
+  // based on 'TablesRead' 'false' value.
+  if (NewFile)
+    return false;
+  return ReadTables(); // Quit only if we failed to read tables.
 }
 
 
 bool Unpack::ReadVMCode()
 {
+  // Entire VM code is guaranteed to fully present in block defined.
+  // by current Huffman table. Compressor checks that VM code does not cross
+  // Huffman block boundaries.
   unsigned int FirstByte=getbits()>>8;
   addbits(8);
   int Length=(FirstByte & 7)+1;

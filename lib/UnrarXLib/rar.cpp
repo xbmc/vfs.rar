@@ -190,8 +190,10 @@ int urarlib_get(char *rarfile, char *targetPath, char *fileToExtract, char *libp
     if (libpassword)
       if (strlen(libpassword)!=0)
       {
-        GetWideName(libpassword,NULL,pCmd->Password,ASIZE(pCmd->Password));
-        pCmd->Password[sizeof(pCmd->Password) - 1] = '\0';
+        wchar PasswordW[MAXPASSWORD];
+        GetWideName(libpassword,NULL,PasswordW,ASIZE(PasswordW));
+        pCmd->Password.Set(PasswordW);
+        cleandata(PasswordW,sizeof(PasswordW));
       }
 
     // Opent the archive    
@@ -324,8 +326,10 @@ int urarlib_list(char *rarfile, ArchiveList_struct **ppList, char *libpassword, 
     // Set password for encrypted archives
     if (libpassword)
     {
-      GetWideName(libpassword,NULL,pCmd->Password,ASIZE(pCmd->Password));
-      pCmd->Password[sizeof(pCmd->Password) - 1] = '\0';
+      wchar PasswordW[MAXPASSWORD];
+      GetWideName(libpassword,NULL,PasswordW,ASIZE(PasswordW));
+      pCmd->Password.Set(PasswordW);
+      cleandata(PasswordW,sizeof(PasswordW));
     }
 
     // Opent the archive

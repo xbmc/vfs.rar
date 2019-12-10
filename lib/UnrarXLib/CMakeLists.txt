@@ -30,6 +30,7 @@ set(SOURCES archive.cpp
             rs.cpp
             savepos.cpp
             scantree.cpp
+            secpassword.cpp
             sha1.cpp
             smallfn.cpp
             strfn.cpp

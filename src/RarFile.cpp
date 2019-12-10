@@ -170,7 +170,10 @@ struct RARContext
       if ((!password.empty()) &&
           (password.size() < sizeof (cmd->Password)))
       {
-        GetWideName(password.c_str(),NULL,cmd->Password,ASIZE(cmd->Password));
+        wchar PasswordW[MAXPASSWORD];
+        GetWideName(password.c_str(), NULL, PasswordW, ASIZE(PasswordW));
+        cmd->Password.Set(PasswordW);
+        cleandata(PasswordW,sizeof(PasswordW));
       }
 
       cmd->ParseDone();
