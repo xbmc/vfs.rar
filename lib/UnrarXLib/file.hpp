@@ -3,7 +3,7 @@
 
 #include <kodi/Filesystem.h>
 
-#ifdef _WIN_32
+#ifdef _WIN_ALL
 typedef HANDLE FileHandle;
 #define BAD_HANDLE INVALID_HANDLE_VALUE
 #else
@@ -41,6 +41,9 @@ class File
     bool NewFile;
     bool AllowDelete;
     bool AllowExceptions;
+#ifdef _WIN_ALL
+    bool NoSequentialRead;
+#endif
   protected:
     bool OpenShared;
   public:
@@ -92,6 +95,9 @@ class File
     int64 Copy(File &Dest,int64 Length=INT64NDF);
     void SetAllowDelete(bool Allow) {AllowDelete=Allow;}
     void SetExceptions(bool Allow) {AllowExceptions=Allow;}
+#ifdef _WIN_ALL
+    void RemoveSequentialFlag() {NoSequentialRead=true;}
+#endif
 };
 
 #endif

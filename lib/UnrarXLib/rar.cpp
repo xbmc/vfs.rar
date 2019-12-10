@@ -8,11 +8,12 @@ using namespace std;
 #if !defined(GUI) && !defined(RARDLL) && !defined(TARGET_POSIX) && !defined(_XBMC)
 int main(int argc, char *argv[])
 {
+
 #ifdef _UNIX
   setlocale(LC_ALL,"");
 #endif
 
-#if !defined(_SFX_RTL_) && !defined(_WIN_32)
+#if !defined(_SFX_RTL_) && !defined(_WIN_ALL)
   setbuf(stdout,NULL);
 #endif
 
@@ -25,18 +26,21 @@ int main(int argc, char *argv[])
   RARInitData();
 
 #ifdef SFX_MODULE
-  char ModuleName[NM];
-#ifdef _WIN_32
-  GetModuleFileName(NULL,ModuleName,sizeof(ModuleName));
+  char ModuleNameA[NM];
+  wchar ModuleNameW[NM];
+#ifdef _WIN_ALL
+  GetModuleFileNameW(NULL,ModuleNameW,ASIZE(ModuleNameW));
+  WideToChar(ModuleNameW,ModuleNameA);
 #else
-  strcpy(ModuleName,argv[0]);
+  strcpy(ModuleNameA,argv[0]);
+  *ModuleNameW=0;
 #endif
 #endif
 
-#ifdef _WIN_32
+#ifdef _WIN_ALL
   SetErrorMode(SEM_NOALIGNMENTFAULTEXCEPT|SEM_FAILCRITICALERRORS|SEM_NOOPENFILEERRORBOX);
 
-#if defined(_WIN_32) && !defined(SFX_MODULE) && !defined(SHELL_EXT)
+#if defined(_WIN_ALL) && !defined(SFX_MODULE) && !defined(SHELL_EXT)
   bool ShutdownOnClose;
 #endif
 
@@ -52,7 +56,7 @@ int main(int argc, char *argv[])
     strcpy(Cmd.Command,"X");
     char *Switch=NULL;
 #ifdef _SFX_RTL_
-    char *CmdLine=GetCommandLine();
+    char *CmdLine=GetCommandLineA();
     if (CmdLine!=NULL && *CmdLine=='\"')
       CmdLine=strchr(CmdLine+1,'\"');
     if (CmdLine!=NULL && (CmdLine=strpbrk(CmdLine," /"))!=NULL)
@@ -78,7 +82,7 @@ int main(int argc, char *argv[])
           break;
       }
     }
-    Cmd.AddArcName(ModuleName,NULL);
+    Cmd.AddArcName(ModuleNameA,ModuleNameW);
 #else
     if (Cmd.IsConfigEnabled(argc,argv))
     {
@@ -90,7 +94,7 @@ int main(int argc, char *argv[])
 #endif
     Cmd.ParseDone();
 
-#if defined(_WIN_32) && !defined(SFX_MODULE) && !defined(SHELL_EXT)
+#if defined(_WIN_ALL) && !defined(SFX_MODULE) && !defined(SHELL_EXT)
     ShutdownOnClose=Cmd.Shutdown;
 #endif
 
@@ -121,12 +125,12 @@ int main(int argc, char *argv[])
 #endif
   File::RemoveCreated();
 #if defined(SFX_MODULE) && defined(_DJGPP)
-  _chmod(ModuleName,1,0x20);
+  _chmod(ModuleNameA,1,0x20);
 #endif
 #if defined(_EMX) && !defined(_DJGPP)
   uni_done();
 #endif
-#if defined(_WIN_32) && !defined(SFX_MODULE) && !defined(SHELL_EXT)
+#if defined(_WIN_ALL) && !defined(SFX_MODULE) && !defined(SHELL_EXT)
   if (ShutdownOnClose)
     Shutdown();
 #endif
@@ -182,7 +186,7 @@ int urarlib_get(char *rarfile, char *targetPath, char *fileToExtract, char *libp
     if (libpassword)
       if (strlen(libpassword)!=0)
       {
-        strncpy(pCmd->Password, libpassword, sizeof(pCmd->Password) - 1);
+        GetWideName(libpassword,NULL,pCmd->Password,ASIZE(pCmd->Password));
         pCmd->Password[sizeof(pCmd->Password) - 1] = '\0';
       }
 
@@ -316,7 +320,7 @@ int urarlib_list(char *rarfile, ArchiveList_struct **ppList, char *libpassword, 
     // Set password for encrypted archives
     if (libpassword)
     {
-      strncpy(pCmd->Password, libpassword, sizeof(pCmd->Password) - 1);
+      GetWideName(libpassword,NULL,pCmd->Password,ASIZE(pCmd->Password));
       pCmd->Password[sizeof(pCmd->Password) - 1] = '\0';
     }
 
