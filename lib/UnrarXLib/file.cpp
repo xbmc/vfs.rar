@@ -365,6 +365,7 @@ void File::Write(const void *Data,size_t Size)
     int32_t Written=0;
     if (HandleType!=FILE_HANDLENORMAL)
     {
+      // writing to stdout can fail in old Windows if data block is too large
       const size_t MaxSize=0x4000;
       for (size_t I=0;I<Size;I+=MaxSize)
       {
