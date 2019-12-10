@@ -16,7 +16,9 @@ enum EXTTIME_MODE {
 };
 enum {NAMES_ORIGINALCASE,NAMES_UPPERCASE,NAMES_LOWERCASE};
 enum MESSAGE_TYPE {MSG_STDOUT,MSG_STDERR,MSG_ERRONLY,MSG_NULL};
-enum OVERWRITE_MODE { OVERWRITE_ASK,OVERWRITE_ALL,OVERWRITE_NONE};
+enum OVERWRITE_MODE {
+  OVERWRITE_ASK,OVERWRITE_ALL,OVERWRITE_NONE,OVERWRITE_AUTORENAME
+};
 
 #define     MAX_FILTERS           16
 enum FilterState {FILTER_DEFAULT=0,FILTER_AUTO,FILTER_FORCE,FILTER_DISABLE};
@@ -45,6 +47,7 @@ class RAROptions
     char ExtrPath[NM+16];
     wchar ExtrPathW[NM];
     char CommentFile[NM];
+    bool UnicodeComment;
     char ArcPath[NM];
     char Password[MAXPASSWORD];
     bool EncryptHeaders;
@@ -95,6 +98,8 @@ class RAROptions
     uint FileTimeNewer;
     RarTime FileTimeBefore;
     RarTime FileTimeAfter;
+    Int64 FileSizeLess;
+    Int64 FileSizeMore;
     bool OldNumbering;
     bool Lock;
     bool Test;
@@ -110,6 +115,11 @@ class RAROptions
     EXTTIME_MODE xatime;
     EXTTIME_MODE xarctime;
     char CompressStdin[NM];
+
+#ifdef PACK_SMP
+    uint Threads;
+#endif
+
 
 
 
