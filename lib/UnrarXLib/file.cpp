@@ -123,12 +123,17 @@ bool File::Open(const char *Name,const wchar *NameW,bool OpenShared,bool Update)
   if (success)
   {
 //    hFile=hNewFile;
+
+    // We use memove instead of strcpy and wcscpy to avoid problems
+    // with overlapped buffers. While we do not call this function with
+    // really overlapped buffers yet, we do call it with Name equal to
+    // FileName like Arc.Open(Arc.FileName,Arc.FileNameW).
     if (NameW!=NULL)
-      wcscpy(FileNameW,NameW);
+      memmove(FileNameW,NameW,(wcslen(NameW)+1)*sizeof(*NameW));
     else
       *FileNameW=0;
     if (Name!=NULL)
-      strcpy(FileName,Name);
+      memmove(FileName,Name,strlen(Name)+1);
     else
       WideToChar(NameW,FileName);
     //AddFileToList(hFile);
@@ -555,6 +560,11 @@ bool File::RawSeek(int64 Offset,int Method)
 
 int64 File::Tell()
 {
+/*  if (hFile==BAD_HANDLE)
+    if (AllowExceptions)
+      ErrHandler.SeekError(FileName,FileNameW);
+    else
+      return(-1);*/
 #if defined(_WIN_ALL) || defined(TARGET_POSIX)
   //LONG HighDist=0;
   //uint LowDist=SetFilePointer(hFile,0,&HighDist,FILE_CURRENT);
@@ -578,11 +588,6 @@ int64 File::Tell()
 
 void File::Prealloc(int64 Size)
 {
-  if (hFile==BAD_HANDLE)
-    if (AllowExceptions)
-      ErrHandler.SeekError(FileName,FileNameW);
-    else
-      return(-1);
 #ifdef _WIN_ALL
   if (RawSeek(Size,SEEK_SET))
   {
