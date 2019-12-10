@@ -7,9 +7,6 @@ static bool ReadSacl=false;
 #ifndef SFX_MODULE
 void ExtractACL(Archive &Arc,char *FileName,wchar *FileNameW)
 {
-#if defined(_XBOX) || defined (_LINUX) || (defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP))
-  return;
-#else
   if (!WinNT())
     return;
 
@@ -66,16 +63,12 @@ void ExtractACL(Archive &Arc,char *FileName,wchar *FileNameW)
     ErrHandler.SysErrMsg();
     ErrHandler.SetErrorCode(WARNING);
   }
-#endif
 }
 #endif
 
 
 void ExtractACLNew(Archive &Arc,char *FileName,wchar *FileNameW)
 {
-#if defined(_XBOX) || defined(_LINUX) || (defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP))
-  return;
-#else
   if (!WinNT())
     return;
 
@@ -103,15 +96,11 @@ void ExtractACLNew(Archive &Arc,char *FileName,wchar *FileNameW)
     ErrHandler.SysErrMsg();
     ErrHandler.SetErrorCode(WARNING);
   }
-#endif
 }
 
 
 void SetPrivileges()
 {
-#if defined(_XBOX) || defined(_LINUX) || (defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP))
-  return;
-#else
   static bool InitDone=false;
   if (InitDone)
     return;
@@ -135,5 +124,4 @@ void SetPrivileges()
     AdjustTokenPrivileges(hToken, FALSE, &tp, 0, NULL, NULL);
 
   CloseHandle(hToken);
-#endif
 }

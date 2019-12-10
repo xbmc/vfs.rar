@@ -35,7 +35,7 @@ bool Archive::GetComment(Array<byte> &CmtData)
 #endif
   }
 #ifndef SFX_MODULE
-  if ((OldFormat && (OldMhd.Flags & MHD_PACK_COMMENT)) || (!OldFormat && CommHead.Method!=0x30))
+  if (OldFormat && (OldMhd.Flags & MHD_PACK_COMMENT) || !OldFormat && CommHead.Method!=0x30)
   {
     if (!OldFormat && (CommHead.UnpVer < 15 || CommHead.UnpVer > UNP_VER || CommHead.Method > 0x35))
       return(false);
@@ -87,7 +87,7 @@ bool Archive::GetComment(Array<byte> &CmtData)
     }
   }
 #endif
-#if defined(_WIN_32) && !defined(_WIN_CE) && !defined(_XBOX) && !defined(_LINUX)
+#if defined(_WIN_32) && !defined(_WIN_CE)
   if (CmtData.Size()>0)
     OemToCharBuff((char*)&CmtData[0],(char*)&CmtData[0],CmtData.Size());
 #endif
@@ -159,7 +159,7 @@ void Archive::ViewFileComment()
     return;
   if (CommHead.HeadCRC!=HeaderCRC)
   {
-    #ifndef GUI
+#ifndef GUI
     Log(FileName,St(MLogCommHead));
 #endif
     return;

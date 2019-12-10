@@ -1,23 +1,6 @@
-// THIS FILE IS MODIFIED TO WORK WITH XBMC
-
 #include "rar.hpp"
 
-#include <wchar.h>
-
 char* PointToName(const char *Path)
-{
-  //const char *Found=NULL;
-  for (const char *s=&Path[strlen(Path)-1];s>=Path;s--)
-    if (IsPathDiv(*s))
-      return (char*)(s+1);
-//  if (Found!=NULL)
-  //  return((char*)Found);
-  return (char*)((*Path && IsDriveDiv(Path[1]) && charnext(Path)==Path+1) ? Path+2:Path);
-}
-
-/*
-Dumbass broken routine!!
-Not searching in reverse to strip off filename portion of path!
 {
   const char *Found=NULL;
   for (const char *s=Path;*s!=0;s=charnext(s))
@@ -27,7 +10,7 @@ Not searching in reverse to strip off filename portion of path!
     return((char*)Found);
   return (char*)((*Path && IsDriveDiv(Path[1]) && charnext(Path)==Path+1) ? Path+2:Path);
 }
-*/
+
 
 wchar* PointToName(const wchar *Path)
 {
@@ -195,18 +178,13 @@ void SetSFXExt(wchar *SFXName)
 
 char *GetExt(const char *Name)
 {
-  const char* ext = strrchr(Name,'.');
-  if (ext)
-    return (char*)ext;
-  return NULL;
+  return(strrchrd(PointToName(Name),'.'));
 }
+
 
 wchar *GetExt(const wchar *Name)
 {
-  const wchar_t* ext = wcsrchr(Name,'.');
-  if (ext)
-    return (wchar_t*)ext;
-  return NULL;
+  return(Name==NULL ? (wchar *)L"":strrchrw(PointToName(Name),'.'));
 }
 
 
@@ -341,22 +319,16 @@ bool EnumConfigPaths(char *Path,int Number)
     "/etc","/usr/lib","/usr/local/lib","/usr/local/etc"
   };
   Number--;
-  if (Number<0 || Number>=(int)(sizeof(AltPath)/sizeof(AltPath[0])))
+  if (Number<0 || Number>=sizeof(AltPath)/sizeof(AltPath[0]))
     return(false);
   strcpy(Path,AltPath[Number]);
   return(true);
 #elif defined(_WIN_32)
-#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
-  return(false);
-#else
   if (Number!=0)
     return(false);
-#if !defined(TARGET_POSIX)
   GetModuleFileName(NULL,Path,NM);
   RemoveNameFromPath(Path);
-#endif
   return(true);
-#endif // WINAPI_FAMILY 
 #else
   return(false);
 #endif
@@ -365,7 +337,7 @@ bool EnumConfigPaths(char *Path,int Number)
 
 
 #ifndef SFX_MODULE
-void GetConfigName(const char *Name,char *FullName, bool CheckExist)
+void GetConfigName(const char *Name,char *FullName,bool CheckExist)
 {
   for (int I=0;EnumConfigPaths(FullName,I);I++)
   {
@@ -452,100 +424,49 @@ void NextVolumeName(char *ArcName,bool OldNumbering)
 
 bool IsNameUsable(const char *Name)
 {
-  // only for xbox
-  if ( Name == NULL) return false;
-  char cIllegalChars[] = "<>=?;\"*+,/|";
-  unsigned int iIllegalCharSize = strlen(cIllegalChars);
-  bool isIllegalChar;
-  unsigned int iSize = strlen(Name);
-  if(iSize > 42) return false;
-  
-  for (unsigned int i = 0; i < iSize; i++)
-  {
-    isIllegalChar = false;
-    // check for illegal chars
-    for (unsigned j = 0; j < iIllegalCharSize; j++)
-      if (Name[i] == cIllegalChars[j]) isIllegalChar = true;
-    // FATX only allows chars from 32 till 127
-    if (isIllegalChar == true || Name[i] < 32 || Name[i] > 126) return false;
-  }
-  return true;
-  /*
 #ifndef _UNIX
   if (Name[0] && Name[1] && strchr(Name+2,':')!=NULL)
     return(false);
 #endif
-  if (strlen(Name) < 43) return 1;
-  else return 0;
-  return(*Name!=0 && strpbrk(Name,"?*<>|")==NULL);
-  */
+  return(*Name!=0 && strpbrk(Name,"?*<>|\"")==NULL);
 }
 
 
-void MakeNameUsable(char *Name, bool bKeepExtension, bool IsFATX)
+void MakeNameUsable(char *Name,bool Extended)
 {
-  // Changed to be compatible with xbmc's MakeLegalFileName function
-  // (xbox only)
-
-  if ( Name == NULL) return;
-  char cIllegalChars[] = "<>=?;\"*+,/|";
-  unsigned int iIllegalCharSize = strlen(cIllegalChars);
-  bool isIllegalChar;
-  unsigned int iSize = strlen(Name);
-  unsigned int iNewStringSize = 0;
-  char* strNewString = new char[iSize + 1];
-
-  // only copy the legal characters to the new filename
-  for (unsigned int i = 0; i < iSize; i++)
+  for (char *s=Name;*s!=0;s=charnext(s))
   {
-    isIllegalChar = false;
-    // check for illigal chars
-    for (unsigned j = 0; j < iIllegalCharSize; j++)
-      if (Name[i] == cIllegalChars[j]) isIllegalChar = true;
-    // FATX only allows chars from 32 till 127
-    if (isIllegalChar == false &&
-        Name[i] > 31 && Name[i] < 127) strNewString[iNewStringSize++] = Name[i];
+    if (strchr(Extended ? "?*<>|\"":"?*",*s)!=NULL || Extended && *s<32)
+      *s='_';
+#ifdef _EMX
+    if (*s=='=')
+      *s='_';
+#endif
+#ifndef _UNIX
+    if (s-Name>1 && *s==':')
+      *s='_';
+#endif
   }
-  strNewString[iNewStringSize] = '\0';
-
-  if (IsFATX)
-  {
-    // since we can only write to samba shares and hd, we assume this has to be a fatx filename
-    // thus we have to strip it down to 42 chars (samba doesn't have this limitation)
-  
-    char* FileName = PointToName(strNewString);
-    int iFileNameSize = strlen(FileName);
-    // no need to keep the extension, just strip it down to 42 characters
-    if (iFileNameSize > 42 && bKeepExtension == false) FileName[42] = '\0';
-
-    // we want to keep the extension
-    else if (iFileNameSize > 42 && bKeepExtension == true)
-    {
-      char strExtension[42];
-      unsigned int iExtensionLength = iFileNameSize - (strrchr(FileName, '.') - FileName);
-      strcpy(strExtension, (FileName + iFileNameSize - iExtensionLength));
-
-      strcpy(FileName + (42 - iExtensionLength), strExtension);
-    }
-  }
-
-  strcpy(Name, strNewString);
-  delete[] strNewString;
 }
+
 
 char* UnixSlashToDos(char *SrcName,char *DestName,uint MaxLength)
 {
   if (DestName!=NULL && DestName!=SrcName)
-    strcpy(DestName,SrcName);
+    if (strlen(SrcName)>=MaxLength)
+    {
+      *DestName=0;
+      return(DestName);
+    }
+    else
+      strcpy(DestName,SrcName);
   for (char *s=SrcName;*s!=0;s=charnext(s))
   {
     if (*s=='/')
-    {
       if (DestName==NULL)
         *s='\\';
       else
         DestName[s-SrcName]='\\';
-    }
   }
   return(DestName==NULL ? SrcName:DestName);
 }
@@ -554,7 +475,6 @@ char* UnixSlashToDos(char *SrcName,char *DestName,uint MaxLength)
 char* DosSlashToUnix(char *SrcName,char *DestName,uint MaxLength)
 {
   if (DestName!=NULL && DestName!=SrcName)
-  {
     if (strlen(SrcName)>=MaxLength)
     {
       *DestName=0;
@@ -562,16 +482,13 @@ char* DosSlashToUnix(char *SrcName,char *DestName,uint MaxLength)
     }
     else
       strcpy(DestName,SrcName);
-  }
   for (char *s=SrcName;*s!=0;s=charnext(s))
   {
     if (*s=='\\')
-    {
       if (DestName==NULL)
         *s='/';
       else
         DestName[s-SrcName]='/';
-    }
   }
   return(DestName==NULL ? SrcName:DestName);
 }
@@ -710,7 +627,6 @@ wchar* GetWideName(const char *Name,const wchar *NameW,wchar *DestW)
     CharToWide(Name,DestW);
   return(DestW);
 }
-
 
 
 

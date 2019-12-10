@@ -3,21 +3,11 @@
 static bool match(char *pattern,char *string);
 static bool match(wchar *pattern,wchar *string);
 
+
 inline uint toupperc(byte ch)
 {
-/*
-*/
-#if defined(_WIN_32)
-#if !defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP)
+#ifdef _WIN_32
   return((uint)CharUpper((LPTSTR)(ch)));
-#else
-  wchar chW[2], mapped_tmp[2];
-  char upper[2];
-  CharToWide((char*)&ch, chW, 1);
-  LCMapStringEx(LOCALE_NAME_INVARIANT, LCMAP_UPPERCASE, chW, 1, mapped_tmp, 2, nullptr, nullptr, 0);
-  WideToChar(chW, upper, 1);
-  return((uint)upper[0]);
-#endif
 #elif defined(_UNIX)
   return(ch);
 #else
@@ -28,8 +18,6 @@ inline uint toupperc(byte ch)
 
 inline uint touppercw(uint ch)
 {
-/*
-*/
 #if defined(_UNIX)
   return(ch);
 #else
@@ -59,17 +47,17 @@ bool CmpName(char *Wildcard,char *Name,int CmpPath)
     if ((CmpPath==MATCH_PATH || CmpPath==MATCH_EXACTPATH) && stricompc(Path1,Path2)!=0)
       return(false);
     if (CmpPath==MATCH_SUBPATH || CmpPath==MATCH_WILDSUBPATH)
-    {
       if (IsWildcard(Path1))
         return(match(Wildcard,Name));
-      else if (CmpPath==MATCH_SUBPATH || IsWildcard(Wildcard))
+      else
+        if (CmpPath==MATCH_SUBPATH || IsWildcard(Wildcard))
         {
           if (*Path1 && strnicompc(Path1,Path2,strlen(Path1))!=0)
             return(false);
         }
-        else if (stricompc(Path1,Path2)!=0)
-          return(false);
-    }
+        else
+          if (stricompc(Path1,Path2)!=0)
+            return(false);
   }
   char *Name1=PointToName(Wildcard);
   char *Name2=PointToName(Name);
@@ -99,17 +87,17 @@ bool CmpName(wchar *Wildcard,wchar *Name,int CmpPath)
     if ((CmpPath==MATCH_PATH || CmpPath==MATCH_EXACTPATH) && stricompcw(Path1,Path2)!=0)
       return(false);
     if (CmpPath==MATCH_SUBPATH || CmpPath==MATCH_WILDSUBPATH)
-    {
       if (IsWildcard(NULL,Path1))
         return(match(Wildcard,Name));
-      else if (CmpPath==MATCH_SUBPATH || IsWildcard(NULL,Wildcard))
-      {
-        if (*Path1 && strnicompcw(Path1,Path2,strlenw(Path1))!=0)
-          return(false);
-      }
-      else if (stricompcw(Path1,Path2)!=0)
-        return(false);
-    }
+      else
+        if (CmpPath==MATCH_SUBPATH || IsWildcard(NULL,Wildcard))
+        {
+          if (*Path1 && strnicompcw(Path1,Path2,strlenw(Path1))!=0)
+            return(false);
+        }
+        else
+          if (stricompcw(Path1,Path2)!=0)
+            return(false);
   }
   wchar *Name1=PointToName(Wildcard);
   wchar *Name2=PointToName(Name);
@@ -158,12 +146,10 @@ bool match(char *pattern,char *string)
         return(false);
       default:
         if (patternc != stringc)
-        {
           if (patternc=='.' && stringc==0)
             return(match(pattern,string));
           else
             return(false);
-        }
         break;
     }
   }
@@ -209,12 +195,10 @@ bool match(wchar *pattern,wchar *string)
         return(false);
       default:
         if (patternc != stringc)
-        {
           if (patternc=='.' && stringc==0)
             return(match(pattern,string));
           else
             return(false);
-        }
         break;
     }
   }

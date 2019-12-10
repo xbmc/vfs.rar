@@ -1,10 +1,6 @@
 #ifndef _RAR_OS_
 #define _RAR_OS_
 
-#ifdef TARGET_WINDOWS
-#include <windows.h>
-#endif
-
 #define FALSE 0
 #define TRUE  1
 
@@ -24,21 +20,19 @@
 
 #ifdef _WIN_32
 
-//#define STRICT
-//#define WINVER 0x0400
-#if _WIN32_WINNT < 0x0300
+#define STRICT
+#undef WINVER
 #undef _WIN32_WINNT
+#define WINVER 0x0400
 #define _WIN32_WINNT 0x0300
-#endif
 
-#ifndef XBMC
 #define WIN32_LEAN_AND_MEAN
-#endif
 
-
+#include <windows.h>
 #include <prsht.h>
-#if defined(TARGET_POSIX)
-#include "PlatformDefs.h"
+
+#ifndef _WIN_CE
+#include <winioctl.h>
 #endif
 
 #endif
@@ -54,7 +48,7 @@
   #include <dir.h>
 #endif
 #ifdef _MSC_VER
-//  #define for if (0) ; else for
+  #define for if (0) ; else for
 #ifndef _WIN_CE
   #include <direct.h>
 #endif
@@ -151,9 +145,6 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#if defined(__ANDROID__)
-#include <endian.h>
-#endif
 #include <sys/file.h>
 #if defined(__QNXNTO__)
   #include <sys/param.h>
@@ -201,6 +192,15 @@
 #define APPENDTEXT   "a"
 
 #define _stdfunction 
+
+#ifdef _APPLE
+	#ifndef BIG_ENDIAN
+		#define BIG_ENDIAN
+	#endif
+	#ifdef LITTLE_ENDIAN
+		#undef LITTLE_ENDIAN
+	#endif
+#endif
 
 #if defined(__sparc) || defined(sparc) || defined(__hpux)
   #ifndef BIG_ENDIAN
