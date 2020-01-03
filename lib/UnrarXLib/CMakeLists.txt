@@ -1,9 +1,11 @@
 set(SOURCES archive.cpp
             arcread.cpp
+            blake2s.cpp
             cmddata.cpp
             consio.cpp
             crc.cpp
             crypt.cpp
+            dll.cpp
             encname.cpp
             errhnd.cpp
             extinfo.cpp
@@ -15,12 +17,15 @@ set(SOURCES archive.cpp
             find.cpp
             getbits.cpp
             global.cpp
-            int64.cpp
+            hash.cpp
+            headers.cpp
             isnt.cpp
+            list.cpp
             log.cpp
             match.cpp
             options.cpp
             pathfn.cpp
+            qopen.cpp
             rar.cpp
             rarvm.cpp
             rawread.cpp
@@ -29,14 +34,18 @@ set(SOURCES archive.cpp
             resource.cpp
             rijndael.cpp
             rs.cpp
-            savepos.cpp
+            rs16.cpp
             scantree.cpp
+            secpassword.cpp
             sha1.cpp
+            sha256.cpp
+            smallfn.cpp
             strfn.cpp
             strlist.cpp
             system.cpp
+            threadpool.cpp
             timefn.cpp
-            ulinks.cpp
+            ui.cpp
             unicode.cpp
             unpack.cpp
             volume.cpp)
@@ -44,8 +53,8 @@ set(SOURCES archive.cpp
 add_library(unrarxlib STATIC ${SOURCES})
 set_property(TARGET unrarxlib PROPERTY POSITION_INDEPENDENT_CODE ON)
 if(NOT CORE_SYSTEM_NAME MATCHES windows)
-  target_compile_definitions(unrarxlib PRIVATE -DSILENT)
+  target_compile_definitions(unrarxlib PRIVATE -DSILENT -DRARDLL)
 else()
-  target_compile_definitions(unrarxlib PRIVATE -D_XBMC -Dstrcasecmp=_stricmp -D_CRT_NONSTDC_NO_DEPRECATE)
+  target_compile_definitions(unrarxlib PRIVATE -D_XBMC -Dstrcasecmp=_stricmp -D_CRT_NONSTDC_NO_DEPRECATE -DSILENT -DRARDLL)
   target_compile_options(unrarxlib PRIVATE /wd4146)
 endif()

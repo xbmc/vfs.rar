@@ -3,31 +3,37 @@
 
 class CmdAdd;
 class Unpack;
+class ArcFileSearch;
 
+#if 0
+// We use external i/o calls for Benchmark command.
+#define COMPRDATAIO_EXTIO
+#endif
 
 class ComprDataIO
 {
   private:
-    void ShowUnpRead(Int64 ArcPos,Int64 ArcSize);
+    void ShowUnpRead(int64 ArcPos,int64 ArcSize);
     void ShowUnpWrite();
 
 
     bool UnpackFromMemory;
-    uint UnpackFromMemorySize;
+    size_t UnpackFromMemorySize;
     byte *UnpackFromMemoryAddr;
 
     bool UnpackToMemory;
-    uint UnpackToMemorySize;
+    size_t UnpackToMemorySize;
     byte *UnpackToMemoryAddr;
 
-    uint UnpWrSize;
+    size_t UnpWrSize;
     byte *UnpWrAddr;
 
-    Int64 UnpPackedSize;
+    int64 UnpPackedSize;
 
     bool ShowProgress;
     bool TestMode;
     bool SkipUnpCRC;
+    bool NoFileHeader;
 
     File *SrcFile;
     File *DestFile;
@@ -35,49 +41,60 @@ class ComprDataIO
     CmdAdd *Command;
 
     FileHeader *SubHead;
-    Int64 *SubHeadPos;
+    int64 *SubHeadPos;
 
-#ifndef NOCRYPT
-    CryptData Crypt;
-    CryptData Decrypt;
+#ifndef RAR_NOCRYPT
+    CryptData *Crypt;
+    CryptData *Decrypt;
 #endif
 
 
     int LastPercent;
 
-    char CurrentCommand;
+    wchar CurrentCommand;
 
   public:
     ComprDataIO();
+    ~ComprDataIO();
     void Init();
-    int UnpRead(byte *Addr,uint Count);
-    void UnpWrite(byte *Addr,uint Count);
+    int UnpRead(byte *Addr,size_t Count);
+    void UnpWrite(byte *Addr,size_t Count);
     void EnableShowProgress(bool Show) {ShowProgress=Show;}
-    void GetUnpackedData(byte **Data,uint *Size);
-    void SetPackedSizeToRead(Int64 Size) {UnpPackedSize=Size;}
+    void GetUnpackedData(byte **Data,size_t *Size);
+    void SetPackedSizeToRead(int64 Size) {UnpPackedSize=Size;}
     void SetTestMode(bool Mode) {TestMode=Mode;}
     void SetSkipUnpCRC(bool Skip) {SkipUnpCRC=Skip;}
+    void SetNoFileHeader(bool Mode) {NoFileHeader=Mode;}
     void SetFiles(File *SrcFile,File *DestFile);
     void SetCommand(CmdAdd *Cmd) {Command=Cmd;}
-    void SetSubHeader(FileHeader *hd,Int64 *Pos) {SubHead=hd;SubHeadPos=Pos;}
-    void SetEncryption(int Method,char *Password,byte *Salt,bool Encrypt);
+    void SetSubHeader(FileHeader *hd,int64 *Pos) {SubHead=hd;SubHeadPos=Pos;}
+    void SetEncryption(bool Encrypt,CRYPT_METHOD Method,SecPassword *Password,
+         const byte *Salt,const byte *InitV,uint Lg2Cnt,byte *HashKey,byte *PswCheck);
     void SetAV15Encryption();
     void SetCmt13Encryption();
     void SetUnpackToMemory(byte *Addr,uint Size);
-    void SetCurrentCommand(char Cmd) {CurrentCommand=Cmd;}
+    void SetCurrentCommand(wchar Cmd) {CurrentCommand=Cmd;}
+
 
     bool PackVolume;
     bool UnpVolume;
     bool NextVolumeMissing;
-    Int64 TotalPackRead;
-    Int64 UnpArcSize;
-    Int64 CurPackRead,CurPackWrite,CurUnpRead,CurUnpWrite;
-    Int64 ProcessedArcSize,TotalArcSize;
+    int64 UnpArcSize;
+    int64 CurPackRead,CurPackWrite,CurUnpRead,CurUnpWrite;
 
-    uint PackFileCRC,UnpFileCRC,PackedCRC;
 
-    int Encryption;
-    int Decryption;
+    // Size of already processed archives.
+    // Used to calculate the total operation progress.
+    int64 ProcessedArcSize;
+
+    int64 TotalArcSize;
+
+    DataHash PackedDataHash; // Packed write and unpack read hash.
+    DataHash PackHash; // Pack read hash.
+    DataHash UnpHash;  // Unpack write hash.
+
+    bool Encryption;
+    bool Decryption;
 };
 
 #endif
