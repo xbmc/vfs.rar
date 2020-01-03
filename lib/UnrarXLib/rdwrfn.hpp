@@ -4,7 +4,6 @@
 class CmdAdd;
 class Unpack;
 
-#include "p8-platform/threads/mutex.h"
 
 class ComprDataIO
 {
@@ -18,7 +17,7 @@ class ComprDataIO
     byte *UnpackFromMemoryAddr;
 
     bool UnpackToMemory;
-    //uint UnpackToMemorySize;
+    uint UnpackToMemorySize;
     byte *UnpackToMemoryAddr;
 
     uint UnpWrSize;
@@ -79,18 +78,6 @@ class ComprDataIO
 
     int Encryption;
     int Decryption;
-    int UnpackToMemorySize;
-    
-    // added stuff
-    P8PLATFORM::CEvent* hBufferFilled;
-    P8PLATFORM::CEvent* hBufferEmpty;
-    P8PLATFORM::CEvent* hSeek;
-    P8PLATFORM::CEvent* hSeekDone;
-    P8PLATFORM::CEvent* hQuit;
-    bool bQuit;
-    Int64 m_iSeekTo;
-    Int64 m_iStartOfBuffer;
-    Int64 CurUnpStart;
 };
 
 #endif

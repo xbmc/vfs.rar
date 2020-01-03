@@ -88,7 +88,7 @@ void RarVM::Execute(VM_PreparedProgram *Prg)
   unsigned int GlobalSize=Min(Prg->GlobalData.Size(),VM_GLOBALMEMSIZE);
   if (GlobalSize)
     memcpy(Mem+VM_GLOBALMEMADDR,&Prg->GlobalData[0],GlobalSize);
-  unsigned int StaticSize=Min((uint)Prg->StaticData.Size(),VM_GLOBALMEMSIZE-GlobalSize);
+  unsigned int StaticSize=Min(Prg->StaticData.Size(),VM_GLOBALMEMSIZE-GlobalSize);
   if (StaticSize)
     memcpy(Mem+VM_GLOBALMEMADDR+GlobalSize,&Prg->StaticData[0],StaticSize);
 
@@ -116,7 +116,7 @@ void RarVM::Execute(VM_PreparedProgram *Prg)
 
 
 #define SET_IP(IP)                      \
-  if ((IP)>=(uint)CodeSize)             \
+  if ((IP)>=CodeSize)                   \
     return(true);                       \
   if (--MaxOpCount<=0)                  \
     return(false);                      \
@@ -383,7 +383,7 @@ bool RarVM::ExecuteCode(VM_PreparedCommand *PreparedCode,int CodeSize)
         break;
       case VM_POPA:
         {
-          const uint RegCount=sizeof(R)/sizeof(R[0]);
+          const int RegCount=sizeof(R)/sizeof(R[0]);
           for (uint I=0,SP=R[7];I<RegCount;I++,SP+=4)
             R[7-I]=GET_VALUE(false,(uint *)&Mem[SP & VM_MEMMASK]);
         }
@@ -430,7 +430,7 @@ bool RarVM::ExecuteCode(VM_PreparedCommand *PreparedCode,int CodeSize)
           uint Value1=GET_VALUE(Cmd->ByteMode,Op1);
           uint FC=(Flags&VM_FC);
           uint Result=UINT32(Value1+GET_VALUE(Cmd->ByteMode,Op2)+FC);
-          Flags=Result==0 ? VM_FZ:(Result<Value1 || (Result==Value1 && FC))|(Result&VM_FS);
+          Flags=Result==0 ? VM_FZ:(Result<Value1 || Result==Value1 && FC)|(Result&VM_FS);
           SET_VALUE(Cmd->ByteMode,Op1,Result);
         }
         break;
@@ -439,7 +439,7 @@ bool RarVM::ExecuteCode(VM_PreparedCommand *PreparedCode,int CodeSize)
           uint Value1=GET_VALUE(Cmd->ByteMode,Op1);
           uint FC=(Flags&VM_FC);
           uint Result=UINT32(Value1-GET_VALUE(Cmd->ByteMode,Op2)-FC);
-          Flags=Result==0 ? VM_FZ:(Result>Value1 || (Result==Value1 && FC))|(Result&VM_FS);
+          Flags=Result==0 ? VM_FZ:(Result>Value1 || Result==Value1 && FC)|(Result&VM_FS);
           SET_VALUE(Cmd->ByteMode,Op1,Result);
         }
         break;
@@ -712,8 +712,6 @@ void RarVM::Optimize(VM_PreparedProgram *Prg)
       case VM_CMP:
         Cmd->OpCode=Cmd->ByteMode ? VM_CMPB:VM_CMPD;
         continue;
-      default:
-        break;
     }
     if ((VM_CmdFlags[Cmd->OpCode] & VMCF_CHFLAGS)==0)
       continue;
@@ -748,8 +746,6 @@ void RarVM::Optimize(VM_PreparedProgram *Prg)
       case VM_NEG:
         Cmd->OpCode=Cmd->ByteMode ? VM_NEGB:VM_NEGD;
         continue;
-      default:
-        break;
     }
   }
 }
@@ -765,16 +761,16 @@ VM_StandardFilters RarVM::IsStandardFilter(byte *Code,int CodeSize)
     uint CRC;
     VM_StandardFilters Type;
   } StdList[]={
-    {53, 0xad576887, VMSF_E8},
-    {57, 0x3cd7e57e, VMSF_E8E9},
-   {120, 0x3769893f, VMSF_ITANIUM},
-    {29, 0x0e06077d, VMSF_DELTA},
-   {149, 0x1c2c5dc8, VMSF_RGB},
-   {216, 0xbc85e701, VMSF_AUDIO},
-    {40, 0x46b9c560, VMSF_UPCASE}
+    53, 0xad576887, VMSF_E8,
+    57, 0x3cd7e57e, VMSF_E8E9,
+   120, 0x3769893f, VMSF_ITANIUM,
+    29, 0x0e06077d, VMSF_DELTA,
+   149, 0x1c2c5dc8, VMSF_RGB,
+   216, 0xbc85e701, VMSF_AUDIO,
+    40, 0x46b9c560, VMSF_UPCASE
   };
   uint CodeCRC=CRC(0xffffffff,Code,CodeSize)^0xffffffff;
-  for (unsigned int I=0;I<sizeof(StdList)/sizeof(StdList[0]);I++)
+  for (int I=0;I<sizeof(StdList)/sizeof(StdList[0]);I++)
     if (StdList[I].CRC==CodeCRC && StdList[I].Length==CodeSize)
       return(StdList[I].Type);
   return(VMSF_NONE);
@@ -797,7 +793,7 @@ void RarVM::ExecuteStandardFilter(VM_StandardFilters FilterType)
 
         const int FileSize=0x1000000;
         byte CmpByte2=FilterType==VMSF_E8E9 ? 0xe9:0xe8;
-        for (uint CurPos=0;CurPos<((uint)DataSize-4);)
+        for (uint CurPos=0;CurPos<DataSize-4;)
         {
           byte CurByte=*(Data++);
           CurPos++;
@@ -835,7 +831,7 @@ void RarVM::ExecuteStandardFilter(VM_StandardFilters FilterType)
     case VMSF_ITANIUM:
       {
         byte *Data=Mem;
-        uint DataSize=R[4];
+        int DataSize=R[4];
         uint FileOffset=R[6];
 
         if (DataSize>=VM_GLOBALMEMADDR)
@@ -873,16 +869,14 @@ void RarVM::ExecuteStandardFilter(VM_StandardFilters FilterType)
       break;
     case VMSF_DELTA:
       {
-        uint DataSize=R[4],Channels=R[0],SrcPos=0,Border=DataSize*2;
-        if (DataSize>VM_MEMSIZE/2 || Channels>MAX3_UNPACK_CHANNELS || Channels==0)
+        int DataSize=R[4],Channels=R[0],SrcPos=0,Border=DataSize*2;
+        SET_VALUE(false,&Mem[VM_GLOBALMEMADDR+0x20],DataSize);
+        if (DataSize>=VM_GLOBALMEMADDR/2)
           break;
-
-        // Bytes from same channels are grouped to continual data blocks,
-        // so we need to place them back to their interleaving positions.
-        for (uint CurChannel=0;CurChannel<Channels;CurChannel++)
+        for (int CurChannel=0;CurChannel<Channels;CurChannel++)
         {
           byte PrevByte=0;
-          for (uint DestPos=DataSize+CurChannel;DestPos<Border;DestPos+=Channels)
+          for (int DestPos=DataSize+CurChannel;DestPos<Border;DestPos+=Channels)
             Mem[DestPos]=(PrevByte-=Mem[SrcPos++]);
         }
       }
@@ -977,7 +971,7 @@ void RarVM::ExecuteStandardFilter(VM_StandardFilters FilterType)
             {
               unsigned int MinDif=Dif[0],NumMinDif=0;
               Dif[0]=0;
-              for (unsigned int J=1;J<sizeof(Dif)/sizeof(Dif[0]);J++)
+              for (int J=1;J<sizeof(Dif)/sizeof(Dif[0]);J++)
               {
                 if (Dif[J]<MinDif)
                 {
@@ -1015,8 +1009,6 @@ void RarVM::ExecuteStandardFilter(VM_StandardFilters FilterType)
         SET_VALUE(false,&Mem[VM_GLOBALMEMADDR+0x1c],DestPos-DataSize);
         SET_VALUE(false,&Mem[VM_GLOBALMEMADDR+0x20],DataSize);
       }
-      break;
-    default:
       break;
   }
 }

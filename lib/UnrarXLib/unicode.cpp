@@ -1,12 +1,8 @@
 #include "rar.hpp"
 
-// yuvalt: wcstombs is not the way to go since it does not convert
-// from utf8 to utf16. Luickly, there's a UTF8/UTF16 conversion
-// functions in here which are used if _APPLE is defined.
-// Therefore, define _APPLE in this case to do proper conversion
-#undef MBFUNCTIONS
-#undef _WIN_32
-#define _APPLE
+#if defined(_EMX) && !defined(_DJGPP)
+#include "unios2.cpp"
+#endif
 
 bool WideToChar(const wchar *Src,char *Dest,int DestSize)
 {
@@ -19,17 +15,26 @@ bool WideToChar(const wchar *Src,char *Dest,int DestSize)
   WideToUtf(Src,Dest,DestSize);
 #else
 #ifdef MBFUNCTIONS
-  if (wcstombs(Dest,Src,DestSize)==(uint)-1)
+  if (wcstombs(Dest,Src,DestSize)==-1)
     RetCode=false;
 #else
   if (UnicodeEnabled())
   {
+#if defined(_EMX) && !defined(_DJGPP)
+    int len=Min(strlenw(Src)+1,DestSize-1);
+    if (uni_fromucs((UniChar*)Src,len,Dest,(size_t*)&DestSize)==-1 ||
+        DestSize>len*2)
+      RetCode=false;
+    Dest[DestSize]=0;
+#endif
+  }
+  else
     for (int I=0;I<DestSize;I++)
     {
       Dest[I]=(char)Src[I];
       if (Src[I]==0)
         break;
-  }
+    }
 #endif
 #endif
 #endif
@@ -48,16 +53,26 @@ bool CharToWide(const char *Src,wchar *Dest,int DestSize)
   UtfToWide(Src,Dest,DestSize);
 #else
 #ifdef MBFUNCTIONS
-  mbstowcs(Dest,Src,DestSize);
+  if (mbstowcs(Dest,Src,DestSize)==-1)
+    RetCode=false;
 #else
   if (UnicodeEnabled())
   {
+#if defined(_EMX) && !defined(_DJGPP)
+    int len=Min(strlen(Src)+1,DestSize-1);
+    if (uni_toucs((char*)Src,len,(UniChar*)Dest,(size_t*)&DestSize)==-1 ||
+        DestSize>len)
+      DestSize=0;
+    RetCode=false;
+#endif
+  }
+  else
     for (int I=0;I<DestSize;I++)
     {
       Dest[I]=(wchar_t)Src[I];
       if (Src[I]==0)
         break;
-  }
+    }
 #endif
 #endif
 #endif
@@ -263,8 +278,8 @@ inline int strnicmpw_w2c(const wchar *s1,const wchar *s2,int n)
   wchar Wide1[NM*2],Wide2[NM*2];
   strncpyw(Wide1,s1,sizeof(Wide1)/sizeof(Wide1[0])-1);
   strncpyw(Wide2,s2,sizeof(Wide2)/sizeof(Wide2[0])-1);
-  Wide1[Min((int)(sizeof(Wide1)/sizeof(Wide1[0])-1),n)]=0;
-  Wide2[Min((int)(sizeof(Wide2)/sizeof(Wide2[0])-1),n)]=0;
+  Wide1[Min(sizeof(Wide1)/sizeof(Wide1[0])-1,n)]=0;
+  Wide2[Min(sizeof(Wide2)/sizeof(Wide2[0])-1,n)]=0;
   char Ansi1[NM*2],Ansi2[NM*2];
   WideToChar(Wide1,Ansi1,sizeof(Ansi1));
   WideToChar(Wide2,Ansi2,sizeof(Ansi2));
@@ -319,7 +334,7 @@ wchar* strlowerw(wchar *Str)
 {
   for (wchar *ChPtr=Str;*ChPtr;ChPtr++)
     if (*ChPtr<128)
-      *ChPtr=loctolower((char)*ChPtr);
+      *ChPtr=loctolower(*ChPtr);
   return(Str);
 }
 #endif
@@ -330,7 +345,7 @@ wchar* strupperw(wchar *Str)
 {
   for (wchar *ChPtr=Str;*ChPtr;ChPtr++)
     if (*ChPtr<128)
-      *ChPtr=loctoupper((char)*ChPtr);
+      *ChPtr=loctoupper(*ChPtr);
   return(Str);
 }
 #endif
@@ -364,97 +379,14 @@ SupportDBCS::SupportDBCS()
   Init();
 }
 
-#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
-#if !defined(NTDDI_WIN10_RS2) || (NTDDI_VERSION < NTDDI_WIN10_RS3)
-// this code was taken from mingw codebase
-static BOOL
-IsDBCSLeadByte(BYTE TestChar)
-{
-	CPINFO lpCPInfo;
-	int i;
-
-	if (GetCPInfo(CP_ACP, &lpCPInfo) == 0)
-		return FALSE;
-
-	if (lpCPInfo.MaxCharSize == 2) {
-		for (i = 0; i < MAX_LEADBYTES && lpCPInfo.LeadByte[i]; i += 2) {
-			if (TestChar >= lpCPInfo.LeadByte[i] && TestChar <= lpCPInfo.LeadByte[i + 1])
-				return TRUE;
-		}
-	}
-	return FALSE;
-}
-#endif
-
-BOOL OemToChar(const char *Src, char *Dst)
-{
-  return OemToCharBuff(Src, Dst, -1);
-}
-
-BOOL OemToCharBuff(const char *Src, char *Dst, int len)
-{
-  int lenW = MultiByteToWideChar(CP_OEMCP, 0, Src, len, NULL, 0);
-  if (lenW == 0)
-    return false;
-  wchar_t * wide = new wchar_t[lenW + 1];
-  MultiByteToWideChar(CP_OEMCP, 0, Src, len, wide, len + 1);
-  int len2 = WideCharToMultiByte(CP_ACP, 0, wide, len + 1, NULL, 0, NULL, NULL);
-  if (len2 == 0)
-  {
-    delete[] wide;
-    return false;
-  }
-
-  char* ansi = new char[len2 + 1];
-  WideCharToMultiByte(CP_ACP, 0, wide, len + 1, ansi, len2 + 1, NULL, NULL);
-
-  memcpy(Dst, ansi, (len == -1 ? strlen(ansi) : len));
-  delete[] wide;
-  delete[] ansi;
-}
-
-BOOL CharToOem(const char *Src, char *Dst)
-{
-  return CharToOemBuff(Src, Dst, -1);
-}
-
-BOOL CharToOemBuff(const char *Src, char *Dst, int len)
-{
-  int lenW = MultiByteToWideChar(CP_ACP, 0, Src, len, NULL, 0);
-  if (lenW == 0)
-    return false;
-  wchar_t * wide = new wchar_t[lenW + 1];
-  MultiByteToWideChar(CP_ACP, 0, Src, len, wide, len + 1);
-  int len2 = WideCharToMultiByte(CP_OEMCP, 0, wide, len + 1, NULL, 0, NULL, NULL);
-  if (len2 == 0)
-  {
-    delete[] wide;
-    return false;
-  }
-
-  char* ansi = new char[len2 + 1];
-  WideCharToMultiByte(CP_OEMCP, 0, wide, len + 1, ansi, len2 + 1, NULL, NULL);
-
-  memcpy(Dst, ansi, (len == -1 ? strlen(ansi) : len));
-  delete[] wide;
-  delete[] ansi;
-}
-#endif
-
 
 void SupportDBCS::Init()
 {
-#if defined(TARGET_POSIX)
-  DBCSMode = true;
-  for (int I=0;I<sizeof(IsLeadByte)/sizeof(IsLeadByte[0]);I++)
-    IsLeadByte[I]=true;
-#else
   CPINFO CPInfo;
   GetCPInfo(CP_ACP,&CPInfo);
   DBCSMode=CPInfo.MaxCharSize > 1;
   for (int I=0;I<sizeof(IsLeadByte)/sizeof(IsLeadByte[0]);I++)
     IsLeadByte[I]=IsDBCSLeadByte(I);
-#endif
 }
 
 

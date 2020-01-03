@@ -67,7 +67,7 @@ bool ErrorHandler::AskRepeatRead(const char *FileName)
   if (!Silent)
   {
     mprintf("\n");
-    RarLog(NULL,St(MErrRead),FileName);
+    Log(NULL,St(MErrRead),FileName);
     return(Ask(St(MRetryAbort))==1);
   }
 #endif
@@ -106,7 +106,7 @@ bool ErrorHandler::AskRepeatWrite(const char *FileName)
   if (!Silent)
   {
     mprintf("\n");
-    RarLog(NULL,St(MErrWrite),FileName);
+    Log(NULL,St(MErrWrite),FileName);
     return(Ask(St(MRetryAbort))==1);
   }
 #endif
@@ -146,7 +146,7 @@ void ErrorHandler::OpenErrorMsg(const char *FileName)
 void ErrorHandler::OpenErrorMsg(const char *ArcName,const char *FileName)
 {
 #ifndef SILENT
-  RarLog(ArcName && *ArcName ? ArcName:NULL,St(MCannotOpen),FileName);
+  Log(ArcName && *ArcName ? ArcName:NULL,St(MCannotOpen),FileName);
   Alarm();
   SysErrMsg();
 #endif
@@ -162,7 +162,7 @@ void ErrorHandler::CreateErrorMsg(const char *FileName)
 void ErrorHandler::CreateErrorMsg(const char *ArcName,const char *FileName)
 {
 #ifndef SILENT
-  RarLog(ArcName && *ArcName ? ArcName:NULL,St(MCannotCreate),FileName);
+  Log(ArcName && *ArcName ? ArcName:NULL,St(MCannotCreate),FileName);
   Alarm();
 #if defined(_WIN_32) && !defined(_WIN_CE) && !defined(SFX_MODULE) && defined(MAXPATH)
   if (GetLastError()==ERROR_PATH_NOT_FOUND)
@@ -176,7 +176,7 @@ void ErrorHandler::CreateErrorMsg(const char *ArcName,const char *FileName)
     }
     if (NameLength>MAXPATH)
     {
-      RarLog(ArcName && *ArcName ? ArcName:NULL,St(MMaxPathLimit),MAXPATH);
+      Log(ArcName && *ArcName ? ArcName:NULL,St(MMaxPathLimit),MAXPATH);
     }
   }
 #endif
@@ -227,7 +227,7 @@ void ErrorHandler::ErrMsg(const char *ArcName,const char *fmt,...)
   Alarm();
   if (*Msg)
   {
-    RarLog(ArcName,"\n%s",Msg);
+    Log(ArcName,"\n%s",Msg);
     mprintf("\n%s\n",St(MProgAborted));
   }
 }
@@ -265,7 +265,7 @@ extern "C"
 void _stdfunction ProcessSignal(int SigType)
 #endif
 {
-#if defined(_WIN_32) && !defined(TARGET_POSIX)
+#ifdef _WIN_32
   if (SigType==CTRL_LOGOFF_EVENT)
     return(TRUE);
 #endif
@@ -280,9 +280,7 @@ void _stdfunction ProcessSignal(int SigType)
 #if defined(USE_RC) && !defined(SFX_MODULE) && !defined(_WIN_CE)
   ExtRes.UnloadDLL();
 #endif
-#if !defined(TARGET_POSIX)
   exit(USER_BREAK);
-#endif
 #ifdef _WIN_32
   return(TRUE);
 #endif
@@ -295,9 +293,8 @@ void ErrorHandler::SetSignalHandlers(bool Enable)
   EnableBreak=Enable;
 #if !defined(GUI) && !defined(_SFX_RTL_)
 #ifdef _WIN_32
-#if (WINAPI_FAMILY != WINAPI_FAMILY_APP)
   SetConsoleCtrlHandler(Enable ? ProcessSignal:NULL,TRUE);
-#endif
+//  signal(SIGBREAK,Enable ? ProcessSignal:SIG_IGN);
 #else
   signal(SIGINT,Enable ? ProcessSignal:SIG_IGN);
   signal(SIGTERM,Enable ? ProcessSignal:SIG_IGN);
@@ -315,9 +312,7 @@ void ErrorHandler::Throw(int Code)
   throw Code;
 #else
   File::RemoveCreated();
-#if !defined(_XBMC) && !defined(TARGET_POSIX)
   exit(Code);
-#endif
 #endif
 }
 
@@ -348,7 +343,7 @@ void ErrorHandler::SysErrMsg()
         *EndMsg=0;
         EndMsg++;
       }
-      RarLog(NULL,"\n%s",CurMsg);
+      Log(NULL,"\n%s",CurMsg);
       CurMsg=EndMsg;
     }
   }

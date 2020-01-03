@@ -77,7 +77,7 @@ int Archive::ReadHeader()
     if (CurBlockPos>ArcSize || NextBlockPos>ArcSize)
     {
   #ifndef SHELL_EXT
-      RarLog(FileName,St(MLogUnexpEOF));
+      Log(FileName,St(MLogUnexpEOF));
   #endif
       ErrHandler.SetErrorCode(WARNING);
     }
@@ -93,7 +93,7 @@ int Archive::ReadHeader()
   if (ShortBlock.HeadSize<SIZEOF_SHORTBLOCKHEAD)
   {
 #ifndef SHELL_EXT
-    RarLog(FileName,St(MLogFileHead),"???");
+    Log(FileName,St(MLogFileHead),"???");
 #endif
     BrokenFileHeader=true;
     ErrHandler.SetErrorCode(CRC_ERROR);
@@ -121,7 +121,7 @@ int Archive::ReadHeader()
       *(BaseBlock *)&EndArcHead=ShortBlock;
       if (EndArcHead.Flags & EARC_DATACRC)
         Raw.Get(EndArcHead.ArcDataCRC);
-    if (EndArcHead.Flags & EARC_VOLNUMBER)
+      if (EndArcHead.Flags & EARC_VOLNUMBER)
         Raw.Get(EndArcHead.VolNumber);
       break;
     case FILE_HEAD:
@@ -144,7 +144,7 @@ int Archive::ReadHeader()
           Raw.Get(hd->HighUnpSize);
         }
         else 
-    {
+        {
           hd->HighPackSize=hd->HighUnpSize=0;
           if (hd->UnpSize==0xffffffff)
           {
@@ -244,7 +244,7 @@ int Archive::ReadHeader()
         }
         NextBlockPos+=hd->FullPackSize;
         bool CRCProcessedOnly=(hd->Flags & LHD_COMMENT)!=0;
-        HeaderCRC = ~Raw.GetCRC(CRCProcessedOnly) & 0xffff;
+        HeaderCRC=~Raw.GetCRC(CRCProcessedOnly)&0xffff;
         if (hd->HeadCRC!=HeaderCRC)
         {
           if (hd->HeadType==NEWSUB_HEAD)
@@ -252,7 +252,7 @@ int Archive::ReadHeader()
           BrokenFileHeader=true;
           ErrHandler.SetErrorCode(WARNING);
 #ifndef SHELL_EXT
-          RarLog(Archive::FileName,St(MLogFileHead),IntNameToExt(hd->FileName));
+          Log(Archive::FileName,St(MLogFileHead),IntNameToExt(hd->FileName));
           Alarm();
 #endif
         }
@@ -370,7 +370,7 @@ int Archive::ReadHeader()
       if (!Recovered)
       {
 #ifndef SILENT
-        RarLog(FileName,St(MEncrBadCRC),FileName);
+        Log(FileName,St(MEncrBadCRC),FileName);
 #endif
         Close();
 
@@ -385,7 +385,7 @@ int Archive::ReadHeader()
   if (NextBlockPos<=CurBlockPos)
   {
 #ifndef SHELL_EXT
-    RarLog(FileName,St(MLogFileHead),"???");
+    Log(FileName,St(MLogFileHead),"???");
 #endif
     BrokenFileHeader=true;
     ErrHandler.SetErrorCode(CRC_ERROR);
@@ -577,13 +577,14 @@ void Archive::ConvertUnknownHeader()
       *s=CPATHDIVIDER;
 }
 
+
 #ifndef SHELL_EXT
 bool Archive::ReadSubData(Array<byte> *UnpData,File *DestFile)
 {
   if (HeaderCRC!=SubHead.HeadCRC)
   {
 #ifndef SHELL_EXT
-    RarLog(FileName,St(MSubHeadCorrupt));
+    Log(FileName,St(MSubHeadCorrupt));
 #endif
     ErrHandler.SetErrorCode(CRC_ERROR);
     return(false);
@@ -591,7 +592,7 @@ bool Archive::ReadSubData(Array<byte> *UnpData,File *DestFile)
   if (SubHead.Method<0x30 || SubHead.Method>0x35 || SubHead.UnpVer>PACK_VER)
   {
 #ifndef SHELL_EXT
-    RarLog(FileName,St(MSubHeadUnknown));
+    Log(FileName,St(MSubHeadUnknown));
 #endif
     return(false);
   }
@@ -609,13 +610,11 @@ bool Archive::ReadSubData(Array<byte> *UnpData,File *DestFile)
     SubDataIO.SetUnpackToMemory(&(*UnpData)[0],SubHead.UnpSize);
   }
   if (SubHead.Flags & LHD_PASSWORD)
-  {
     if (*Cmd->Password)
       SubDataIO.SetEncryption(SubHead.UnpVer,Cmd->Password,
              (SubHead.Flags & LHD_SALT) ? SubHead.Salt:NULL,false);
     else
       return(false);
-  }
   SubDataIO.SetPackedSizeToRead(SubHead.PackSize);
   SubDataIO.EnableShowProgress(false);
   SubDataIO.SetFiles(this,DestFile);
@@ -630,7 +629,7 @@ bool Archive::ReadSubData(Array<byte> *UnpData,File *DestFile)
   if (SubHead.FileCRC!=~SubDataIO.UnpFileCRC)
   {
 #ifndef SHELL_EXT
-    RarLog(FileName,St(MSubHeadDataCRC),SubHead.FileName);
+    Log(FileName,St(MSubHeadDataCRC),SubHead.FileName);
 #endif
     ErrHandler.SetErrorCode(CRC_ERROR);
     if (UnpData!=NULL)

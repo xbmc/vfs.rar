@@ -66,35 +66,16 @@ void SubAllocator::StopSubAllocator()
 
 bool SubAllocator::StartSubAllocator(int SASize)
 {
-  uint t=(uint)(SASize) << 20;
-  if ((uint)SubAllocatorSize == t)
+  uint t=SASize << 20;
+  if (SubAllocatorSize == t)
     return TRUE;
   StopSubAllocator();
   uint AllocSize=t/FIXED_UNIT_SIZE*UNIT_SIZE+UNIT_SIZE;
-#ifdef XBOX
   if ((HeapStart=(byte *)rarmalloc(AllocSize)) == NULL)
   {
     ErrHandler.MemoryError();
     return FALSE;
   }
-#else
-  // this is uggly, we keep halfing the size till
-  // we manage to alloc, it's likely that we
-  // fail to alloc 
-  uint AllocSize2 = AllocSize;
-  while(AllocSize2 && (HeapStart=(byte *)rarmalloc(AllocSize2)) == NULL)
-    AllocSize2<<=1;
-  
-  if(HeapStart == NULL)
-  {
-    ErrHandler.MemoryError();
-    return FALSE;
-  }
-
-  //if(AllocSize != AllocSize2)
-    //OutputDebugString("ERROR - had to allocate smaller data than required, extract can very well fail");
-
-#endif
   HeapEnd=HeapStart+AllocSize-UNIT_SIZE;
   SubAllocatorSize=t;
   return TRUE;

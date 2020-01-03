@@ -55,7 +55,7 @@ void Archive::CheckArc(bool EnableBroken)
 {
   if (!IsArchive(EnableBroken))
   {
-    RarLog(FileName,St(MBadArc),FileName);
+    Log(FileName,St(MBadArc),FileName);
     ErrHandler.Exit(FATAL_ERROR);
   }
 }
@@ -78,7 +78,7 @@ bool Archive::WCheckOpen(char *Name,wchar *NameW)
   if (!IsArchive(false))
   {
 #ifndef SHELL_EXT
-    RarLog(FileName,St(MNotRAR),FileName);
+    Log(FileName,St(MNotRAR),FileName);
 #endif
     Close();
     return(false);
@@ -91,7 +91,6 @@ bool Archive::IsSignature(byte *D)
 {
   bool Valid=false;
   if (D[0]==0x52)
-  {
 #ifndef SFX_MODULE
     if (D[1]==0x45 && D[2]==0x7e && D[3]==0x5e)
     {
@@ -100,14 +99,11 @@ bool Archive::IsSignature(byte *D)
     }
     else
 #endif
-    {
       if (D[1]==0x61 && D[2]==0x72 && D[3]==0x21 && D[4]==0x1a && D[5]==0x07 && D[6]==0x00)
       {
         OldFormat=false;
         Valid=true;
       }
-    }
-  }
   return(Valid);
 }
 
@@ -119,14 +115,13 @@ bool Archive::IsArchive(bool EnableBroken)
   if (IsDevice())
   {
 #ifndef SHELL_EXT
-    RarLog(FileName,St(MInvalidName),FileName);
+    Log(FileName,St(MInvalidName),FileName);
 #endif
     return(false);
   }
 #endif
   if (Read(MarkHead.Mark,SIZEOF_MARKHEAD)!=SIZEOF_MARKHEAD)
     return(false);
-    
   SFXSize=0;
   if (IsSignature(MarkHead.Mark))
   {
@@ -170,7 +165,7 @@ bool Archive::IsArchive(bool EnableBroken)
     if (HeaderCRC!=NewMhd.HeadCRC)
     {
 #ifndef SHELL_EXT
-      RarLog(FileName,St(MLogMainHead));
+      Log(FileName,St(MLogMainHead));
 #endif
       Alarm();
       if (!EnableBroken)
@@ -188,7 +183,6 @@ bool Archive::IsArchive(bool EnableBroken)
 #ifdef RARDLL
   SilentOpen=true;
 #endif
-  if (Encrypted) return (true);
   if (!SilentOpen || !Encrypted)
   {
     SaveFilePos SavePos(*this);
@@ -203,13 +197,13 @@ bool Archive::IsArchive(bool EnableBroken)
         if (SubHead.CmpName(SUBHEAD_TYPE_CMT))
           MainComment=true;
         if ((SubHead.Flags & LHD_SPLIT_BEFORE) ||
-            (Volume && (NewMhd.Flags & MHD_FIRSTVOLUME)==0))
+            Volume && (NewMhd.Flags & MHD_FIRSTVOLUME)==0)
           NotFirstVolume=true;
       }
       else
       {
-        if ((HeaderType==FILE_HEAD && ((NewLhd.Flags & LHD_SPLIT_BEFORE)!=0)) ||
-            (Volume && NewLhd.UnpVer>=29 && (NewMhd.Flags & MHD_FIRSTVOLUME)==0))
+        if (HeaderType==FILE_HEAD && ((NewLhd.Flags & LHD_SPLIT_BEFORE)!=0 ||
+            Volume && NewLhd.UnpVer>=29 && (NewMhd.Flags & MHD_FIRSTVOLUME)==0))
           NotFirstVolume=true;
         break;
       }

@@ -34,7 +34,8 @@ struct SEE2_CONTEXT
       Count=3 << Shift++;
     }
   }
-} _PACK_ATTR;
+};
+
 
 class ModelPPM;
 struct PPM_CONTEXT;
@@ -58,7 +59,6 @@ struct PPM_CONTEXT
     union
     {
       FreqData U;
-
       STATE OneState;
     };
 
@@ -99,7 +99,7 @@ class ModelPPM
   private:
     friend struct PPM_CONTEXT;
     
-    SEE2_CONTEXT SEE2Cont[25][16], DummySEE2Cont;
+    _PACK_ATTR SEE2_CONTEXT SEE2Cont[25][16], DummySEE2Cont;
     
     struct PPM_CONTEXT *MinContext, *MedContext, *MaxContext;
     STATE* FoundState;      // found next state transition
