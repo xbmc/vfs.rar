@@ -7,9 +7,6 @@ static bool ReadSacl=false;
 #ifndef SFX_MODULE
 void ExtractACL(Archive &Arc,char *FileName,wchar *FileNameW)
 {
-#if defined(_XBOX) || defined (_LINUX) || (defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP))
-  return;
-#else
   if (!WinNT())
     return;
 
@@ -17,14 +14,14 @@ void ExtractACL(Archive &Arc,char *FileName,wchar *FileNameW)
 
   if (Arc.HeaderCRC!=Arc.EAHead.HeadCRC)
   {
-    RarLog(Arc.FileName,St(MACLBroken),FileName);
+    Log(Arc.FileName,St(MACLBroken),FileName);
     ErrHandler.SetErrorCode(CRC_ERROR);
     return;
   }
 
   if (Arc.EAHead.Method<0x31 || Arc.EAHead.Method>0x35 || Arc.EAHead.UnpVer>PACK_VER)
   {
-    RarLog(Arc.FileName,St(MACLUnknown),FileName);
+    Log(Arc.FileName,St(MACLUnknown),FileName);
     ErrHandler.SetErrorCode(WARNING);
     return;
   }
@@ -43,7 +40,7 @@ void ExtractACL(Archive &Arc,char *FileName,wchar *FileNameW)
 
   if (Arc.EAHead.EACRC!=~DataIO.UnpFileCRC)
   {
-    RarLog(Arc.FileName,St(MACLBroken),FileName);
+    Log(Arc.FileName,St(MACLBroken),FileName);
     ErrHandler.SetErrorCode(CRC_ERROR);
     return;
   }
@@ -62,20 +59,16 @@ void ExtractACL(Archive &Arc,char *FileName,wchar *FileNameW)
 
   if (!SetCode)
   {
-    RarLog(Arc.FileName,St(MACLSetError),FileName);
+    Log(Arc.FileName,St(MACLSetError),FileName);
     ErrHandler.SysErrMsg();
     ErrHandler.SetErrorCode(WARNING);
   }
-#endif
 }
 #endif
 
 
 void ExtractACLNew(Archive &Arc,char *FileName,wchar *FileNameW)
 {
-#if defined(_XBOX) || defined(_LINUX) || (defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP))
-  return;
-#else
   if (!WinNT())
     return;
 
@@ -99,19 +92,15 @@ void ExtractACLNew(Archive &Arc,char *FileName,wchar *FileNameW)
 
   if (!SetCode)
   {
-    RarLog(Arc.FileName,St(MACLSetError),FileName);
+    Log(Arc.FileName,St(MACLSetError),FileName);
     ErrHandler.SysErrMsg();
     ErrHandler.SetErrorCode(WARNING);
   }
-#endif
 }
 
 
 void SetPrivileges()
 {
-#if defined(_XBOX) || defined(_LINUX) || (defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP))
-  return;
-#else
   static bool InitDone=false;
   if (InitDone)
     return;
@@ -135,5 +124,4 @@ void SetPrivileges()
     AdjustTokenPrivileges(hToken, FALSE, &tp, 0, NULL, NULL);
 
   CloseHandle(hToken);
-#endif
 }

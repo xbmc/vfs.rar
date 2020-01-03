@@ -1,24 +1,124 @@
 #include "rar.hpp"
 
+MKDIR_CODE MakeDir(const char *Name,const wchar *NameW,uint Attr)
+{
+#ifdef _WIN_32
+  int Success;
+  if (WinNT() && NameW!=NULL && *NameW!=0)
+    Success=CreateDirectoryW(NameW,NULL);
+  else
+    Success=CreateDirectory(Name,NULL);
+  if (Success)
+  {
+    SetFileAttr(Name,NameW,Attr);
+    return(MKDIR_SUCCESS);
+  }
+  int ErrCode=GetLastError();
+  if (ErrCode==ERROR_FILE_NOT_FOUND || ErrCode==ERROR_PATH_NOT_FOUND)
+    return(MKDIR_BADPATH);
+  return(MKDIR_ERROR);
+#endif
+#ifdef _EMX
+#ifdef _DJGPP
+  if (mkdir(Name,(Attr & FA_RDONLY) ? 0:S_IWUSR)==0)
+#else
+  if (__mkdir(Name)==0)
+#endif
+  {
+    SetFileAttr(Name,NameW,Attr);
+    return(MKDIR_SUCCESS);
+  }
+  return(errno==ENOENT ? MKDIR_BADPATH:MKDIR_ERROR);
+#endif
+#ifdef _UNIX
+  int prevmask=umask(0);
+  int ErrCode=Name==NULL ? -1:mkdir(Name,(mode_t)Attr);
+  umask(prevmask);
+  if (ErrCode==-1)
+    return(errno==ENOENT ? MKDIR_BADPATH:MKDIR_ERROR);
+  return(MKDIR_SUCCESS);
+#endif
+}
+
+
+void CreatePath(const char *Path,const wchar *PathW,bool SkipLastName)
+{
+#ifdef _WIN_32
+  uint DirAttr=0;
+#else
+  uint DirAttr=0777;
+#endif
+#ifdef UNICODE_SUPPORTED
+  bool Wide=PathW!=NULL && *PathW!=0 && UnicodeEnabled();
+#else
+  bool Wide=false;
+#endif
+  bool IgnoreAscii=false;
+
+  const char *s=Path;
+  for (int PosW=0;;PosW++)
+  {
+    if (s==NULL || s-Path>=NM || *s==0)
+      IgnoreAscii=true;
+    if (Wide && (PosW>=NM || PathW[PosW]==0) || !Wide && IgnoreAscii)
+      break;
+    if (Wide && PathW[PosW]==CPATHDIVIDER || !Wide && *s==CPATHDIVIDER)
+    {
+      wchar *DirPtrW=NULL,DirNameW[NM];
+      if (Wide)
+      {
+        strncpyw(DirNameW,PathW,PosW);
+        DirNameW[PosW]=0;
+        DirPtrW=DirNameW;
+      }
+      char DirName[NM];
+      if (IgnoreAscii)
+        WideToChar(DirPtrW,DirName);
+      else
+      {
+#ifndef DBCS_SUPPORTED
+        if (*s!=CPATHDIVIDER)
+          for (const char *n=s;*n!=0 && n-Path<NM;n++)
+            if (*n==CPATHDIVIDER)
+            {
+              s=n;
+              break;
+            }
+#endif
+        strncpy(DirName,Path,s-Path);
+        DirName[s-Path]=0;
+      }
+      if (MakeDir(DirName,DirPtrW,DirAttr)==MKDIR_SUCCESS)
+      {
+#ifndef GUI
+        mprintf(St(MCreatDir),DirName);
+        mprintf(" %s",St(MOk));
+#endif
+      }
+    }
+    if (!IgnoreAscii)
+      s=charnext(s);
+  }
+  if (!SkipLastName)
+    MakeDir(Path,PathW,DirAttr);
+}
+
 
 void SetDirTime(const char *Name,RarTime *ftm,RarTime *ftc,RarTime *fta)
 {
 #ifdef _WIN_32
   bool sm=ftm!=NULL && ftm->IsSet();
   bool sc=ftc!=NULL && ftc->IsSet();
-  bool sa=ftc!=NULL && fta->IsSet();
+  bool sa=fta!=NULL && fta->IsSet();
+
   if (!WinNT())
     return;
-#if !defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP)
-  HANDLE hFile=CreateFileA(Name,GENERIC_WRITE,FILE_SHARE_READ|FILE_SHARE_WRITE,
-                           NULL,OPEN_EXISTING,FILE_FLAG_BACKUP_SEMANTICS,NULL);
-#else
-  CREATEFILE2_EXTENDED_PARAMETERS ext = {0};
-  ext.dwFileFlags = FILE_FLAG_BACKUP_SEMANTICS;
-  wchar wname[NM];
-  CharToWide(Name, wname);
-  HANDLE hFile = CreateFile2(wname, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, OPEN_EXISTING, &ext);
-#endif
+  unsigned int DirAttr=GetFileAttr(Name);
+  bool ResetAttr=(DirAttr!=0xffffffff && (DirAttr & FA_RDONLY)!=0);
+  if (ResetAttr)
+    SetFileAttr(Name,NULL,0);
+  HANDLE hFile=CreateFile(Name,GENERIC_WRITE,FILE_SHARE_READ|FILE_SHARE_WRITE,
+                          NULL,OPEN_EXISTING,FILE_FLAG_BACKUP_SEMANTICS,NULL);
   if (hFile==INVALID_HANDLE_VALUE)
     return;
   FILETIME fm,fc,fa;
@@ -30,6 +130,8 @@ void SetDirTime(const char *Name,RarTime *ftm,RarTime *ftc,RarTime *fta)
     fta->GetWin32(&fa);
   SetFileTime(hFile,sc ? &fc:NULL,sa ? &fa:NULL,sm ? &fm:NULL);
   CloseHandle(hFile);
+  if (ResetAttr)
+    SetFileAttr(Name,NULL,DirAttr);
 #endif
 #if defined(_UNIX) || defined(_EMX)
   File::SetCloseFileTimeByName(Name,ftm,fta);
@@ -39,19 +141,11 @@ void SetDirTime(const char *Name,RarTime *ftm,RarTime *ftc,RarTime *fta)
 
 bool IsRemovable(const char *Name)
 {
-#if defined(TARGET_POSIX)
-  return false;
-//#ifdef _WIN_32
-#elif defined(_WIN_32)
-#if !defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP)
+#ifdef _WIN_32
   char Root[NM];
-  GetPathRoot(Name, Root);
-  int Type=GetDriveTypeA(*Root ? Root:NULL);
+  GetPathRoot(Name,Root);
+  int Type=GetDriveType(*Root ? Root:NULL);
   return(Type==DRIVE_REMOVABLE || Type==DRIVE_CDROM);
-#else
-  char Drive = toupper(Name[0]);
-  return((Drive == 'A' || Drive == 'B') && Name[1] == ':');
-#endif
 #elif defined(_EMX)
   char Drive=toupper(Name[0]);
   return((Drive=='A' || Drive=='B') && Name[1]==':');
@@ -64,17 +158,37 @@ bool IsRemovable(const char *Name)
 #ifndef SFX_MODULE
 Int64 GetFreeDisk(const char *Name)
 {
-#if defined(_WIN_32)
+#ifdef _WIN_32
   char Root[NM];
   GetPathRoot(Name,Root);
 
-  GetFilePath(Name,Root);
-  ULARGE_INTEGER uiTotalSize,uiTotalFree,uiUserFree;
-  uiUserFree.u.LowPart=uiUserFree.u.HighPart=0;
-  if (GetDiskFreeSpaceExA(*Root ? Root:NULL,&uiUserFree,&uiTotalSize,&uiTotalFree) &&
-      uiUserFree.u.HighPart<=uiTotalFree.u.HighPart)
-    return(int32to64(uiUserFree.u.HighPart,uiUserFree.u.LowPart));
+  typedef BOOL (WINAPI *GETDISKFREESPACEEX)(
+    LPCTSTR,PULARGE_INTEGER,PULARGE_INTEGER,PULARGE_INTEGER
+   );
+  static GETDISKFREESPACEEX pGetDiskFreeSpaceEx=NULL;
 
+  if (pGetDiskFreeSpaceEx==NULL)
+  {
+    HMODULE hKernel=GetModuleHandle("kernel32.dll");
+    if (hKernel!=NULL)
+      pGetDiskFreeSpaceEx=(GETDISKFREESPACEEX)GetProcAddress(hKernel,"GetDiskFreeSpaceExA");
+  }
+  if (pGetDiskFreeSpaceEx!=NULL)
+  {
+    GetFilePath(Name,Root);
+    ULARGE_INTEGER uiTotalSize,uiTotalFree,uiUserFree;
+    uiUserFree.u.LowPart=uiUserFree.u.HighPart=0;
+    if (pGetDiskFreeSpaceEx(*Root ? Root:NULL,&uiUserFree,&uiTotalSize,&uiTotalFree) &&
+        uiUserFree.u.HighPart<=uiTotalFree.u.HighPart)
+      return(int32to64(uiUserFree.u.HighPart,uiUserFree.u.LowPart));
+  }
+
+  DWORD SectorsPerCluster,BytesPerSector,FreeClusters,TotalClusters;
+  if (!GetDiskFreeSpace(*Root ? Root:NULL,&SectorsPerCluster,&BytesPerSector,&FreeClusters,&TotalClusters))
+    return(1457664);
+  Int64 FreeSize=SectorsPerCluster*BytesPerSector;
+  FreeSize=FreeSize*FreeClusters;
+  return(FreeSize);
 #elif defined(_BEOS)
   char Root[NM];
   GetFilePath(Name,Root);
@@ -124,12 +238,10 @@ Int64 GetFreeDisk(const char *Name)
 bool FileExist(const char *Name,const wchar *NameW)
 {
 #ifdef _WIN_32
-#if !defined(TARGET_POSIX)
     if (WinNT() && NameW!=NULL && *NameW!=0)
       return(GetFileAttributesW(NameW)!=0xffffffff);
     else
-#endif
-      return(GetFileAttributesA(Name)!=0xffffffff);
+      return(GetFileAttributes(Name)!=0xffffffff);
 #elif defined(ENABLE_ACCESS)
   return(access(Name,0)==0);
 #else
@@ -220,12 +332,10 @@ void PrepareToDelete(const char *Name,const wchar *NameW)
 uint GetFileAttr(const char *Name,const wchar *NameW)
 {
 #ifdef _WIN_32
-#if !defined(TARGET_POSIX)
     if (WinNT() && NameW!=NULL && *NameW!=0)
       return(GetFileAttributesW(NameW));
     else
-#endif
-      return(GetFileAttributesA(Name));
+      return(GetFileAttributes(Name));
 #elif defined(_DJGPP)
   return(_chmod(Name,0));
 #else
@@ -243,40 +353,32 @@ uint GetFileAttr(const char *Name,const wchar *NameW)
 
 bool SetFileAttr(const char *Name,const wchar *NameW,uint Attr)
 {
-  bool success;
+  bool Success;
 #ifdef _WIN_32
-#if !defined(TARGET_POSIX)
     if (WinNT() && NameW!=NULL && *NameW!=0)
-      success=SetFileAttributesW(NameW,Attr)!=0;
+      Success=SetFileAttributesW(NameW,Attr)!=0;
     else
-#endif
-      success=SetFileAttributesA(Name,Attr)!=0;
+      Success=SetFileAttributes(Name,Attr)!=0;
 #elif defined(_DJGPP)
-  success=_chmod(Name,1,Attr)!=-1;
+  Success=_chmod(Name,1,Attr)!=-1;
 #elif defined(_EMX)
-  success=__chmod(Name,1,Attr)!=-1;
+  Success=__chmod(Name,1,Attr)!=-1;
 #elif defined(_UNIX)
-  success=chmod(Name,(mode_t)Attr)==0;
+  Success=chmod(Name,(mode_t)Attr)==0;
 #else
-  success=false;
+  Success=false;
 #endif
-  return(success);
+  return(Success);
 }
 
 
 void ConvertNameToFull(const char *Src,char *Dest)
 {
 #ifdef _WIN_32
-//#ifndef _WIN_CE
-#if !defined(_WIN_CE) && !defined(TARGET_POSIX)
-  char FullName[NM];
-  wchar FullNameW[NM], *NameWPtr, SrcW[NM];
-  CharToWide(Src, SrcW);
-  if (GetFullPathNameW(SrcW,sizeof(FullNameW),FullNameW,&NameWPtr))
-  {
-    WideToChar(FullNameW, FullName);
+#ifndef _WIN_CE
+  char FullName[NM],*NamePtr;
+  if (GetFullPathName(Src,sizeof(FullName),FullName,&NamePtr))
     strcpy(Dest,FullName);
-  }
   else
 #endif
     if (Src!=Dest)
@@ -287,11 +389,9 @@ void ConvertNameToFull(const char *Src,char *Dest)
     strcpy(FullName,Src);
   else
   {
-    if (getcwd(FullName,sizeof(FullName)))
-    {
-      AddEndSlash(FullName);
-      strcat(FullName,Src);
-    }
+    getcwd(FullName,sizeof(FullName));
+    AddEndSlash(FullName);
+    strcat(FullName,Src);
   }
   strcpy(Dest,FullName);
 #endif
@@ -311,8 +411,7 @@ void ConvertNameToFull(const wchar *Src,wchar *Dest)
   if (WinNT())
 #endif
   {
-//#ifndef _WIN_CE
-#if !defined(_WIN_CE) && !defined(TARGET_POSIX)
+#ifndef _WIN_CE
     wchar FullName[NM],*NamePtr;
     if (GetFullPathNameW(Src,sizeof(FullName)/sizeof(FullName[0]),FullName,&NamePtr))
       strcpyw(Dest,FullName);
@@ -419,3 +518,23 @@ bool DelDir(const char *Name,const wchar *NameW)
 {
   return(rmdir(Name)==0);
 }
+
+
+#if defined(_WIN_32) && !defined(_WIN_CE)
+bool SetFileCompression(char *Name,wchar *NameW,bool State)
+{
+  wchar FileNameW[NM];
+  GetWideName(Name,NameW,FileNameW);
+  HANDLE hFile=CreateFileW(FileNameW,FILE_READ_DATA|FILE_WRITE_DATA,
+                 FILE_SHARE_READ|FILE_SHARE_WRITE,NULL,OPEN_EXISTING,
+                 FILE_FLAG_BACKUP_SEMANTICS|FILE_FLAG_SEQUENTIAL_SCAN,NULL);
+  if (hFile==INVALID_HANDLE_VALUE)
+    return(false);
+  SHORT NewState=State ? COMPRESSION_FORMAT_DEFAULT:COMPRESSION_FORMAT_NONE;
+  DWORD Result;
+  int RetCode=DeviceIoControl(hFile,FSCTL_SET_COMPRESSION,&NewState,
+                              sizeof(NewState),NULL,0,&Result,NULL);
+  CloseHandle(hFile);
+  return(RetCode!=0);
+}
+#endif

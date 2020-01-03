@@ -113,7 +113,7 @@ bool ReadTextFile(char *Name,StringList *List,bool Config,bool AbortOnError,
             CurStr++;
           }
         }
-#if defined(_WIN_32) && !defined(TARGET_POSIX)
+#if defined(_WIN_32)
         if (ConvertToAnsi)
           OemToCharA(CurStr,CurStr);
 #endif

@@ -27,7 +27,7 @@ bool Archive::GetComment(Array<byte> &CmtData)
 #ifndef SFX_MODULE
     if (CommHead.HeadCRC!=HeaderCRC)
     {
-      RarLog(FileName,St(MLogCommHead));
+      Log(FileName,St(MLogCommHead));
       Alarm();
       return(false);
     }
@@ -35,7 +35,7 @@ bool Archive::GetComment(Array<byte> &CmtData)
 #endif
   }
 #ifndef SFX_MODULE
-  if ((OldFormat && (OldMhd.Flags & MHD_PACK_COMMENT)) || (!OldFormat && CommHead.Method!=0x30))
+  if (OldFormat && (OldMhd.Flags & MHD_PACK_COMMENT) || !OldFormat && CommHead.Method!=0x30)
   {
     if (!OldFormat && (CommHead.UnpVer < 15 || CommHead.UnpVer > UNP_VER || CommHead.Method > 0x35))
       return(false);
@@ -60,7 +60,7 @@ bool Archive::GetComment(Array<byte> &CmtData)
 
     if (!OldFormat && ((~DataIO.UnpFileCRC)&0xffff)!=CommHead.CommCRC)
     {
-      RarLog(FileName,St(MLogCommBrk));
+      Log(FileName,St(MLogCommBrk));
       Alarm();
       return(false);
     }
@@ -80,14 +80,14 @@ bool Archive::GetComment(Array<byte> &CmtData)
     Read(&CmtData[0],CmtLength);
     if (!OldFormat && CommHead.CommCRC!=(~CRC(0xffffffff,&CmtData[0],CmtLength)&0xffff))
     {
-      RarLog(FileName,St(MLogCommBrk));
+      Log(FileName,St(MLogCommBrk));
       Alarm();
       CmtData.Reset();
       return(false);
     }
   }
 #endif
-#if defined(_WIN_32) && !defined(_WIN_CE) && !defined(_XBOX) && !defined(_LINUX)
+#if defined(_WIN_32) && !defined(_WIN_CE)
   if (CmtData.Size()>0)
     OemToCharBuffA((char*)&CmtData[0],(char*)&CmtData[0],CmtData.Size());
 #endif
@@ -159,8 +159,8 @@ void Archive::ViewFileComment()
     return;
   if (CommHead.HeadCRC!=HeaderCRC)
   {
-    #ifndef GUI
-    RarLog(FileName,St(MLogCommHead));
+#ifndef GUI
+    Log(FileName,St(MLogCommHead));
 #endif
     return;
   }
@@ -170,7 +170,7 @@ void Archive::ViewFileComment()
   Read(&CmtBuf[0],CommHead.UnpSize);
   if (CommHead.CommCRC!=((~CRC(0xffffffff,&CmtBuf[0],CommHead.UnpSize)&0xffff)))
   {
-    RarLog(FileName,St(MLogBrokFCmt));
+    Log(FileName,St(MLogBrokFCmt));
   }
   else
   {

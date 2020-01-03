@@ -96,13 +96,13 @@ char* StringList::GetString()
 
 bool StringList::GetString(char **Str,wchar **StrW)
 {
-  if ((int)CurPos>=StringData.Size())
+  if (CurPos>=StringData.Size())
   {
     *Str=NULL;
     return(false);
   }
   *Str=&StringData[CurPos];
-  if ((int)PosDataItem<PosDataW.Size() && PosDataW[PosDataItem]==(int)CurPos)
+  if (PosDataItem<PosDataW.Size() && PosDataW[PosDataItem]==CurPos)
   {
     PosDataItem++;
     if (StrW!=NULL)
@@ -119,7 +119,7 @@ bool StringList::GetString(char **Str,wchar **StrW)
 
 char* StringList::GetString(unsigned int StringPos)
 {
-  if ((int)StringPos>=StringData.Size())
+  if (StringPos>=StringData.Size())
     return(NULL);
   return(&StringData[StringPos]);
 }

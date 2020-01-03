@@ -19,7 +19,7 @@ class ScanTree
     int Depth;
 
     int SetAllMaskDepth;
-    
+
     StringList *FileMasks;
     int Recurse;
     bool GetLinks;
@@ -39,7 +39,7 @@ class ScanTree
 
     CommandData *Cmd;
   public:
-  ScanTree(StringList *FileMasks,int Recurse,bool GetLinks,int GetDirs);
+    ScanTree(StringList *FileMasks,int Recurse,bool GetLinks,int GetDirs);
     ~ScanTree();
     int GetNext(FindData *FindData);
     int GetSpecPathLength() {return(SpecPathLength);};

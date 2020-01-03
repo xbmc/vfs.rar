@@ -19,7 +19,7 @@ A million repetitions of "a"
     #define LITTLE_ENDIAN
   #else
     #error "LITTLE_ENDIAN or BIG_ENDIAN must be defined"
-  #endif
+	#endif
 #endif
 
 /* #define SHA1HANDSOFF * Copies data before messing with it. */
@@ -223,3 +223,5 @@ unsigned char finalcount[8];
     SHA1Transform(context->state, context->buffer);
 #endif
 }
+
+

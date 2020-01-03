@@ -1,4 +1,5 @@
-// THIS FILE IS SLIGHTLY MODIFIED TO WORK WITH XBMC
+
+
 
 #ifndef SFX_MODULE
 void ExtractStreams(Archive &Arc,char *FileName,wchar *FileNameW)
@@ -9,7 +10,7 @@ void ExtractStreams(Archive &Arc,char *FileName,wchar *FileNameW)
   if (Arc.HeaderCRC!=Arc.StreamHead.HeadCRC)
   {
 #ifndef SILENT
-    RarLog(Arc.FileName,St(MStreamBroken),FileName);
+    Log(Arc.FileName,St(MStreamBroken),FileName);
 #endif
     ErrHandler.SetErrorCode(CRC_ERROR);
     return;
@@ -18,7 +19,7 @@ void ExtractStreams(Archive &Arc,char *FileName,wchar *FileNameW)
   if (Arc.StreamHead.Method<0x31 || Arc.StreamHead.Method>0x35 || Arc.StreamHead.UnpVer>PACK_VER)
   {
 #ifndef SILENT
-    RarLog(Arc.FileName,St(MStreamUnknown),FileName);
+    Log(Arc.FileName,St(MStreamUnknown),FileName);
 #endif
     ErrHandler.SetErrorCode(WARNING);
     return;
@@ -35,7 +36,7 @@ void ExtractStreams(Archive &Arc,char *FileName,wchar *FileNameW)
   if (strlen(StreamName)+strlen((char *)Arc.StreamHead.StreamName)>=sizeof(StreamName))
   {
 #ifndef SILENT
-    RarLog(Arc.FileName,St(MStreamBroken),FileName);
+    Log(Arc.FileName,St(MStreamBroken),FileName);
 #endif
     ErrHandler.SetErrorCode(CRC_ERROR);
     return;
@@ -66,7 +67,7 @@ void ExtractStreams(Archive &Arc,char *FileName,wchar *FileNameW)
     if (Arc.StreamHead.StreamCRC!=~DataIO.UnpFileCRC)
     {
 #ifndef SILENT
-      RarLog(Arc.FileName,St(MStreamBroken),StreamName);
+      Log(Arc.FileName,St(MStreamBroken),StreamName);
 #endif
       ErrHandler.SetErrorCode(CRC_ERROR);
     }
@@ -75,8 +76,8 @@ void ExtractStreams(Archive &Arc,char *FileName,wchar *FileNameW)
   }
   File HostFile;
   if (Found && HostFile.Open(FileName,FileNameW,true,true))
-    /*SetFileTime(HostFile.GetHandle(),&fd.ftCreationTime,&fd.ftLastAccessTime,
-                &fd.ftLastWriteTime);*/
+    SetFileTime(HostFile.GetHandle(),&fd.ftCreationTime,&fd.ftLastAccessTime,
+                &fd.ftLastWriteTime);
   if (fd.FileAttr & FILE_ATTRIBUTE_READONLY)
     SetFileAttr(FileName,FileNameW,fd.FileAttr);
 }
@@ -109,7 +110,7 @@ void ExtractStreamsNew(Archive &Arc,char *FileName,wchar *FileNameW)
   if (strlenw(StreamNameW)+DestSize>=sizeof(StreamNameW)/sizeof(StreamNameW[0]))
   {
 #if !defined(SILENT) && !defined(SFX_MODULE)
-    RarLog(Arc.FileName,St(MStreamBroken),FileName);
+    Log(Arc.FileName,St(MStreamBroken),FileName);
 #endif
     ErrHandler.SetErrorCode(CRC_ERROR);
     return;
@@ -130,8 +131,8 @@ void ExtractStreamsNew(Archive &Arc,char *FileName,wchar *FileNameW)
     CurFile.Close();
   File HostFile;
   if (Found && HostFile.Open(FileName,FileNameW,true,true))
-/*    SetFileTime(HostFile.GetHandle(),&fd.ftCreationTime,&fd.ftLastAccessTime,
-                &fd.ftLastWriteTime);*/
+    SetFileTime(HostFile.GetHandle(),&fd.ftCreationTime,&fd.ftLastAccessTime,
+                &fd.ftLastWriteTime);
   if (fd.FileAttr & FILE_ATTRIBUTE_READONLY)
     SetFileAttr(FileName,FileNameW,fd.FileAttr);
 }

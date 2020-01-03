@@ -63,9 +63,6 @@ void Unpack::Unpack15(bool Solid)
 
   while (DestUnpSize>=0)
   {
-    if (UnpIO->hQuit->Wait(1))
-      return;
-
     UnpPtr&=MAXWINMASK;
 
     if (InAddr>ReadTop-30 && !UnpReadBuf())
@@ -293,10 +290,11 @@ void Unpack::LongLZ()
   BitField=fgetbits();
   if (AvrPlcB > 0x28ff)
     DistancePlace=DecodeNum(BitField,STARTHF2,DecHf2,PosHf2);
-  else if (AvrPlcB > 0x6ff)
-    DistancePlace=DecodeNum(BitField,STARTHF1,DecHf1,PosHf1);
   else
-    DistancePlace=DecodeNum(BitField,STARTHF0,DecHf0,PosHf0);
+    if (AvrPlcB > 0x6ff)
+      DistancePlace=DecodeNum(BitField,STARTHF1,DecHf1,PosHf1);
+    else
+      DistancePlace=DecodeNum(BitField,STARTHF0,DecHf0,PosHf0);
 
   AvrPlcB += DistancePlace;
   AvrPlcB -= AvrPlcB >> 8;
@@ -318,21 +316,20 @@ void Unpack::LongLZ()
 
   OldAvr3=AvrLn3;
   if (Length!=1 && Length!=4)
-  {
     if (Length==0 && Distance <= MaxDist3)
     {
       AvrLn3++;
       AvrLn3 -= AvrLn3 >> 8;
     }
-    else if (AvrLn3 > 0)
-      AvrLn3--;
-  }
+    else
+      if (AvrLn3 > 0)
+        AvrLn3--;
   Length+=3;
   if (Distance >= MaxDist3)
     Length++;
   if (Distance <= 256)
     Length+=8;
-  if (OldAvr3 > 0xb0 || (AvrPlc >= 0x2a00 && OldAvr2 < 0x40))
+  if (OldAvr3 > 0xb0 || AvrPlc >= 0x2a00 && OldAvr2 < 0x40)
     MaxDist3=0x7f00;
   else
     MaxDist3=0x2001;
@@ -355,14 +352,17 @@ void Unpack::HuffDecode()
 
   if (AvrPlc > 0x75ff)
     BytePlace=DecodeNum(BitField,STARTHF4,DecHf4,PosHf4);
-  else if (AvrPlc > 0x5dff)
-    BytePlace=DecodeNum(BitField,STARTHF3,DecHf3,PosHf3);
-  else if (AvrPlc > 0x35ff)
-    BytePlace=DecodeNum(BitField,STARTHF2,DecHf2,PosHf2);
-  else if (AvrPlc > 0x0dff)
-    BytePlace=DecodeNum(BitField,STARTHF1,DecHf1,PosHf1);
   else
-    BytePlace=DecodeNum(BitField,STARTHF0,DecHf0,PosHf0);
+    if (AvrPlc > 0x5dff)
+      BytePlace=DecodeNum(BitField,STARTHF3,DecHf3,PosHf3);
+    else
+      if (AvrPlc > 0x35ff)
+        BytePlace=DecodeNum(BitField,STARTHF2,DecHf2,PosHf2);
+      else
+        if (AvrPlc > 0x0dff)
+          BytePlace=DecodeNum(BitField,STARTHF1,DecHf1,PosHf1);
+        else
+          BytePlace=DecodeNum(BitField,STARTHF0,DecHf0,PosHf0);
   BytePlace&=0xff;
   if (StMode)
   {
@@ -500,7 +500,7 @@ unsigned int Unpack::DecodeNum(int Num,unsigned int StartPos,
                                unsigned int *DecTab,unsigned int *PosTab)
 {
   int I;
-  for (Num&=0xfff0,I=0;(int)DecTab[I]<=Num;I++)
+  for (Num&=0xfff0,I=0;DecTab[I]<=Num;I++)
     StartPos++;
   faddbits(StartPos);
   return(((Num-(I ? DecTab[I-1]:0))>>(16-StartPos))+PosTab[StartPos]);

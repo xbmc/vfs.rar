@@ -1,8 +1,6 @@
 #ifndef _RAR_FILE_
 #define _RAR_FILE_
 
-#include <kodi/Filesystem.h>
-
 #ifdef _WIN_32
 typedef HANDLE FileHandle;
 #define BAD_HANDLE INVALID_HANDLE_VALUE
@@ -25,15 +23,13 @@ struct FileStat
   bool IsDir;
 };
 
+
 class File
 {
   private:
-    //void AddFileToList(FileHandle hFile);
-    void AddFileToList();
+    void AddFileToList(FileHandle hFile);
 
-    //FileHandle hFile;
-    kodi::vfs::CFile* m_File;
-
+    FileHandle hFile;
     bool LastWrite;
     FILE_HANDLETYPE HandleType;
     bool SkipClose;
@@ -41,6 +37,9 @@ class File
     bool NewFile;
     bool AllowDelete;
     bool AllowExceptions;
+#ifdef _WIN_32
+    bool NoSequentialRead;
+#endif
   protected:
     bool OpenShared;
   public:
@@ -80,20 +79,22 @@ class File
     void SetOpenFileStat(RarTime *ftm,RarTime *ftc,RarTime *fta);
     void SetCloseFileStat(RarTime *ftm,RarTime *fta,uint FileAttr);
     void GetOpenFileTime(RarTime *ft);
-    //bool IsOpened() {return(hFile!=BAD_HANDLE);};
-    bool IsOpened() {return true;}; // wtf
+    bool IsOpened() {return(hFile!=BAD_HANDLE);};
     Int64 FileLength();
     void SetHandleType(FILE_HANDLETYPE Type);
     FILE_HANDLETYPE GetHandleType() {return(HandleType);};
     bool IsDevice();
     void fprintf(const char *fmt,...);
     static bool RemoveCreated();
-    //FileHandle GetHandle() {return(hFile);};
+    FileHandle GetHandle() {return(hFile);};
     void SetIgnoreReadErrors(bool Mode) {IgnoreReadErrors=Mode;};
     char *GetName() {return(FileName);}
     long Copy(File &Dest,Int64 Length=INT64ERR);
     void SetAllowDelete(bool Allow) {AllowDelete=Allow;}
     void SetExceptions(bool Allow) {AllowExceptions=Allow;}
+#ifdef _WIN_32
+    void RemoveSequentialFlag() {NoSequentialRead=true;}
+#endif
 };
 
 #endif
