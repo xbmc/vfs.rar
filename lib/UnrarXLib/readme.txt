@@ -4,31 +4,24 @@
 
    1. General
 
-   This package includes freeware Unrar C++ source and a few makefiles
-   (makefile.bcc, makefile.msc+msc.dep, makefile.unix). Unrar source
-   is subset of RAR and generated from RAR source automatically,
+   This package includes freeware Unrar C++ source and makefile for
+   several Unix compilers.
+
+   Unrar source is subset of RAR and generated from RAR source automatically,
    by a small program removing blocks like '#ifndef UNRAR ... #endif'.
-   Such method is not perfect and you may find some RAR related
-   stuff unnecessary in Unrar, especially in header files.
+   Such method is not perfect and you may find some RAR related stuff
+   unnecessary in Unrar, especially in header files.
 
    If you wish to port Unrar to a new platform, you may need to edit
    '#define LITTLE_ENDIAN' in os.hpp and data type definitions
    in rartypes.hpp.
 
-   It is important to provide 1 byte alignment for structures
-   in model.hpp. Now it contains '#pragma pack(1)' directive,
-   but your compiler may require something else. Though Unrar
-   should work with other model.hpp alignments, its memory 
-   requirements may increase significantly. Alignment in other
-   modules is not important.
+   if computer architecture does not allow not aligned data access,
+   you need to undefine ALLOW_NOT_ALIGNED_INT and define
+   STRICT_ALIGNMENT_REQUIRED in os.h.
 
-   If you use Borland C++ makefile (makefile.bcc), you need to define
-   BASEPATHCC environment (or makefile) variable containing
-   the path to Borland C++ installation.
-
-   Makefile.unix contains both Linux and IRIX compiler option sets.
-   Linux is selected by default. If you need to compile Unrar for IRIX,
-   just uncomment corresponding lines.
+   UnRAR.vcproj and UnRARDll.vcproj are projects for Microsoft Visual C++.
+   UnRARDll.vcproj lets to build unrar.dll library.
 
 
    2. Unrar binaries
@@ -40,15 +33,8 @@
 
    3. Acknowledgements
 
-   This source includes parts of code written by the following authors:
-
-   Dmitry Shkarin     PPMII text compression
-   Dmitry Subbotin    Carryless rangecoder
-   Szymon Stefanek    AES encryption
-   Brian Gladman      AES encryption
-   Steve Reid         SHA-1 hash function
-   Marcus Herbert     makefile.unix file
-   Tomasz Klim        fixes for libunrar.so
+   This source includes parts of code written by other authors.
+   Please see acknow.txt file for details.
 
 
    4. Legal stuff

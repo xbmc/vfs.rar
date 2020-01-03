@@ -1,16 +1,15 @@
 #ifndef _RAR_SHA1_
 #define _RAR_SHA1_
 
-#define HW 5
-
 typedef struct {
     uint32 state[5];
-    uint32 count[2];
+    uint64 count;
     unsigned char buffer[64];
-} hash_context;
+} sha1_context;
 
-void hash_initial( hash_context * c );
-void hash_process( hash_context * c, unsigned char * data, unsigned len );
-void hash_final( hash_context * c, uint32[HW] );
+void sha1_init( sha1_context * c );
+void sha1_process(sha1_context * c, const byte *data, size_t len);
+void sha1_process_rar29(sha1_context *context, const unsigned char *data, size_t len);
+void sha1_done( sha1_context * c, uint32 digest[5] );
 
 #endif
