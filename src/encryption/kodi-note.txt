@@ -1,0 +1,3 @@
+Source from https://github.com/philipperemy/easy-encryption
+
+Used to make stored passwords on xml not direct readable.
