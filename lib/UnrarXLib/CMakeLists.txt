@@ -55,6 +55,9 @@ set_property(TARGET unrarxlib PROPERTY POSITION_INDEPENDENT_CODE ON)
 if(NOT CORE_SYSTEM_NAME MATCHES windows)
   target_compile_definitions(unrarxlib PRIVATE -DSILENT -DRARDLL)
 else()
-  target_compile_definitions(unrarxlib PRIVATE -D_XBMC -Dstrcasecmp=_stricmp -D_CRT_NONSTDC_NO_DEPRECATE -DSILENT -DRARDLL)
+  target_compile_definitions(unrarxlib PRIVATE -Dstrcasecmp=_stricmp
+                                               -D_CRT_NONSTDC_NO_DEPRECATE
+                                               -DSILENT
+                                               -DRARDLL)
   target_compile_options(unrarxlib PRIVATE /wd4146)
 endif()

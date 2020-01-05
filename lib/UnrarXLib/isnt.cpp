@@ -3,6 +3,7 @@
 #ifdef _WIN_ALL
 DWORD WinNT()
 {
+#if !defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP)
   static int dwPlatformId=-1;
   static DWORD dwMajorVersion,dwMinorVersion;
   if (dwPlatformId==-1)
@@ -20,5 +21,8 @@ DWORD WinNT()
 
 
   return Result;
+#else
+  return WNT_W10;
+#endif
 }
 #endif

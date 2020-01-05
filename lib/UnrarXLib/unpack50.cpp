@@ -18,6 +18,12 @@ void Unpack::Unpack5(bool Solid)
 
   while (true)
   {
+    if (UnpIO->bQuit)
+    {
+      FileExtracted=false;
+      return;
+    }
+
     UnpPtr&=MaxWinMask;
 
     if (Inp.InAddr>=ReadBorder)
@@ -152,6 +158,14 @@ void Unpack::Unpack5(bool Solid)
     }
   }
   UnpWriteBuf();
+
+  if (UnpIO->UnpackToMemorySize > -1)
+  {
+    UnpIO->hBufferEmpty->Signal();
+    while (! UnpIO->hBufferFilled->Wait(1))
+      if (UnpIO->hQuit->Wait(1))
+        return;
+  }
 }
 
 

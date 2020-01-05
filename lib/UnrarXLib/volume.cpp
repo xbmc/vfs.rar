@@ -155,10 +155,12 @@ bool MergeArchive(Archive &Arc,ComprDataIO *DataIO,bool ShowFileName,wchar Comma
     DataIO->UnpArcSize=Arc.FileLength();
 #endif
     
+#ifndef BUILD_KODI_ADDON
     // Reset the size of packed data read from current volume. It is used
     // to display the total progress and preceding volumes are already
     // compensated with ProcessedArcSize, so we need to reset this variable.
     DataIO->CurUnpRead=0;
+#endif
 
     DataIO->PackedDataHash.Init(hd->FileHash.Type,Cmd->Threads);
   }
@@ -171,7 +173,7 @@ bool MergeArchive(Archive &Arc,ComprDataIO *DataIO,bool ShowFileName,wchar Comma
 
 
 #ifdef RARDLL
-#if defined(RARDLL) && defined(_MSC_VER) && !defined(_WIN_64)
+#if defined(RARDLL) && defined(_MSC_VER) && !defined(_WIN_64) && !defined(_WIN_ARM)
 // Disable the run time stack check for unrar.dll, so we can manipulate
 // with ChangeVolProc call type below. Run time check would intercept
 // a wrong ESP before we restore it.
@@ -217,7 +219,7 @@ bool DllVolChange(RAROptions *Cmd,wchar *NextName,size_t NameSize)
     // even though in year 2001 we announced in unrar.dll whatsnew.txt
     // that it will be PASCAL type (for compatibility with Visual Basic).
 #if defined(_MSC_VER)
-#ifndef _WIN_64
+#if !defined(_WIN_64) && !defined(_WIN_ARM)
     __asm mov ebx,esp
 #endif
 #elif defined(_WIN_ALL) && defined(__BORLANDC__)
@@ -228,7 +230,7 @@ bool DllVolChange(RAROptions *Cmd,wchar *NextName,size_t NameSize)
     // Restore ESP after ChangeVolProc with wrongly defined calling
     // convention broken it.
 #if defined(_MSC_VER)
-#ifndef _WIN_64
+#if !defined(_WIN_64) && !defined(_WIN_ARM)
     __asm mov esp,ebx
 #endif
 #elif defined(_WIN_ALL) && defined(__BORLANDC__)
@@ -281,7 +283,7 @@ bool DllVolNotify(RAROptions *Cmd,wchar *NextName)
   return true;
 }
 
-#if defined(RARDLL) && defined(_MSC_VER) && !defined(_WIN_64)
+#if defined(RARDLL) && defined(_MSC_VER) && !defined(_WIN_64) && !defined(_WIN_ARM)
 // Restore the run time stack check for unrar.dll.
 #pragma runtime_checks( "s", restore )
 #endif

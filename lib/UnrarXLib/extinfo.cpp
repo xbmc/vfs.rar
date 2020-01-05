@@ -168,7 +168,7 @@ bool ExtractSymlink(CommandData *Cmd,ComprDataIO &DataIO,Archive &Arc,const wcha
     return ExtractUnixLink30(Cmd,DataIO,Arc,LinkName);
   if (Arc.Format==RARFMT50)
     return ExtractUnixLink50(Cmd,LinkName,&Arc.FileHead);
-#elif defined _WIN_ALL
+#elif defined(_WIN_ALL) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP))
   // RAR 5.0 archives store link information in file header, so there is
   // no need to additionally test it if we do not create a file.
   if (Arc.Format==RARFMT50)

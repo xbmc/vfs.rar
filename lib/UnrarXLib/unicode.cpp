@@ -424,7 +424,7 @@ bool IsTextUtf8(const byte *Src,size_t SrcSize)
 
 int wcsicomp(const wchar *s1,const wchar *s2)
 {
-#ifdef _WIN_ALL
+#if defined(_WIN_ALL) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP))
   return CompareStringW(LOCALE_USER_DEFAULT,NORM_IGNORECASE|SORT_STRINGSORT,s1,-1,s2,-1)-2;
 #else
   while (true)
@@ -445,7 +445,7 @@ int wcsicomp(const wchar *s1,const wchar *s2)
 
 int wcsnicomp(const wchar *s1,const wchar *s2,size_t n)
 {
-#ifdef _WIN_ALL
+#if defined(_WIN_ALL) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP))
   // If we specify 'n' exceeding the actual string length, CompareString goes
   // beyond the trailing zero and compares garbage. So we need to limit 'n'
   // to real string length.
@@ -488,7 +488,7 @@ const wchar_t* wcscasestr(const wchar_t *str, const wchar_t *search)
 #ifndef SFX_MODULE
 wchar* wcslower(wchar *s)
 {
-#ifdef _WIN_ALL
+#if defined(_WIN_ALL) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP))
   // _wcslwr requires setlocale and we do not want to depend on setlocale
   // in Windows. Also CharLower involves less overhead.
   CharLower(s);
@@ -504,7 +504,7 @@ wchar* wcslower(wchar *s)
 #ifndef SFX_MODULE
 wchar* wcsupper(wchar *s)
 {
-#ifdef _WIN_ALL
+#if defined(_WIN_ALL) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP))
   // _wcsupr requires setlocale and we do not want to depend on setlocale
   // in Windows. Also CharUpper involves less overhead.
   CharUpper(s);
@@ -521,7 +521,7 @@ wchar* wcsupper(wchar *s)
 
 int toupperw(int ch)
 {
-#if defined(_WIN_ALL)
+#if defined(_WIN_ALL) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP))
   // CharUpper is more reliable than towupper in Windows, which seems to be
   // C locale dependent even in Unicode version. For example, towupper failed
   // to convert lowercase Russian characters. Use 0xffff mask to prevent crash
@@ -535,7 +535,7 @@ int toupperw(int ch)
 
 int tolowerw(int ch)
 {
-#if defined(_WIN_ALL)
+#if defined(_WIN_ALL) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP))
   // CharLower is more reliable than towlower in Windows.
   // See comment for towupper above. Use 0xffff mask to prevent crash
   // if value larger than 0xffff is passed to this function.

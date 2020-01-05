@@ -2,7 +2,13 @@
 
 MKDIR_CODE MakeDir(const wchar *Name,bool SetAttr,uint Attr)
 {
-#ifdef _WIN_ALL
+#if defined(BUILD_KODI_ADDON)
+  char NameA[NM];
+  WideToChar(Name,NameA,ASIZE(NameA));
+  if (!kodi::vfs::CreateDirectory(NameA))
+    return(MKDIR_ERROR);
+  return(MKDIR_SUCCESS);
+#elif defined(_WIN_ALL)
   // Windows automatically removes dots and spaces in the end of directory
   // name. So we detect such names and process them with \\?\ prefix.
   wchar *LastChar=PointToLastChar(Name);
@@ -88,6 +94,7 @@ bool CreatePath(const wchar *Path,bool SkipLastName)
 
 void SetDirTime(const wchar *Name,RarTime *ftm,RarTime *ftc,RarTime *fta)
 {
+#if !defined(BUILD_KODI_ADDON)
 #if defined(_WIN_ALL)
   bool sm=ftm!=NULL && ftm->IsSet();
   bool sc=ftc!=NULL && ftc->IsSet();
@@ -124,6 +131,7 @@ void SetDirTime(const wchar *Name,RarTime *ftm,RarTime *ftc,RarTime *fta)
 #endif
 #if defined(_UNIX) || defined(_EMX)
   File::SetCloseFileTimeByName(Name,ftm,fta);
+#endif
 #endif
 }
 
@@ -301,7 +309,9 @@ uint GetFileAttr(const wchar *Name)
 
 bool SetFileAttr(const wchar *Name,uint Attr)
 {
-#ifdef _WIN_ALL
+#ifdef BUILD_KODI_ADDON
+  return false;
+#elif defined(_WIN_ALL)
   bool Success=SetFileAttributes(Name,Attr)!=0;
   if (!Success)
   {
@@ -432,7 +442,12 @@ void CalcFileSum(File *SrcFile,uint *CRC32,byte *Blake2,uint Threads,int64 Size,
 
 bool RenameFile(const wchar *SrcName,const wchar *DestName)
 {
-#ifdef _WIN_ALL
+#ifdef BUILD_KODI_ADDON
+  char SrcNameA[NM],DestNameA[NM];
+  WideToChar(SrcName,SrcNameA,ASIZE(SrcNameA));
+  WideToChar(DestName,DestNameA,ASIZE(DestNameA));
+  return kodi::vfs::RenameFile(SrcNameA,DestNameA);
+#elif defined(_WIN_ALL)
   bool Success=MoveFile(SrcName,DestName)!=0;
   if (!Success)
   {
@@ -454,7 +469,11 @@ bool RenameFile(const wchar *SrcName,const wchar *DestName)
 
 bool DelFile(const wchar *Name)
 {
-#ifdef _WIN_ALL
+#ifdef BUILD_KODI_ADDON
+  char NameA[NM];
+  WideToChar(Name,NameA,ASIZE(NameA));
+  return kodi::vfs::DeleteFile(NameA);
+#elif defined(_WIN_ALL)
   bool Success=DeleteFile(Name)!=0;
   if (!Success)
   {
@@ -477,6 +496,9 @@ bool DelFile(const wchar *Name)
 #if defined(_WIN_ALL) && !defined(SFX_MODULE)
 bool SetFileCompression(const wchar *Name,bool State)
 {
+#ifdef BUILD_KODI_ADDON
+  return false;
+#else
   HANDLE hFile=CreateFile(Name,FILE_READ_DATA|FILE_WRITE_DATA,
                  FILE_SHARE_READ|FILE_SHARE_WRITE,NULL,OPEN_EXISTING,
                  FILE_FLAG_BACKUP_SEMANTICS|FILE_FLAG_SEQUENTIAL_SCAN,NULL);
@@ -496,6 +518,7 @@ bool SetFileCompression(const wchar *Name,bool State)
                               sizeof(NewState),NULL,0,&Result,NULL);
   CloseHandle(hFile);
   return RetCode!=0;
+#endif
 }
 #endif
 

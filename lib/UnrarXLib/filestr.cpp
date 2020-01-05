@@ -58,7 +58,7 @@ bool ReadTextFile(
   if (SrcCharset==RCH_DEFAULT || SrcCharset==RCH_OEM || SrcCharset==RCH_ANSI)
   {
     Data.Push(0); // Zero terminate.
-#if defined(_WIN_ALL)
+#if defined(_WIN_ALL) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP))
     if (SrcCharset==RCH_OEM)
       OemToCharA((char *)&Data[0],(char *)&Data[0]);
 #endif

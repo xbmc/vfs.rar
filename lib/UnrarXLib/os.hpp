@@ -79,8 +79,10 @@
   #include <direct.h>
   #include <intrin.h>
 
-  #define USE_SSE
-  #define SSE_ALIGNMENT 16
+  #ifndef _WIN_ARM
+    #define USE_SSE
+    #define SSE_ALIGNMENT 16
+  #endif
 #else
   #include <dirent.h>
 #endif // _MSC_VER

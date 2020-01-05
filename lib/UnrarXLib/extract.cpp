@@ -459,7 +459,7 @@ bool CmdExtract::ExtractCurrentFile(Archive &Arc,size_t HeaderSize,bool &Repeat)
       // Set a password before creating the file, so we can skip creating
       // in case of wrong password.
       SecPassword FilePassword=Cmd->Password;
-#if defined(_WIN_ALL) && !defined(SFX_MODULE)
+#if defined(_WIN_ALL) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP)) && !defined(SFX_MODULE)
       ConvertDosPassword(Arc,FilePassword);
 #endif
 
@@ -617,6 +617,7 @@ bool CmdExtract::ExtractCurrentFile(Archive &Arc,size_t HeaderSize,bool &Repeat)
 #endif
 
       uint64 Preallocated=0;
+      if (GetDataIO().UnpackToMemorySize == -1)
       if (!TestMode && !Arc.BrokenHeader && Arc.FileHead.UnpSize>1000000 &&
           Arc.FileHead.PackSize*1024>Arc.FileHead.UnpSize &&
           (Arc.FileHead.UnpSize<100000000 || Arc.FileLength()>Arc.FileHead.PackSize))
@@ -628,7 +629,6 @@ bool CmdExtract::ExtractCurrentFile(Archive &Arc,size_t HeaderSize,bool &Repeat)
 
       bool FileCreateMode=!TestMode && !SkipSolid && Command!='P';
       bool ShowChecksum=true; // Display checksum verification result.
-
       bool LinkSuccess=true; // Assume success for test mode.
       if (LinkEntry)
       {
@@ -683,6 +683,12 @@ bool CmdExtract::ExtractCurrentFile(Archive &Arc,size_t HeaderSize,bool &Repeat)
               Unp->DoUnpack(Arc.FileHead.UnpVer,Arc.FileHead.Solid);
           }
 
+      if (DataIO.UnpackToMemorySize > -1)
+        if (DataIO.hQuit->Wait(1))
+        {
+          return false;
+        }
+
       Arc.SeekToNext();
 
       // We check for "split after" flag to detect partially extracted files
@@ -705,6 +711,7 @@ bool CmdExtract::ExtractCurrentFile(Archive &Arc,size_t HeaderSize,bool &Repeat)
  
       bool BrokenFile=false;
       
+#ifndef BUILD_KODI_ADDON
       // Checksum is not calculated in skip solid mode for performance reason.
       if (!SkipSolid && ShowChecksum)
       {
@@ -734,6 +741,7 @@ bool CmdExtract::ExtractCurrentFile(Archive &Arc,size_t HeaderSize,bool &Repeat)
       }
       else
         mprintf(L"\b\b\b\b\b     ");
+#endif
 
       // If we successfully unpacked a hard link, we wish to set its file
       // attributes. Hard link shares file metadata with link target,
@@ -771,7 +779,7 @@ bool CmdExtract::ExtractCurrentFile(Archive &Arc,size_t HeaderSize,bool &Repeat)
             Cmd->xmtime==EXTTIME_NONE ? NULL:&Arc.FileHead.mtime,
             Cmd->xatime==EXTTIME_NONE ? NULL:&Arc.FileHead.atime);
         }
-        
+
 #if defined(_WIN_ALL) && !defined(SFX_MODULE)
         if (Cmd->SetCompressedAttr &&
             (Arc.FileHead.FileAttr & FILE_ATTRIBUTE_COMPRESSED)!=0)
@@ -806,6 +814,68 @@ bool CmdExtract::ExtractCurrentFile(Archive &Arc,size_t HeaderSize,bool &Repeat)
 void CmdExtract::UnstoreFile(ComprDataIO &DataIO,int64 DestUnpSize)
 {
   Array<byte> Buffer(File::CopyBufferSize());
+#ifdef BUILD_KODI_ADDON
+  if (DataIO.UnpackToMemorySize > -1)
+  {
+    while (true)
+    {
+      if (DataIO.hQuit->Wait(1))
+        return;
+
+      int ReadSize=DataIO.UnpRead(&Buffer[0],Buffer.Size());
+      if (DataIO.UnpackToMemorySize > -1 && !DataIO.NextVolumeMissing)
+      {
+        if (DataIO.hSeek->Wait(1))
+          continue;
+      }
+      if (ReadSize > 0)
+      {
+        int WriteSize=ReadSize<DestUnpSize ? ReadSize:(int)DestUnpSize;
+        if (WriteSize>0)
+        {
+          DataIO.UnpWrite(&Buffer[0],WriteSize);
+          DestUnpSize-=WriteSize;
+        }
+      }
+      else
+      {
+        if (DataIO.NextVolumeMissing)
+          DataIO.hSeekDone->Signal();
+        else
+          if (DataIO.hSeek->Wait(1))
+           continue;
+        DataIO.hBufferFilled->Reset();
+        DataIO.hBufferEmpty->Signal();
+        while (!DataIO.hBufferFilled->Wait(1))
+          if (DataIO.hQuit->Wait(1))
+            return;
+      }
+    }
+  }
+  else
+  {
+    while (true)
+    {
+      int ReadSize=DataIO.UnpRead(&Buffer[0],Buffer.Size());
+      if (ReadSize > 0)
+      {
+        int WriteSize=ReadSize<DestUnpSize ? ReadSize:(int)DestUnpSize;
+        if (WriteSize>0)
+        {
+          DataIO.UnpWrite(&Buffer[0],WriteSize);
+          DestUnpSize-=WriteSize;
+        }
+      }
+      else if ((int)ReadSize==-1)
+      {
+        DataIO.NextVolumeMissing = true;
+        return;
+      }
+      else
+        return;
+    }
+  }
+#else
   while (true)
   {
     int ReadSize=DataIO.UnpRead(&Buffer[0],Buffer.Size());
@@ -818,6 +888,7 @@ void CmdExtract::UnstoreFile(ComprDataIO &DataIO,int64 DestUnpSize)
       DestUnpSize-=WriteSize;
     }
   }
+#endif
 }
 
 
@@ -1022,7 +1093,7 @@ bool CmdExtract::ExtrGetPassword(Archive &Arc,const wchar *ArcFileName)
 #endif
 
 
-#if defined(_WIN_ALL) && !defined(SFX_MODULE)
+#if defined(_WIN_ALL) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP)) && !defined(SFX_MODULE)
 void CmdExtract::ConvertDosPassword(Archive &Arc,SecPassword &DestPwd)
 {
   if (Arc.Format==RARFMT15 && Arc.FileHead.HostOS==HOST_MSDOS)
@@ -1052,6 +1123,13 @@ void CmdExtract::ExtrCreateDir(Archive &Arc,const wchar *ArcFileName)
     return;
   }
 
+#ifdef BUILD_KODI_ADDON
+  char DestFileNameA[NM];
+  WideToChar(DestFileName,DestFileNameA,ASIZE(DestFileNameA));
+  MKDIR_CODE MDCode=MKDIR_ERROR;
+  if (kodi::vfs::CreateDirectory(DestFileNameA))
+    MDCode=MKDIR_SUCCESS;
+#else
   MKDIR_CODE MDCode=MakeDir(DestFileName,!Cmd->IgnoreGeneralAttr,Arc.FileHead.FileAttr);
   bool DirExist=false;
   if (MDCode!=MKDIR_SUCCESS)
@@ -1083,12 +1161,14 @@ void CmdExtract::ExtrCreateDir(Archive &Arc,const wchar *ArcFileName)
       }
     }
   }
+#endif
   if (MDCode==MKDIR_SUCCESS)
   {
     mprintf(St(MCreatDir),DestFileName);
     mprintf(L" %s",St(MOk));
     PrevProcessed=true;
   }
+#if !defined(BUILD_KODI_ADDON)
   else
     if (DirExist)
     {
@@ -1105,6 +1185,7 @@ void CmdExtract::ExtrCreateDir(Archive &Arc,const wchar *ArcFileName)
 #endif
       ErrHandler.SetErrorCode(RARX_CREATE);
     }
+#endif
   if (PrevProcessed)
   {
 #if defined(_WIN_ALL) && !defined(SFX_MODULE)
@@ -1132,36 +1213,38 @@ bool CmdExtract::ExtrCreateFile(Archive &Arc,File &CurFile)
   if ((Command=='E' || Command=='X') && !Cmd->Test)
   {
     bool UserReject;
-    // Specify "write only" mode to avoid OpenIndiana NAS problems
-    // with SetFileTime and read+write files.
-    if (!FileCreate(Cmd,&CurFile,DestFileName,ASIZE(DestFileName),&UserReject,Arc.FileHead.UnpSize,&Arc.FileHead.mtime,true))
+    if (GetDataIO().UnpackToMemorySize == -1)
     {
-      Success=false;
-      if (!UserReject)
+      // Specify "write only" mode to avoid OpenIndiana NAS problems
+      // with SetFileTime and read+write files.
+      if (!FileCreate(Cmd,&CurFile,DestFileName,ASIZE(DestFileName),&UserReject,Arc.FileHead.UnpSize,&Arc.FileHead.mtime,true))
       {
-        ErrHandler.CreateErrorMsg(Arc.FileName,DestFileName);
-#ifdef RARDLL
-        Cmd->DllError=ERAR_ECREATE;
-#endif
-        if (!IsNameUsable(DestFileName))
+        Success=false;
+        if (!UserReject)
         {
-          uiMsg(UIMSG_CORRECTINGNAME,Arc.FileName);
-
-          wchar OrigName[ASIZE(DestFileName)];
-          wcsncpyz(OrigName,DestFileName,ASIZE(OrigName));
-
-          MakeNameUsable(DestFileName,true);
-
-          CreatePath(DestFileName,true);
-          if (FileCreate(Cmd,&CurFile,DestFileName,ASIZE(DestFileName),&UserReject,Arc.FileHead.UnpSize,&Arc.FileHead.mtime,true))
-          {
-#ifndef SFX_MODULE
-            uiMsg(UIERROR_RENAMING,Arc.FileName,OrigName,DestFileName);
+          ErrHandler.CreateErrorMsg(Arc.FileName,DestFileName);
+#ifdef RARDLL
+          Cmd->DllError=ERAR_ECREATE;
 #endif
-            Success=true;
+          if (!IsNameUsable(DestFileName))
+          {
+            uiMsg(UIMSG_CORRECTINGNAME,Arc.FileName);
+            wchar OrigName[ASIZE(DestFileName)];
+            wcsncpyz(OrigName,DestFileName,ASIZE(OrigName));
+
+            MakeNameUsable(DestFileName,true);
+
+            CreatePath(DestFileName,true);
+            if (FileCreate(Cmd,&CurFile,DestFileName,ASIZE(DestFileName),&UserReject,Arc.FileHead.UnpSize,&Arc.FileHead.mtime,true))
+            {
+#ifndef SFX_MODULE
+              uiMsg(UIERROR_RENAMING,Arc.FileName,OrigName,DestFileName);
+#endif
+              Success=true;
+            }
+            else
+              ErrHandler.CreateErrorMsg(Arc.FileName,DestFileName);
           }
-          else
-            ErrHandler.CreateErrorMsg(Arc.FileName,DestFileName);
         }
       }
     }

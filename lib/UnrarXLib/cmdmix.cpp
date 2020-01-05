@@ -16,7 +16,7 @@ void CommandData::OutTitle()
     swprintf(Version,ASIZE(Version),L"%d.%02d %ls %d",RARVER_MAJOR,RARVER_MINOR,St(MBeta),RARVER_BETA);
   else
     swprintf(Version,ASIZE(Version),L"%d.%02d",RARVER_MAJOR,RARVER_MINOR);
-#if defined(_WIN_32) || defined(_WIN_64)
+#if defined(_WIN_32) || defined(_WIN_64) || defined(_WIN_ARM)
   wcsncatz(Version,L" ",ASIZE(Version));
 #endif
 #ifdef _WIN_32
@@ -24,6 +24,9 @@ void CommandData::OutTitle()
 #endif
 #ifdef _WIN_64
   wcsncatz(Version,St(Mx64),ASIZE(Version));
+#endif
+#ifdef _WIN_ARM
+  wcsncatz(Version,St(MARM),ASIZE(Version));
 #endif
   if (PrintVersion)
   {

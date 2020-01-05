@@ -33,24 +33,12 @@ void SetPriority(int Priority)
       PriorityLevel=Priority-4;
     }
     else
-      if (Priority==7)
+      if (Priority<11)
       {
-        PriorityClass=BELOW_NORMAL_PRIORITY_CLASS;
-        PriorityLevel=THREAD_PRIORITY_ABOVE_NORMAL;
+        PriorityClass=NORMAL_PRIORITY_CLASS;
+        PriorityLevel=Priority-9;
       }
       else
-        if (Priority<10)
-        {
-          PriorityClass=NORMAL_PRIORITY_CLASS;
-          PriorityLevel=Priority-7;
-        }
-        else
-          if (Priority==10)
-          {
-            PriorityClass=ABOVE_NORMAL_PRIORITY_CLASS;
-            PriorityLevel=THREAD_PRIORITY_NORMAL;
-          }
-          else
           {
             PriorityClass=HIGH_PRIORITY_CLASS;
             PriorityLevel=Priority-13;
@@ -81,7 +69,7 @@ void Wait()
 {
   if (ErrHandler.UserBreak)
     ErrHandler.Exit(RARX_USERBREAK);
-#if defined(_WIN_ALL) && !defined(SFX_MODULE)
+#if defined(_WIN_ALL) && !defined(SFX_MODULE) && !defined(BUILD_KODI_ADDON)
   if (SleepTime!=0)
   {
     static clock_t LastTime=MonoClock();
@@ -92,7 +80,7 @@ void Wait()
     }
   }
 #endif
-#if defined(_WIN_ALL)
+#if defined(_WIN_ALL) && !defined(BUILD_KODI_ADDON)
   // Reset system sleep timer to prevent system going sleep.
   SetThreadExecutionState(ES_SYSTEM_REQUIRED);
 #endif
@@ -101,7 +89,7 @@ void Wait()
 
 
 
-#if defined(_WIN_ALL) && !defined(SFX_MODULE)
+#if defined(_WIN_ALL) && !defined(SFX_MODULE) && !defined(BUILD_KODI_ADDON)
 void Shutdown(POWER_MODE Mode)
 {
   HANDLE hToken;
@@ -159,7 +147,11 @@ HMODULE WINAPI LoadSysLibrary(const wchar *Name)
   if (GetSystemDirectory(SysDir,ASIZE(SysDir))==0)
     return NULL;
   MakeName(SysDir,Name,SysDir,ASIZE(SysDir));
+#if !defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP)
   return LoadLibrary(SysDir);
+#else
+  return NULL;
+#endif
 }
 
 

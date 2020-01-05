@@ -1,6 +1,8 @@
 #include "rar.hpp"
 #include "log.cpp"
 
+#ifndef BUILD_KODI_ADDON
+
 static MESSAGE_TYPE MsgStream=MSG_STDOUT;
 static RAR_CHARSET RedirectCharset=RCH_DEFAULT;
 
@@ -355,3 +357,22 @@ void OutComment(const wchar *Comment,size_t Size)
   }
   mprintf(L"\n");
 }
+
+#else
+
+void SetConsoleMsgStream(MESSAGE_TYPE MsgStream)
+{
+
+}
+
+
+void SetConsoleRedirectCharset(RAR_CHARSET RedirectCharset)
+{
+
+}
+
+void OutComment(const wchar *Comment,size_t Size)
+{
+}
+
+#endif

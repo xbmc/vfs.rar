@@ -1,6 +1,10 @@
 #ifndef _RAR_RARCOMMON_
 #define _RAR_RARCOMMON_
 
+#ifdef BUILD_KODI_ADDON
+#include <kodi/Filesystem.h>
+#endif
+
 #include "raros.hpp"
 #include "rartypes.hpp"
 #include "os.hpp"
@@ -90,7 +94,14 @@
 #include "benchmark.hpp"
 #endif
 
-
+#ifdef BUILD_KODI_ADDON
+#ifdef CreateDirectory
+#undef CreateDirectory
+#endif
+#ifdef DeleteFile
+#undef DeleteFile
+#endif
+#endif
 
 
 

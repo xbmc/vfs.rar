@@ -49,7 +49,7 @@ HANDLE PASCAL RAROpenArchiveEx(struct RAROpenArchiveDataEx *r)
     if (r->ArcName!=NULL)
     {
       strncpyz(AnsiArcName,r->ArcName,ASIZE(AnsiArcName));
-#ifdef _WIN_ALL
+#if defined(_WIN_ALL) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP))
       if (!AreFileApisANSI())
       {
         OemToCharBuffA(r->ArcName,AnsiArcName,ASIZE(AnsiArcName));
@@ -247,7 +247,7 @@ int PASCAL RARReadHeaderEx(HANDLE hArcData,struct RARHeaderDataEx *D)
 
     wcsncpy(D->FileNameW,hd->FileName,ASIZE(D->FileNameW));
     WideToChar(D->FileNameW,D->FileName,ASIZE(D->FileName));
-#ifdef _WIN_ALL
+#if defined(_WIN_ALL) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP))
     CharToOemA(D->FileName,D->FileName);
 #endif
 
@@ -353,7 +353,7 @@ int PASCAL ProcessFile(HANDLE hArcData,int Operation,char *DestPath,char *DestNa
       {
         char ExtrPathA[NM];
         strncpyz(ExtrPathA,DestPath,ASIZE(ExtrPathA)-2);
-#ifdef _WIN_ALL
+#if defined(_WIN_ALL) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP))
         // We must not apply OemToCharBuffA directly to DestPath,
         // because we do not know DestPath length and OemToCharBuffA
         // does not stop at 0.
@@ -366,7 +366,7 @@ int PASCAL ProcessFile(HANDLE hArcData,int Operation,char *DestPath,char *DestNa
       {
         char DestNameA[NM];
         strncpyz(DestNameA,DestName,ASIZE(DestNameA)-2);
-#ifdef _WIN_ALL
+#if defined(_WIN_ALL) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP))
         // We must not apply OemToCharBuffA directly to DestName,
         // because we do not know DestName length and OemToCharBuffA
         // does not stop at 0.

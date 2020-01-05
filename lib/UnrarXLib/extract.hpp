@@ -57,6 +57,10 @@ class CmdExtract
     void ExtractArchiveInit(Archive &Arc);
     bool ExtractCurrentFile(Archive &Arc,size_t HeaderSize,bool &Repeat);
     static void UnstoreFile(ComprDataIO &DataIO,int64 DestUnpSize);
+
+#ifdef BUILD_KODI_ADDON
+    ComprDataIO &GetDataIO() {return DataIO;}
+#endif
 };
 
 #endif

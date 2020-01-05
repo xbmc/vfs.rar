@@ -11,7 +11,7 @@ bool ExtractHardlink(wchar *NameNew,wchar *NameExisting,size_t NameExistingSize)
   }
   CreatePath(NameNew,true);
 
-#ifdef _WIN_ALL
+#if defined(_WIN_ALL) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP))
   bool Success=CreateHardLink(NameNew,NameExisting,NULL)!=0;
   if (!Success)
   {

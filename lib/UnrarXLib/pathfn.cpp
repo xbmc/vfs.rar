@@ -209,7 +209,7 @@ void RemoveNameFromPath(wchar *Path)
 }
 
 
-#if defined(_WIN_ALL) && !defined(SFX_MODULE)
+#if defined(_WIN_ALL) && !defined(SFX_MODULE) && !defined(BUILD_KODI_ADDON)
 bool GetAppDataPath(wchar *Path,size_t MaxSize,bool Create)
 {
   LPMALLOC g_pMalloc;
@@ -232,7 +232,7 @@ bool GetAppDataPath(wchar *Path,size_t MaxSize,bool Create)
 #endif
 
 
-#if defined(_WIN_ALL) && !defined(SFX_MODULE)
+#if defined(_WIN_ALL) && !defined(SFX_MODULE) && !defined(BUILD_KODI_ADDON)
 void GetRarDataPath(wchar *Path,size_t MaxSize,bool Create)
 {
   *Path=0;
@@ -259,7 +259,9 @@ void GetRarDataPath(wchar *Path,size_t MaxSize,bool Create)
 #ifndef SFX_MODULE
 bool EnumConfigPaths(uint Number,wchar *Path,size_t MaxSize,bool Create)
 {
-#ifdef _UNIX
+#if defined(BUILD_KODI_ADDON)
+  return false;
+#elif defined(_UNIX)
   static const wchar *ConfPath[]={
     L"/etc", L"/etc/rar", L"/usr/lib", L"/usr/local/lib", L"/usr/local/etc"
   };
@@ -972,6 +974,7 @@ bool GetWinLongPath(const wchar *Src,wchar *Dest,size_t MaxSize)
 // Convert Unix, OS X and Android decomposed chracters to Windows precomposed.
 void ConvertToPrecomposed(wchar *Name,size_t NameSize)
 {
+#if !defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP)
   wchar FileName[NM];
   if (WinNT()>=WNT_VISTA && // MAP_PRECOMPOSED is not supported in XP.
       FoldString(MAP_PRECOMPOSED,Name,-1,FileName,ASIZE(FileName))!=0)
@@ -979,6 +982,7 @@ void ConvertToPrecomposed(wchar *Name,size_t NameSize)
     FileName[ASIZE(FileName)-1]=0;
     wcsncpyz(Name,FileName,NameSize);
   }
+#endif
 }
 
 

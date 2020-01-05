@@ -14,7 +14,7 @@ const wchar *NullToEmpty(const wchar *Str)
 
 void IntToExt(const char *Src,char *Dest,size_t DestSize)
 {
-#ifdef _WIN_ALL
+#if defined(_WIN_ALL) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP))
   // OemToCharBuff does not stop at 0, so let's check source length.
   size_t SrcLength=strlen(Src)+1;
   if (DestSize>SrcLength)
@@ -64,7 +64,7 @@ void ArcCharToWide(const char *Src,wchar *Dest,size_t DestSize,ACTW_ENCODING Enc
 
 int stricomp(const char *s1,const char *s2)
 {
-#ifdef _WIN_ALL
+#if defined(_WIN_ALL) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP))
   return CompareStringA(LOCALE_USER_DEFAULT,NORM_IGNORECASE|SORT_STRINGSORT,s1,-1,s2,-1)-2;
 #else
   while (toupper(*s1)==toupper(*s2))
@@ -81,7 +81,7 @@ int stricomp(const char *s1,const char *s2)
 
 int strnicomp(const char *s1,const char *s2,size_t n)
 {
-#ifdef _WIN_ALL
+#if defined(_WIN_ALL) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP))
   // If we specify 'n' exceeding the actual string length, CompareString goes
   // beyond the trailing zero and compares garbage. So we need to limit 'n'
   // to real string length.
@@ -123,7 +123,7 @@ wchar* RemoveLF(wchar *Str)
 
 unsigned char loctolower(unsigned char ch)
 {
-#if defined(_WIN_ALL)
+#if defined(_WIN_ALL) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP))
   // Convert to LPARAM first to avoid a warning in 64 bit mode.
   // Convert to uintptr_t to avoid Clang/win error: cast to 'char *' from smaller integer type 'unsigned char' [-Werror,-Wint-to-pointer-cast]
   return (int)(LPARAM)CharLowerA((LPSTR)(uintptr_t)ch);
@@ -135,7 +135,7 @@ unsigned char loctolower(unsigned char ch)
 
 unsigned char loctoupper(unsigned char ch)
 {
-#if defined(_WIN_ALL)
+#if defined(_WIN_ALL) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP))
   // Convert to LPARAM first to avoid a warning in 64 bit mode.
   // Convert to uintptr_t to avoid Clang/win error: cast to 'char *' from smaller integer type 'unsigned char' [-Werror,-Wint-to-pointer-cast]
   return (int)(LPARAM)CharUpperA((LPSTR)(uintptr_t)ch);
