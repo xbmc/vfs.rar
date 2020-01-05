@@ -25,5 +25,9 @@ Attention: A "Solid RAR" archive type requires complete unpacking to use files w
     <platform>@PLATFORM@</platform>
     <license>GPL-2.0</license>
     <source>https://github.com/xbmc/vfs.rar</source>
+    <assets>
+      <icon>resources/icon.png</icon>
+      <fanart>resources/fanart.jpg</fanart>
+    </assets>
   </extension>
 </addon>
