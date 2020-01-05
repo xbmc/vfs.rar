@@ -352,7 +352,7 @@ bool EnumConfigPaths(char *Path,int Number)
   if (Number!=0)
     return(false);
 #if !defined(TARGET_POSIX)
-  GetModuleFileName(NULL,Path,NM);
+  GetModuleFileNameA(NULL,Path,NM);
   RemoveNameFromPath(Path);
 #endif
   return(true);

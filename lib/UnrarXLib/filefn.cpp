@@ -10,8 +10,8 @@ void SetDirTime(const char *Name,RarTime *ftm,RarTime *ftc,RarTime *fta)
   if (!WinNT())
     return;
 #if !defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP)
-  HANDLE hFile=CreateFile(Name,GENERIC_WRITE,FILE_SHARE_READ|FILE_SHARE_WRITE,
-                          NULL,OPEN_EXISTING,FILE_FLAG_BACKUP_SEMANTICS,NULL);
+  HANDLE hFile=CreateFileA(Name,GENERIC_WRITE,FILE_SHARE_READ|FILE_SHARE_WRITE,
+                           NULL,OPEN_EXISTING,FILE_FLAG_BACKUP_SEMANTICS,NULL);
 #else
   CREATEFILE2_EXTENDED_PARAMETERS ext = {0};
   ext.dwFileFlags = FILE_FLAG_BACKUP_SEMANTICS;
@@ -46,7 +46,7 @@ bool IsRemovable(const char *Name)
 #if !defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP)
   char Root[NM];
   GetPathRoot(Name, Root);
-  int Type=GetDriveType(*Root ? Root:NULL);
+  int Type=GetDriveTypeA(*Root ? Root:NULL);
   return(Type==DRIVE_REMOVABLE || Type==DRIVE_CDROM);
 #else
   char Drive = toupper(Name[0]);

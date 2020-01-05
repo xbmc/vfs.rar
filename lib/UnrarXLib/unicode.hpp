@@ -14,10 +14,10 @@
 #endif
 
 #if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
-BOOL OemToChar(const char *Src, char *Dst);
-BOOL OemToCharBuff(const char *Src, char *Dst, int len);
-BOOL CharToOem(const char *Src, char *Dst);
-BOOL CharToOemBuff(const char *Src, char *Dst, int len);
+BOOL OemToCharA(const char *Src, char *Dst);
+BOOL OemToCharBuffA(const char *Src, char *Dst, int len);
+BOOL CharToOemA(const char *Src, char *Dst);
+BOOL CharToOemBuffA(const char *Src, char *Dst, int len);
 #endif
 
 bool WideToChar(const wchar *Src,char *Dest,int DestSize=0x10000000);

@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 #ifdef SFX_MODULE
   char ModuleName[NM];
 #ifdef _WIN_32
-  GetModuleFileName(NULL,ModuleName,sizeof(ModuleName));
+  GetModuleFileNameA(NULL,ModuleName,sizeof(ModuleName));
 #else
   strcpy(ModuleName,argv[0]);
 #endif

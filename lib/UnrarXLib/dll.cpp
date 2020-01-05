@@ -184,7 +184,7 @@ int PASCAL RARReadHeaderEx(HANDLE hArcData,struct RARHeaderDataEx *D)
     {
 #ifdef _WIN_32
       char AnsiName[NM];
-      OemToChar(Data->Arc.NewLhd.FileName,AnsiName);
+      OemToCharA(Data->Arc.NewLhd.FileName,AnsiName);
       CharToWide(AnsiName,D->FileNameW);
 #else
       CharToWide(Data->Arc.NewLhd.FileName,D->FileNameW);
@@ -239,13 +239,13 @@ int PASCAL ProcessFile(HANDLE hArcData,int Operation,char *DestPath,char *DestNa
       if (DestPath!=NULL || DestName!=NULL)
       {
 #ifdef _WIN_32
-        OemToChar(NullToEmpty(DestPath),Data->Cmd.ExtrPath);
+        OemToCharA(NullToEmpty(DestPath),Data->Cmd.ExtrPath);
 #else
         strcpy(Data->Cmd.ExtrPath,NullToEmpty(DestPath));
 #endif
         AddEndSlash(Data->Cmd.ExtrPath);
 #ifdef _WIN_32
-        OemToChar(NullToEmpty(DestName),Data->Cmd.DllDestName);
+        OemToCharA(NullToEmpty(DestName),Data->Cmd.DllDestName);
 #else
         strcpy(Data->Cmd.DllDestName,NullToEmpty(DestName));
 #endif
