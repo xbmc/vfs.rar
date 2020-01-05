@@ -49,6 +49,30 @@ bool File::Open(const wchar *Name,uint Mode)
   bool OpenShared=File::OpenShared || (Mode & FMF_OPENSHARED)!=0;
   bool UpdateMode=(Mode & FMF_UPDATE)!=0;
   bool WriteMode=(Mode & FMF_WRITE)!=0;
+
+#ifdef BUILD_KODI_ADDON
+  char NameA[NM];
+  WideToChar(Name,NameA,ASIZE(NameA));
+
+  hNewFile = new kodi::vfs::CFile;
+  if (UpdateMode || WriteMode)
+  {
+    if (!hNewFile->OpenFileForWrite(NameA, true))
+    {
+      delete hNewFile;
+      hNewFile = nullptr;
+    }
+  }
+  else
+  {
+    if (!hNewFile->OpenFile(NameA, 0))
+    {
+      delete hNewFile;
+      hNewFile = nullptr;
+    }
+  }
+
+#else
 #ifdef _WIN_ALL
   uint Access=WriteMode ? GENERIC_WRITE:GENERIC_READ;
   if (UpdateMode)
@@ -138,6 +162,8 @@ bool File::Open(const wchar *Name,uint Mode)
   if (hNewFile==FILE_BAD_HANDLE && errno==ENOENT)
     ErrorType=FILE_NOTFOUND;
 #endif
+#endif
+
   NewFile=false;
   HandleType=FILE_HANDLENORMAL;
   SkipClose=false;
@@ -177,7 +203,19 @@ bool File::Create(const wchar *Name,uint Mode)
   // SetFileTime call and do not need to read from file.
   bool WriteMode=(Mode & FMF_WRITE)!=0;
   bool ShareRead=(Mode & FMF_SHAREREAD)!=0 || File::OpenShared;
-#ifdef _WIN_ALL
+#ifdef BUILD_KODI_ADDON
+  char NameA[NM];
+  WideToChar(Name,NameA,ASIZE(NameA));
+
+  hFile = new kodi::vfs::CFile;
+  if (!hFile->OpenFileForWrite(NameA, true))
+  {
+    delete hFile;
+    hFile = nullptr;
+    return false;
+  }
+
+#elif defined(_WIN_ALL)
   CreateMode=Mode;
   uint Access=WriteMode ? GENERIC_WRITE:GENERIC_READ|GENERIC_WRITE;
   DWORD ShareMode=ShareRead ? FILE_SHARE_READ:0;
@@ -242,7 +280,9 @@ bool File::Close()
   {
     if (!SkipClose)
     {
-#ifdef _WIN_ALL
+#if defined(BUILD_KODI_ADDON)
+        delete hFile;
+#elif defined(_WIN_ALL)
       // We use the standard system handle for stdout in Windows
       // and it must not be closed here.
       if (HandleType==FILE_HANDLENORMAL)
@@ -297,7 +337,9 @@ bool File::Write(const void *Data,size_t Size)
     return true;
   if (HandleType==FILE_HANDLESTD)
   {
-#ifdef _WIN_ALL
+#ifdef BUILD_KODI_ADDON
+    return true;
+#elif defined(_WIN_ALL)
     hFile=GetStdHandle(STD_OUTPUT_HANDLE);
 #else
     // Cannot use the standard stdout here, because it already has wide orientation.
@@ -315,7 +357,14 @@ bool File::Write(const void *Data,size_t Size)
   while (1)
   {
     Success=false;
-#ifdef _WIN_ALL
+#ifdef BUILD_KODI_ADDON
+    int Written = -1;
+    if (HandleType==FILE_HANDLENORMAL)
+    {
+      Written=hFile->Write(Data, Size);
+      Success=Written==Size;
+    }
+#elif defined(_WIN_ALL)
     DWORD Written=0;
     if (HandleType!=FILE_HANDLENORMAL)
     {
@@ -341,7 +390,7 @@ bool File::Write(const void *Data,size_t Size)
 #endif
     if (!Success && AllowExceptions && HandleType==FILE_HANDLENORMAL)
     {
-#if defined(_WIN_ALL) && !defined(SFX_MODULE) && !defined(RARDLL)
+#if defined(_WIN_ALL) && !defined(SFX_MODULE) && !defined(RARDLL) && !defined(BUILD_KODI_ADDON)
       int ErrCode=GetLastError();
       int64 FilePos=Tell();
       uint64 FreeSize=GetFreeDisk(FileName);
@@ -408,6 +457,28 @@ int File::Read(void *Data,size_t Size)
 // Returns -1 in case of error.
 int File::DirectRead(void *Data,size_t Size)
 {
+#ifdef BUILD_KODI_ADDON
+  if (LastWrite)
+  {
+    hFile->Flush();
+    LastWrite=false;
+  }
+
+  size_t Read = 0;
+  while (Size)
+  {
+    size_t nRead = hFile->Read(Data, Size);
+    if (nRead <= 0)
+      break;
+    Read += nRead;
+    Data = (void*)(((char*)Data)+nRead);
+    Size -= nRead;
+  }
+  //if (Read == 0)
+   // return -1;
+
+  return Read;
+#else
 #ifdef _WIN_ALL
   const size_t MaxDeviceRead=20000;
   const size_t MaxLockedRead=32768;
@@ -469,18 +540,28 @@ int File::DirectRead(void *Data,size_t Size)
   return (int)ReadSize;
 #endif
 #endif
+#endif
 }
 
 
 void File::Seek(int64 Offset,int Method)
 {
   if (!RawSeek(Offset,Method) && AllowExceptions)
+  {
     ErrHandler.SeekError(FileName);
+  }
 }
 
 
 bool File::RawSeek(int64 Offset,int Method)
 {
+#ifdef BUILD_KODI_ADDON
+  if (Offset > FileLength())
+    return false;
+
+  if (hFile->Seek(Offset,Method) < 0)
+    return false;
+#else
   if (hFile==FILE_BAD_HANDLE)
     return true;
   if (Offset<0 && Method!=SEEK_SET)
@@ -506,6 +587,7 @@ bool File::RawSeek(int64 Offset,int Method)
     return false;
 #endif
 #endif
+#endif
   return true;
 }
 
@@ -517,7 +599,9 @@ int64 File::Tell()
       ErrHandler.SeekError(FileName);
     else
       return -1;
-#ifdef _WIN_ALL
+#ifdef BUILD_KODI_ADDON
+  return hFile->GetPosition();
+#elif defined(_WIN_ALL)
   LONG HighDist=0;
   uint LowDist=SetFilePointer(hFile,0,&HighDist,FILE_CURRENT);
   if (LowDist==0xffffffff && GetLastError()!=NO_ERROR)
@@ -574,7 +658,9 @@ void File::PutByte(byte Byte)
 
 bool File::Truncate()
 {
-#ifdef _WIN_ALL
+#ifdef BUILD_KODI_ADDON
+  return true;
+#elif defined(_WIN_ALL)
   return SetEndOfFile(hFile)==TRUE;
 #else
   return ftruncate(GetFD(),(off_t)Tell())==0;
@@ -584,7 +670,9 @@ bool File::Truncate()
 
 void File::Flush()
 {
-#ifdef _WIN_ALL
+#ifdef BUILD_KODI_ADDON
+  hFile->Flush();
+#elif defined(_WIN_ALL)
   FlushFileBuffers(hFile);
 #else
 #ifndef FILE_USE_OPEN
@@ -597,7 +685,7 @@ void File::Flush()
 
 void File::SetOpenFileTime(RarTime *ftm,RarTime *ftc,RarTime *fta)
 {
-#ifdef _WIN_ALL
+#if defined(_WIN_ALL) && !defined(BUILD_KODI_ADDON)
   // Workaround for OpenIndiana NAS time bug. If we cannot create a file
   // in write only mode, we need to flush the write buffer before calling
   // SetFileTime or file time will not be changed.
@@ -627,7 +715,7 @@ void File::SetCloseFileTime(RarTime *ftm,RarTime *fta)
 // Also we noticed futimens fail to set timestamps on NTFS partition
 // mounted to virtual Linux x86 machine, but utimensat worked correctly.
 // So we set timestamps for already closed files in Unix.
-#ifdef _UNIX
+#if defined(_UNIX) && !defined(BUILD_KODI_ADDON)
   SetCloseFileTimeByName(FileName,ftm,fta);
 #endif
 }
@@ -635,7 +723,7 @@ void File::SetCloseFileTime(RarTime *ftm,RarTime *fta)
 
 void File::SetCloseFileTimeByName(const wchar *Name,RarTime *ftm,RarTime *fta)
 {
-#ifdef _UNIX
+#if defined(_UNIX) && !defined(BUILD_KODI_ADDON)
   bool setm=ftm!=NULL && ftm->IsSet();
   bool seta=fta!=NULL && fta->IsSet();
   if (setm || seta)
@@ -669,6 +757,21 @@ void File::SetCloseFileTimeByName(const wchar *Name,RarTime *ftm,RarTime *fta)
 
 void File::GetOpenFileTime(RarTime *ft)
 {
+#ifdef BUILD_KODI_ADDON
+  char NameA[NM];
+  WideToChar(FileName,NameA,ASIZE(NameA));
+
+  STAT_STRUCTURE statFile;
+  if (kodi::vfs::StatFile(NameA, statFile))
+  {
+#ifdef _WIN_ALL
+    ft->SetUnix(statFile.modificationTime);
+#endif
+#if defined(_UNIX) || defined(_EMX)
+    ft->SetUnix(statFile.modificationTime.tv_sec);
+#endif
+  }
+#else
 #ifdef _WIN_ALL
   FILETIME FileTime;
   GetFileTime(hFile,NULL,NULL,&FileTime);
@@ -679,19 +782,27 @@ void File::GetOpenFileTime(RarTime *ft)
   fstat(GetFD(),&st);
   ft->SetUnix(st.st_mtime);
 #endif
+#endif
 }
 
 
 int64 File::FileLength()
 {
+#ifdef BUILD_KODI_ADDON
+  return hFile->GetLength();
+#else
   SaveFilePos SavePos(*this);
   Seek(0,SEEK_END);
   return Tell();
+#endif
 }
 
 
 bool File::IsDevice()
 {
+#if defined(BUILD_KODI_ADDON)
+  return false;
+#else
   if (hFile==FILE_BAD_HANDLE)
     return false;
 #ifdef _WIN_ALL
@@ -699,6 +810,7 @@ bool File::IsDevice()
   return Type==FILE_TYPE_CHAR || Type==FILE_TYPE_PIPE;
 #else
   return isatty(GetFD());
+#endif
 #endif
 }
 

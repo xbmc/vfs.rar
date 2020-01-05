@@ -3,7 +3,10 @@
 
 #define FILE_USE_OPEN
 
-#ifdef _WIN_ALL
+#ifdef BUILD_KODI_ADDON
+  typedef kodi::vfs::CFile* FileHandle;
+  #define FILE_BAD_HANDLE nullptr
+#elif defined(_WIN_ALL)
   typedef HANDLE FileHandle;
   #define FILE_BAD_HANDLE INVALID_HANDLE_VALUE
 #elif defined(FILE_USE_OPEN)
@@ -116,7 +119,7 @@ class File
     void RemoveSequentialFlag() {NoSequentialRead=true;}
 #endif
     void SetPreserveAtime(bool Preserve) {PreserveAtime=Preserve;}
-#ifdef _UNIX
+#if defined(_UNIX) && !defined(BUILD_KODI_ADDON)
     int GetFD()
     {
 #ifdef FILE_USE_OPEN

@@ -13,7 +13,7 @@ bool FileCreate(RAROptions *Cmd,File *NewFile,wchar *Name,size_t MaxNameSize,
 #endif
   while (FileExist(Name))
   {
-#if defined(_WIN_ALL)
+#if defined(_WIN_ALL) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP))
     if (!ShortNameChanged)
     {
       // Avoid the infinite loop if UpdateExistingShortName returns
@@ -76,7 +76,7 @@ bool GetAutoRenamedName(wchar *Name,size_t MaxNameSize)
 }
 
 
-#if defined(_WIN_ALL)
+#if defined(_WIN_ALL) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP))
 // If we find a file, which short name is equal to 'Name', we try to change
 // its short name, while preserving the long name. It helps when unpacking
 // an archived file, which long name is equal to short name of already

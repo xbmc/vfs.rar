@@ -34,6 +34,8 @@ void Unpack::Unpack20(bool Solid)
 
   while (DestUnpSize>=0)
   {
+    if (UnpIO->bQuit) return;
+
     UnpPtr&=MaxWinMask;
 
     if (Inp.InAddr>ReadTop-30)

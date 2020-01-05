@@ -31,7 +31,11 @@ static bool UnixSymlink(const char *Target,const wchar *LinkName,RarTime *ftm,Ra
   tv[0].tv_usec=long(fta->GetUnixNS()%1000000000/1000);
   tv[1].tv_sec=ftm->GetUnix();
   tv[1].tv_usec=long(ftm->GetUnixNS()%1000000000/1000);
+#ifdef ANDROID
+  utimes(LinkNameA,tv);
+#else
   lutimes(LinkNameA,tv);
+#endif
 #endif
 #endif
 

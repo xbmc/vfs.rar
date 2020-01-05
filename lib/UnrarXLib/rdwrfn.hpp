@@ -9,6 +9,7 @@ class ArcFileSearch;
 // We use external i/o calls for Benchmark command.
 #define COMPRDATAIO_EXTIO
 #endif
+#include "../../src/Helpers.h"
 
 class ComprDataIO
 {
@@ -22,7 +23,7 @@ class ComprDataIO
     byte *UnpackFromMemoryAddr;
 
     bool UnpackToMemory;
-    size_t UnpackToMemorySize;
+    //size_t UnpackToMemorySize;
     byte *UnpackToMemoryAddr;
 
     size_t UnpWrSize;
@@ -95,6 +96,18 @@ class ComprDataIO
 
     bool Encryption;
     bool Decryption;
+    int64_t UnpackToMemorySize;
+
+    // added stuff
+    ThreadHelpers::CEvent* hBufferFilled;
+    ThreadHelpers::CEvent* hBufferEmpty;
+    ThreadHelpers::CEvent* hSeek;
+    ThreadHelpers::CEvent* hSeekDone;
+    ThreadHelpers::CEvent* hQuit;
+    bool bQuit = false;
+    int64 m_iSeekTo;
+    int64 m_iStartOfBuffer;
+    int64 CurUnpStart;
 };
 
 #endif

@@ -7,6 +7,9 @@ static bool ReadSacl=false;
 #ifndef SFX_MODULE
 void ExtractACL20(Archive &Arc,const wchar *FileName)
 {
+#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
+  return;
+#else
   SetACLPrivileges();
 
   if (Arc.BrokenHeader)
@@ -60,12 +63,16 @@ void ExtractACL20(Archive &Arc,const wchar *FileName)
       uiMsg(UIERROR_NEEDADMIN);
     ErrHandler.SetErrorCode(RARX_WARNING);
   }
+#endif
 }
 #endif
 
 
 void ExtractACL(Archive &Arc,const wchar *FileName)
 {
+#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
+  return;
+#else
   Array<byte> SubData;
   if (!Arc.ReadSubData(&SubData,NULL,false))
     return;
@@ -95,6 +102,7 @@ void ExtractACL(Archive &Arc,const wchar *FileName)
       uiMsg(UIERROR_NEEDADMIN);
     ErrHandler.SetErrorCode(RARX_WARNING);
   }
+#endif
 }
 
 

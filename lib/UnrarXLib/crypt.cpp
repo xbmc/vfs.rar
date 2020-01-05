@@ -113,7 +113,7 @@ static void TimeRandomize(byte *RndBuf,size_t BufSize)
 void GetRnd(byte *RndBuf,size_t BufSize)
 {
   bool Success=false;
-#if defined(_WIN_ALL)
+#if defined(_WIN_ALL) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP))
   HCRYPTPROV hProvider = 0;
   if (CryptAcquireContext(&hProvider, 0, 0, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT | CRYPT_SILENT))
   {

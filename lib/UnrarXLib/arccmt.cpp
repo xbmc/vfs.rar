@@ -89,7 +89,7 @@ bool Archive::GetComment(Array<wchar> *CmtData)
       DataIO.GetUnpackedData(&UnpData,&UnpDataSize);
       if (UnpDataSize>0)
       {
-#ifdef _WIN_ALL
+#if defined(_WIN_ALL) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP))
         // If we ever decide to extend it to Android, we'll need to alloc
         // 4x memory for OEM to UTF-8 output here.
         OemToCharBuffA((char *)UnpData,(char *)UnpData,(DWORD)UnpDataSize);
@@ -120,7 +120,7 @@ bool Archive::GetComment(Array<wchar> *CmtData)
     }
     CmtData->Alloc(CmtLength+1);
     CmtRaw.Push(0);
-#ifdef _WIN_ALL
+#if defined(_WIN_ALL) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP))
     // If we ever decide to extend it to Android, we'll need to alloc
     // 4x memory for OEM to UTF-8 output here.
     OemToCharA((char *)&CmtRaw[0],(char *)&CmtRaw[0]);

@@ -1,0 +1,5 @@
+unrarsrc from ftp://ftp.rarlab.com/rar/
+Sync to 5.8.5 (05. Dez. 2019)
+
+Note: It have a lot of own changes to allow Windows UWP use and to read
+direct from not compressed RAR files (to prevent extract before read).

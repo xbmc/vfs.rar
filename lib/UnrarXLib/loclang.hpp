@@ -12,6 +12,7 @@
 #define   MBeta              L"beta"
 #define   Mx86               L"x86"
 #define   Mx64               L"x64"
+#define   MARM               L"arm"
 #define   MMonthJan          L"Jan"
 #define   MMonthFeb          L"Feb"
 #define   MMonthMar          L"Mar"

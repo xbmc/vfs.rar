@@ -18,7 +18,7 @@ void AddEndSlash(wchar *Path,size_t MaxLength);
 void MakeName(const wchar *Path,const wchar *Name,wchar *Pathname,size_t MaxSize);
 void GetFilePath(const wchar *FullName,wchar *Path,size_t MaxLength);
 void RemoveNameFromPath(wchar *Path);
-#if defined(_WIN_ALL) && !defined(SFX_MODULE)
+#if defined(_WIN_ALL) && !defined(SFX_MODULE) && !defined(BUILD_KODI_ADDON)
 bool GetAppDataPath(wchar *Path,size_t MaxSize,bool Create);
 void GetRarDataPath(wchar *Path,size_t MaxSize,bool Create);
 #endif

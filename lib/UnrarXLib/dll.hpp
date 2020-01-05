@@ -41,7 +41,7 @@
 #ifdef _UNIX
 #define CALLBACK
 #define PASCAL
-#define LONG long
+typedef long LONG;
 #define HANDLE void *
 #define LPARAM long
 #define UINT unsigned int

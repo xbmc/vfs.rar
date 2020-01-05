@@ -28,7 +28,7 @@ typedef struct _REPARSE_DATA_BUFFER {
 
 
 
-
+#if !defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP)
 bool CreateReparsePoint(CommandData *Cmd,const wchar *Name,FileHeader *hd)
 {
   static bool PrivSet=false;
@@ -77,8 +77,15 @@ bool CreateReparsePoint(CommandData *Cmd,const wchar *Name,FileHeader *hd)
   // Unix symlinks do not have their own 'directory' attribute.
   if (hd->Dir || hd->DirTarget)
   {
+#ifdef BUILD_KODI_ADDON
+    char NameA[NM];
+    WideToChar(Name,NameA,ASIZE(NameA));
+    if (!kodi::vfs::CreateDirectory(NameA))
+      return false;
+#else
     if (!CreateDirectory(Name,NULL))
       return false;
+#endif
   }
   else
   {
@@ -158,9 +165,19 @@ bool CreateReparsePoint(CommandData *Cmd,const wchar *Name,FileHeader *hd)
     if (hd->Dir)
       RemoveDirectory(Name);
     else
+#ifdef BUILD_KODI_ADDON
+    {
+      char NameA[NM];
+      WideToChar(Name,NameA,ASIZE(NameA));
+      kodi::vfs::DeleteFile(NameA);
+    }
+#else
       DeleteFile(Name);
+#endif
+
     return false;
   }
+#ifndef BUILD_KODI_ADDON
   File LinkFile;
   LinkFile.SetHandle(hFile);
   LinkFile.SetOpenFileTime(
@@ -168,7 +185,9 @@ bool CreateReparsePoint(CommandData *Cmd,const wchar *Name,FileHeader *hd)
     Cmd->xctime==EXTTIME_NONE ? NULL:&hd->ctime,
     Cmd->xatime==EXTTIME_NONE ? NULL:&hd->atime);
   LinkFile.Close();
+#endif
   if (!Cmd->IgnoreGeneralAttr)
     SetFileAttr(Name,hd->FileAttr);
   return true;
 }
+#endif

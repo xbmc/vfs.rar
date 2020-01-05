@@ -15,10 +15,11 @@ void ComprDataIO::Init()
 {
   UnpackFromMemory=false;
   UnpackToMemory=false;
+  UnpackToMemorySize=-1;
   UnpPackedSize=0;
   ShowProgress=true;
   TestMode=false;
-  SkipUnpCRC=false;
+  SkipUnpCRC=true;
   NoFileHeader=false;
   PackVolume=false;
   UnpVolume=false;
@@ -30,7 +31,7 @@ void ComprDataIO::Init()
   Command=NULL;
   Encryption=false;
   Decryption=false;
-  CurPackRead=CurPackWrite=CurUnpRead=CurUnpWrite=0;
+  CurPackRead=CurPackWrite=CurUnpRead=CurUnpWrite=CurUnpStart=0;
   LastPercent=-1;
   SubHead=NULL;
   SubHeadPos=NULL;
@@ -75,6 +76,7 @@ int ComprDataIO::UnpRead(byte *Addr,size_t Count)
     }
     else
     {
+      bool bRead = true;
       size_t SizeToRead=((int64)Count>UnpPackedSize) ? (size_t)UnpPackedSize:Count;
       if (SizeToRead > 0)
       {
@@ -94,11 +96,77 @@ int ComprDataIO::UnpRead(byte *Addr,size_t Count)
         }
 
         if (!SrcFile->IsOpened())
-          return -1;
-        ReadSize=SrcFile->Read(ReadAddr,SizeToRead);
-        FileHeader *hd=SubHead!=NULL ? SubHead:&SrcArc->FileHead;
-        if (!NoFileHeader && hd->SplitAfter)
-          PackedDataHash.Update(ReadAddr,ReadSize);
+        {
+          NextVolumeMissing = true;
+          return(-1);
+        }
+        if (UnpackToMemory)
+        {
+          if (hSeek->Wait(1)) // we are seeking
+          {
+            if (m_iSeekTo > CurUnpStart+SrcArc->FileHead.PackSize) // need to seek outside this block
+            {
+              TotalRead += (int)(SrcArc->NextBlockPos-SrcFile->Tell());
+              CurUnpRead=CurUnpStart+SrcArc->FileHead.PackSize;
+              UnpPackedSize=0;
+              ReadSize = 0;
+              bRead = false;
+            }
+            else
+            {
+              size_t MaxWinSize = File::CopyBufferSize();
+              int64 iStartOfFile = SrcArc->NextBlockPos-SrcArc->FileHead.PackSize;
+              m_iStartOfBuffer = CurUnpStart;
+              int64 iSeekTo=m_iSeekTo-CurUnpStart<MaxWinSize/2?iStartOfFile:iStartOfFile+m_iSeekTo-CurUnpStart-MaxWinSize/2;
+              if (iSeekTo == iStartOfFile) // front
+              {
+                if (CurUnpStart+MaxWinSize>SrcArc->FileHead.UnpSize)
+                {
+                  m_iSeekTo=iStartOfFile;
+                  UnpPackedSize = SrcArc->FileHead.PackSize;
+                }
+                else
+                {
+                  m_iSeekTo=MaxWinSize-(m_iSeekTo-CurUnpStart);
+                  UnpPackedSize = SrcArc->FileHead.PackSize - (m_iStartOfBuffer - CurUnpStart);
+                }
+              }
+              else
+              {
+                m_iStartOfBuffer = m_iSeekTo-MaxWinSize/2; // front
+                if (m_iSeekTo+MaxWinSize/2>SrcArc->FileHead.UnpSize)
+                {
+                  iSeekTo = iStartOfFile+SrcArc->FileHead.PackSize-MaxWinSize;
+                  m_iStartOfBuffer = CurUnpStart+SrcArc->FileHead.PackSize-MaxWinSize;
+                  m_iSeekTo = MaxWinSize-(m_iSeekTo-m_iStartOfBuffer);
+                  UnpPackedSize = MaxWinSize;
+                }
+                else
+                {
+                  m_iSeekTo=MaxWinSize/2;
+                  UnpPackedSize = SrcArc->FileHead.PackSize - (m_iStartOfBuffer - CurUnpStart);
+                }
+              }
+
+              SrcFile->Seek(iSeekTo,SEEK_SET);
+
+              TotalRead = 0;
+              CurUnpRead = CurUnpStart + iSeekTo - iStartOfFile;
+
+              CurUnpWrite = SrcFile->Tell() - iStartOfFile + CurUnpStart;
+              hSeek->Reset();
+              hSeekDone->Signal();
+            }
+          }
+        }
+        if (bRead)
+        {
+          SizeToRead=(Count>UnpPackedSize) ? (int)(UnpPackedSize):Count;
+          ReadSize=SrcFile->Read(ReadAddr,SizeToRead);
+          FileHeader *hd=SubHead!=NULL ? SubHead:&SrcArc->FileHead;
+          if (!NoFileHeader && hd->SplitAfter)
+            PackedDataHash.Update(ReadAddr,ReadSize);
+        }
       }
     }
     CurUnpRead+=ReadSize;
@@ -128,6 +196,7 @@ int ComprDataIO::UnpRead(byte *Addr,size_t Count)
         NextVolumeMissing=true;
         return -1;
       }
+      CurUnpStart = CurUnpRead;
     }
     else
       break;
@@ -148,7 +217,7 @@ int ComprDataIO::UnpRead(byte *Addr,size_t Count)
 }
 
 
-#if defined(RARDLL) && defined(_MSC_VER) && !defined(_WIN_64)
+#if defined(RARDLL) && defined(_MSC_VER) && !defined(_WIN_64) && !defined(_WIN_ARM)
 // Disable the run time stack check for unrar.dll, so we can manipulate
 // with ProcessDataProc call type below. Run time check would intercept
 // a wrong ESP before we restore it.
@@ -172,7 +241,7 @@ void ComprDataIO::UnpWrite(byte *Addr,size_t Count)
       // even though in year 2001 we announced in unrar.dll whatsnew.txt
       // that it will be PASCAL type (for compatibility with Visual Basic).
 #if defined(_MSC_VER)
-#ifndef _WIN_64
+#if !defined(_WIN_64) && !defined(_M_ARM)
       __asm mov ebx,esp
 #endif
 #elif defined(_WIN_ALL) && defined(__BORLANDC__)
@@ -183,7 +252,7 @@ void ComprDataIO::UnpWrite(byte *Addr,size_t Count)
       // Restore ESP after ProcessDataProc with wrongly defined calling
       // convention broken it.
 #if defined(_MSC_VER)
-#ifndef _WIN_64
+#if !defined(_WIN_64) && !defined(_WIN_ARM)
       __asm mov esp,ebx
 #endif
 #elif defined(_WIN_ALL) && defined(__BORLANDC__)
@@ -199,12 +268,24 @@ void ComprDataIO::UnpWrite(byte *Addr,size_t Count)
   UnpWrSize=Count;
   if (UnpackToMemory)
   {
-    if (Count <= UnpackToMemorySize)
+    while(UnpackToMemorySize < (int)Count)
+    {
+      hBufferEmpty->Broadcast();
+      while(!hBufferFilled->Wait(1))
+      {
+        if (hQuit->Wait(1))
+          return;
+      }
+    }
+
+    if (!hSeek->Wait(1)) // we are seeking
     {
       memcpy(UnpackToMemoryAddr,Addr,Count);
       UnpackToMemoryAddr+=Count;
       UnpackToMemorySize-=Count;
     }
+    else
+      return;
   }
   else
     if (!TestMode)
@@ -216,7 +297,7 @@ void ComprDataIO::UnpWrite(byte *Addr,size_t Count)
   Wait();
 }
 
-#if defined(RARDLL) && defined(_MSC_VER) && !defined(_WIN_64)
+#if defined(RARDLL) && defined(_MSC_VER) && !defined(_WIN_64) && !defined(_WIN_ARM)
 // Restore the run time stack check for unrar.dll.
 #pragma runtime_checks( "s", restore )
 #endif
