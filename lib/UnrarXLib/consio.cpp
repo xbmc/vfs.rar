@@ -64,7 +64,7 @@ void RawPrint(char *Msg,MESSAGE_TYPE MessageType)
       return;
   }
 #ifdef _WIN_32
-  CharToOem(Msg,Msg);
+  CharToOemA(Msg,Msg);
 
   char OutMsg[MaxMsgSize],*OutPos=OutMsg;
   for (int I=0;Msg[I]!=0;I++)
@@ -117,7 +117,7 @@ void GetPasswordText(char *Str,int MaxLength)
   SetConsoleMode(hConOut,ENABLE_PROCESSED_OUTPUT|ENABLE_WRAP_AT_EOL_OUTPUT);
   ReadConsole(hConIn,Str,MaxLength-1,&Read,NULL);
   Str[Read]=0;
-  OemToChar(Str,Str);
+  OemToCharA(Str,Str);
   SetConsoleMode(hConIn,ConInMode);
   SetConsoleMode(hConOut,ConOutMode);
 #elif defined(_EMX) || defined(_BEOS)
@@ -184,7 +184,7 @@ bool GetPassword(PASSWORD_TYPE Type,const char *FileName,char *Password,int MaxL
         strcpy(PromptStr,St(MNotMatchPsw));
 /*
 #ifdef _WIN_32
-        CharToOem(PromptStr,PromptStr);
+        CharToOemA(PromptStr,PromptStr);
 #endif
 */
         eprintf(PromptStr);
@@ -241,7 +241,7 @@ int Ask(const char *AskStr)
   eprintf(" ");
   int Ch=GetKey();
 #if defined(_WIN_32)
-  OemToCharBuff((LPCSTR)&Ch,(LPTSTR)&Ch,1);
+  OemToCharBuffA((LPCSTR)&Ch,(LPTSTR)&Ch,1);
 #endif
   Ch=loctoupper(Ch);
   for (int I=0;I<NumItems;I++)

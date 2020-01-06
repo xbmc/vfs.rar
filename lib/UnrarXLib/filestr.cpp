@@ -115,7 +115,7 @@ bool ReadTextFile(char *Name,StringList *List,bool Config,bool AbortOnError,
         }
 #if defined(_WIN_32) && !defined(TARGET_POSIX)
         if (ConvertToAnsi)
-          OemToChar(CurStr,CurStr);
+          OemToCharA(CurStr,CurStr);
 #endif
         List->AddString(CurStr);
       }

@@ -58,7 +58,7 @@ void ExtractACL(Archive &Arc,char *FileName,wchar *FileNameW)
   if (FileNameW!=NULL)
     SetCode=SetFileSecurityW(FileNameW,si,sd);
   else
-    SetCode=SetFileSecurity(FileName,si,sd);
+    SetCode=SetFileSecurityA(FileName,si,sd);
 
   if (!SetCode)
   {
@@ -95,7 +95,7 @@ void ExtractACLNew(Archive &Arc,char *FileName,wchar *FileNameW)
   if (FileNameW!=NULL)
     SetCode=SetFileSecurityW(FileNameW,si,sd);
   else
-    SetCode=SetFileSecurity(FileName,si,sd);
+    SetCode=SetFileSecurityA(FileName,si,sd);
 
   if (!SetCode)
   {

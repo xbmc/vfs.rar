@@ -386,12 +386,12 @@ IsDBCSLeadByte(BYTE TestChar)
 }
 #endif
 
-BOOL OemToChar(const char *Src, char *Dst)
+BOOL OemToCharA(const char *Src, char *Dst)
 {
-  return OemToCharBuff(Src, Dst, -1);
+  return OemToCharBuffA(Src, Dst, -1);
 }
 
-BOOL OemToCharBuff(const char *Src, char *Dst, int len)
+BOOL OemToCharBuffA(const char *Src, char *Dst, int len)
 {
   int lenW = MultiByteToWideChar(CP_OEMCP, 0, Src, len, NULL, 0);
   if (lenW == 0)
@@ -413,12 +413,12 @@ BOOL OemToCharBuff(const char *Src, char *Dst, int len)
   delete[] ansi;
 }
 
-BOOL CharToOem(const char *Src, char *Dst)
+BOOL CharToOemA(const char *Src, char *Dst)
 {
-  return CharToOemBuff(Src, Dst, -1);
+  return CharToOemBuffA(Src, Dst, -1);
 }
 
-BOOL CharToOemBuff(const char *Src, char *Dst, int len)
+BOOL CharToOemBuffA(const char *Src, char *Dst, int len)
 {
   int lenW = MultiByteToWideChar(CP_ACP, 0, Src, len, NULL, 0);
   if (lenW == 0)

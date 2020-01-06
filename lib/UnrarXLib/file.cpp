@@ -68,7 +68,7 @@ bool File::Open(const char *Name,const wchar *NameW,bool OpenShared,bool Update)
                          FILE_FLAG_SEQUENTIAL_SCAN,NULL);
   else
 #endif
-    hNewFile=CreateFile(Name,Access,ShareMode,NULL,OPEN_EXISTING,
+    hNewFile=CreateFileA(Name,Access,ShareMode,NULL,OPEN_EXISTING,
                         FILE_FLAG_SEQUENTIAL_SCAN,NULL);
 
   if (hNewFile==BAD_HANDLE && GetLastError()==ERROR_FILE_NOT_FOUND)
@@ -168,7 +168,7 @@ bool File::Create(const char *Name,const wchar *NameW)
                       CREATE_ALWAYS,0,NULL);
   else
 #endif
-    hFile=CreateFile(Name,GENERIC_READ|GENERIC_WRITE,FILE_SHARE_READ,NULL,
+    hFile=CreateFileA(Name,GENERIC_READ|GENERIC_WRITE,FILE_SHARE_READ,NULL,
                      CREATE_ALWAYS,0,NULL);
 #else
   hFile=fopen(Name,CREATEBINARY);

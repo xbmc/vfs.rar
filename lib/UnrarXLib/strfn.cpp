@@ -24,7 +24,7 @@ char *IntNameToExt(const char *Name)
 void ExtToInt(const char *Src,char *Dest)
 {
 #if defined(_WIN_32)
-  CharToOem(Src,Dest);
+  CharToOemA(Src,Dest);
 #else
   if (Dest!=Src)
     strcpy(Dest,Src);
@@ -35,7 +35,7 @@ void ExtToInt(const char *Src,char *Dest)
 void IntToExt(const char *Src,char *Dest)
 {
 #if defined(_WIN_32)
-  OemToChar(Src,Dest);
+  OemToCharA(Src,Dest);
 #else
   if (Dest!=Src)
     strcpy(Dest,Src);
