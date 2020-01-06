@@ -1,6 +1,6 @@
 /*
- *      Copyright (C) 2005-2013 Team XBMC
- *      http://xbmc.org
+ *      Copyright (C) 2005-2019 Team Kodi
+ *      http://kodi.tv
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,48 +13,33 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, see
+ *  along with Kodi; see the file COPYING.  If not, see
  *  <http://www.gnu.org/licenses/>.
  *
  */
 
 #include "RarManager.h"
-#include <kodi/General.h>
+#include "RarControl.h"
+#include "Helpers.h"
+
 #include <codecvt>
+#include <kodi/General.h>
 #include <locale>
 #include <set>
 
-using namespace std;
-using namespace XFILE;
-
-CFileInfo::CFileInfo()
-{
-  m_strCachedPath.clear();
-  m_bAutoDel = true;
-  m_iUsed = 0;
-  m_iIsSeekable = -1;
-}
-
-CFileInfo::~CFileInfo()
-{
-}
-
 void CRarManager::Tokenize(const std::string& input, std::vector<std::string>& tokens, const std::string& delimiters)
 {
-  // Tokenize ripped from http://www.linuxselfhelp.com/HOWTO/C++Programming-HOWTO-7.html
+  tokens.clear();
   // Skip delimiters at beginning.
-  string::size_type lastPos = input.find_first_not_of(delimiters, 0);
-  // Find first "non-delimiter".
-  string::size_type pos = input.find_first_of(delimiters, lastPos);
-
-  while (string::npos != pos || string::npos != lastPos)
+  std::string::size_type dataPos = input.find_first_not_of(delimiters);
+  while (dataPos != std::string::npos)
   {
+    // Find next delimiter
+    const std::string::size_type nextDelimPos = input.find_first_of(delimiters, dataPos);
     // Found a token, add it to the vector.
-    tokens.push_back(input.substr(lastPos, pos - lastPos));
+    tokens.push_back(input.substr(dataPos, nextDelimPos - dataPos));
     // Skip delimiters.  Note the "not_of"
-    lastPos = input.find_first_not_of(delimiters, pos);
-    // Find next "non-delimiter"
-    pos = input.find_first_of(delimiters, lastPos);
+    dataPos = input.find_first_not_of(delimiters, nextDelimPos);
   }
 }
 
@@ -67,34 +52,50 @@ CRarManager& CRarManager::Get()
 
 
 /////////////////////////////////////////////////
-CRarManager::CRarManager()
-{
-}
 
 CRarManager::~CRarManager()
 {
   ClearCache(true);
 }
 
-bool CRarManager::CacheRarredFile(std::string& strPathInCache, const std::string& strRarPath, const std::string& strPathInRar, uint8_t bOptions, const std::string& strDir, const int64_t iSize)
+bool CRarManager::CacheRarredFile(std::string& strPathInCache, const std::string& strRarPath,
+                                  const std::string& strPathInRar, uint8_t bOptions,
+                                  const std::string& strDir, const int64_t iSize)
 {
-  P8PLATFORM::CLockObject lock(m_lock);
+  bool bShowProgress=false;
+  if ((iSize > 1024*1024 || iSize == -2) && !(bOptions & EXFILE_NOCACHE)) // 1MB
+    bShowProgress=true;
 
   //If file is listed in the cache, then use listed copy or cleanup before overwriting.
   bool bOverwrite = (bOptions & EXFILE_OVERWRITE) != 0;
-  map<std::string, pair<ArchiveList_struct*,vector<CFileInfo> > >::iterator j = m_ExFiles.find( strRarPath );
-  CFileInfo* pFile=NULL;
+
+  /*
+   * alwinus:
+   * Mallet on my Head, hard if main thread is locked somewhere in this class
+   * and within here, GUI where need main thread, is called (if bShowProgress is
+   * true) :(, Crrrrh
+   *
+   * The progress is mandatory for me, in case of "Solid RAR" package need the
+   * content complete extracted which can e.g. on my test RAR with 15 splited
+   * RAR files, 8 GByte size of all and over 40 files inside take very long, if
+   * last of them is played (many minutes).
+   *
+   * During tests this has worked, but is not nice and is ugly!
+   *
+   * VERY BIG TODO: Fix Kodi for this cases!!!
+   */
+  std::unique_lock<std::recursive_mutex> lock(m_lock);
+  if (bShowProgress)
+    lock.unlock();
+
+  auto j = m_ExFiles.find(strRarPath);
+  CFileInfo* pFile = nullptr;
   if (j != m_ExFiles.end())
   {
-    pFile = GetFileInRar(strRarPath,strPathInRar);
+    pFile = GetFileInRar(strRarPath, strPathInRar);
     if (pFile)
     {
-      if (pFile->m_bIsCanceled())
-      {
-        return false;
-      }
-
-      if (kodi::vfs::FileExists(pFile->m_strCachedPath.c_str(), true))
+      if (kodi::vfs::FileExists(pFile->m_strCachedPath, true))
       {
         if (!bOverwrite)
         {
@@ -103,13 +104,11 @@ bool CRarManager::CacheRarredFile(std::string& strPathInCache, const std::string
           return true;
         }
 
-        kodi::vfs::DeleteFile(pFile->m_strCachedPath.c_str());
+        kodi::vfs::DeleteFile(pFile->m_strCachedPath);
         pFile->m_iUsed++;
       }
     }
   }
-
-  int iRes = 0;
 
   std::string cf = strDir+"rarfolderXXXXXX";
 #ifdef _WIN32
@@ -122,67 +121,51 @@ bool CRarManager::CacheRarredFile(std::string& strPathInCache, const std::string
   std::string strCachedPath = cf+'/'+strPathInRar;
   if (strCachedPath.empty())
   {
-    kodi::Log(ADDON_LOG_ERROR, "Could not cache file %s", (strRarPath + strPathInRar).c_str());
+    kodiLog(ADDON_LOG_ERROR, "CRarManager::%s: Could not cache file %s", __func__, (strRarPath + strPathInRar).c_str());
     return false;
   }
-  int64_t iOffset = -1;
-  if (iRes != 2)
+
+  if (j != m_ExFiles.end())  // grab from list
   {
-    if (pFile)
+    for (const auto& entry : j->second.first)
     {
-      if (pFile->m_iOffset != -1)
-        iOffset = pFile->m_iOffset;
-    }
+      std::string strName;
 
-
-    if (iOffset == -1 && j != m_ExFiles.end())  // grab from list
-    {
-      for( ArchiveList_struct* pIterator = j->second.first; pIterator  ; pIterator ? pIterator = pIterator->next : NULL)
+      /* convert to utf8 */
+      if (entry.FileNameW && wcslen(entry.FileNameW) > 0)
       {
-        std::string strName;
+        std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
+        strName = conv.to_bytes(entry.FileNameW);
+      }
+      else
+        kodi::UnknownToUTF8(entry.FileName, strName);
 
-        /* convert to utf8 */
-        if (pIterator->item.NameW && wcslen(pIterator->item.NameW) > 0)
-        {
-          std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
-          strName = conv.to_bytes(pIterator->item.NameW);
-        }
-        else
-          kodi::UnknownToUTF8(pIterator->item.Name, strName);
-
-        if (strName == strPath)
-        {
-          iOffset = pIterator->item.iOffset;
-          break;
-        }
+      if (strName == strPath)
+      {
+        break;
       }
     }
-    bool bShowProgress=false;
-    if (iSize > 1024*1024 || iSize == -2) // 1MB
-      bShowProgress=true;
-
-    size_t pos = strCachedPath.rfind('/');
-    std::string strDir2 = strCachedPath.substr(0,pos);
-    kodi::vfs::CreateDirectory(strDir2);
-    iRes = urarlib_get(const_cast<char*>(strRarPath.c_str()), const_cast<char*>(strDir2.c_str()),
-                       const_cast<char*>(strPath.c_str()),NULL,&iOffset,bShowProgress);
   }
+
+  CRARControl control(strRarPath);
+  int iRes = control.ArchiveExtract(cf, strPath, bShowProgress);
   if (iRes == 0)
   {
-    kodi::Log(ADDON_LOG_ERROR,"failed to extract file: %s",strPathInRar.c_str());
+    kodiLog(ADDON_LOG_ERROR, "CRarManager::%s: failed to extract file: %s", __func__, strPathInRar.c_str());
     return false;
   }
 
-  if(!pFile)
+  if (!pFile)
   {
     CFileInfo fileInfo;
     fileInfo.m_strPathInRar = strPathInRar;
     if (j == m_ExFiles.end())
     {
-      ArchiveList_struct* pArchiveList;
-      if(ListArchive(strRarPath,pArchiveList))
+      std::vector<RARHeaderDataEx> pArchiveList;
+
+      if (control.ArchiveList(pArchiveList))
       {
-        m_ExFiles.insert(make_pair(strRarPath,make_pair(pArchiveList,vector<CFileInfo>())));
+        m_ExFiles.insert(std::make_pair(strRarPath, std::make_pair(pArchiveList, std::vector<CFileInfo>())));
         j = m_ExFiles.find(strRarPath);
       }
       else
@@ -191,12 +174,11 @@ bool CRarManager::CacheRarredFile(std::string& strPathInCache, const std::string
       }
     }
     j->second.second.push_back(fileInfo);
-    pFile = &(j->second.second[j->second.second.size()-1]);
+    pFile = &(j->second.second[j->second.second.size() - 1]);
     pFile->m_iUsed = 1;
   }
   pFile->m_strCachedPath = strCachedPath;
   pFile->m_bAutoDel = (bOptions & EXFILE_AUTODELETE) != 0;
-  pFile->m_iOffset = iOffset;
   strPathInCache = pFile->m_strCachedPath;
 
   if (iRes == 2) //canceled
@@ -212,48 +194,42 @@ bool CRarManager::CacheRarredFile(std::string& strPathInCache, const std::string
 bool CRarManager::GetFilesInRar(std::vector<kodi::vfs::CDirEntry>& vecpItems, const std::string& strRarPath,
                                 bool bMask, const std::string& strPathInRar)
 {
-  P8PLATFORM::CLockObject lock(m_lock);
+  std::unique_lock<std::recursive_mutex> lock(m_lock);
 
-  ArchiveList_struct* pFileList = NULL;
-  map<std::string,pair<ArchiveList_struct*,std::vector<CFileInfo> > >::iterator it = m_ExFiles.find(strRarPath);
+  std::vector<RARHeaderDataEx> pFileList;
+  auto it = m_ExFiles.find(strRarPath);
   if (it == m_ExFiles.end())
   {
-    if (urarlib_list((char*)strRarPath.c_str(), &pFileList, NULL))
-    {
-      m_ExFiles.insert(make_pair(strRarPath, make_pair(pFileList, vector<CFileInfo>())));
-    }
+    CRARControl control(strRarPath);
+    if (control.ArchiveList(pFileList))
+      m_ExFiles.insert(std::make_pair(strRarPath, std::make_pair(pFileList, std::vector<CFileInfo>())));
     else
-    {
-      if( pFileList )
-        urarlib_freelist(pFileList);
       return false;
-    }
   }
   else
     pFileList = it->second.first;
 
-  vector<std::string> vec;
-  set<std::string> dirSet;
-  Tokenize(strPathInRar,vec,"/");
+  std::vector<std::string> vec;
+  std::set<std::string> dirSet;
+  Tokenize(strPathInRar, vec, "/");
   unsigned int iDepth = vec.size();
 
-  ArchiveList_struct* pIterator;
   std::string strCompare = strPathInRar;
   if (!strCompare.empty() && strCompare[strCompare.size()-1] != '/')
     strCompare += '/';
-  for( pIterator = pFileList; pIterator  ; pIterator ? pIterator = pIterator->next : NULL)
+
+  for (const auto& entry : pFileList)
   {
-    std::string strDirDelimiter = (pIterator->item.HostOS==3 ? "/":"\\"); // win32 or unix paths?
     std::string strName;
 
     /* convert to utf8 */
-    if (pIterator->item.NameW && wcslen(pIterator->item.NameW) > 0)
+    if (entry.FileNameW && wcslen(entry.FileNameW) > 0)
     {
       std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
-      strName = conv.to_bytes(pIterator->item.NameW);
+      strName = conv.to_bytes(entry.FileNameW);
     }
     else
-      kodi::UnknownToUTF8(pIterator->item.Name, strName);
+      kodi::UnknownToUTF8(entry.FileName, strName);
 
     /* replace back slashes into forward slashes */
     /* this could get us into troubles, file could two different files, one with / and one with \ */
@@ -269,91 +245,90 @@ bool CRarManager::GetFilesInRar(std::vector<kodi::vfs::CDirEntry>& vecpItems, co
 
     if (bMask)
     {
-      if (!strstr(strName.c_str(),strCompare.c_str()))
+      if (!strstr(strName.c_str(), strCompare.c_str()))
         continue;
 
       vec.clear();
-      Tokenize(strName,vec,"/");
+      Tokenize(strName, vec, "/");
       if (vec.size() < iDepth)
         continue;
     }
-    if (vec.size() > 0)
+
+    unsigned int iMask = (entry.HostOS==3 ? 0x0040000 : 16); // win32 or unix attribs?
+    if (((entry.FileAttr & iMask) == iMask) || (vec.size() > iDepth + 1 && bMask)) // we have a directory
     {
-      iDepth = vec.size() - 1;
+      if (!bMask)
+        continue;
+      if (vec.size() == iDepth)
+        continue; // remove root of listing
+
+      if (dirSet.find(vec[iDepth]) == dirSet.end())
+      {
+        kodi::vfs::CDirEntry file;
+        dirSet.insert(vec[iDepth]);
+        file.SetLabel(vec[iDepth]);
+        file.SetPath(vec[iDepth] + '/');
+        file.SetSize(0);
+        file.SetFolder(true);
+
+        char tmp[16];
+        sprintf(tmp, "%i", entry.Method);
+        file.AddProperty("rarcompressionmethod", tmp);
+
+        vecpItems.push_back(file);
+      }
     }
-    unsigned int iMask = (pIterator->item.HostOS==3 ? 0x0040000:16); // win32 or unix attribs?
-    do
+    else
     {
-      if (((pIterator->item.FileAttr & iMask) == iMask) || (vec.size() > iDepth + 1 && bMask)) // we have a directory
+      if (vec.size() == iDepth + 1 || !bMask)
       {
-        if (!bMask) continue;
-        if (vec.size() == iDepth)
-          continue; // remove root of listing
+        kodi::vfs::CDirEntry file;
+        if (vec.size() == 0)
+          file.SetLabel(strName);
+        else
+          file.SetLabel(vec[iDepth]);
+        file.SetPath(strName.c_str() + strPathInRar.size());
+        file.SetSize(entry.UnpSize);
+        file.SetFolder(false);
 
-        if (dirSet.find(vec[iDepth]) == dirSet.end())
-        {
-          kodi::vfs::CDirEntry entry;
-          dirSet.insert(vec[iDepth]);
-          entry.SetLabel(vec[iDepth]);
-          entry.SetPath(vec[iDepth] + '/');
-          entry.SetFolder(true);
-          vecpItems.push_back(entry);
-        }
+        char tmp[16];
+        sprintf(tmp, "%i", entry.Method);
+        file.AddProperty("rarcompressionmethod", tmp);
+
+        vecpItems.push_back(file);
       }
-      else
-      {
-        if (vec.size() == iDepth + 1 || !bMask)
-        {
-          kodi::vfs::CDirEntry entry;
-          if (vec.size() == 0)
-            entry.SetLabel(strName);
-          else
-            entry.SetLabel(vec[iDepth]);
-          entry.SetPath(strName.c_str() + strPathInRar.size());
-          entry.SetSize(pIterator->item.UnpSize);
-          entry.SetFolder(false);
-
-          char tmp[16];
-          sprintf(tmp, "%i", pIterator->item.Method);
-          entry.AddProperty("rarcompressionmethod", tmp);
-
-          vecpItems.push_back(entry);
-        }
-      }
-      iDepth++;
-    } while (iDepth < vec.size());
+    }
   }
 
   return true;
 }
 
-bool CRarManager::ListArchive(const std::string& strRarPath, ArchiveList_struct* &pArchiveList)
-{
- return urarlib_list((char*) strRarPath.c_str(), &pArchiveList, NULL) == 1;
-}
-
 CFileInfo* CRarManager::GetFileInRar(const std::string& strRarPath, const std::string& strPathInRar)
 {
-  map<std::string,pair<ArchiveList_struct*,vector<CFileInfo> > >::iterator j = m_ExFiles.find(strRarPath);
+  auto j = m_ExFiles.find(strRarPath);
   if (j == m_ExFiles.end())
-    return NULL;
+    return nullptr;
 
-  for (vector<CFileInfo>::iterator it2=j->second.second.begin(); it2 != j->second.second.end(); ++it2)
-    if (it2->m_strPathInRar == strPathInRar)
-      return &(*it2);
+  for (auto& it : j->second.second)
+  {
+    if (it.m_strPathInRar == strPathInRar)
+      return &it;
+  }
 
-  return NULL;
+  return nullptr;
 }
 
 bool CRarManager::GetPathInCache(std::string& strPathInCache, const std::string& strRarPath, const std::string& strPathInRar)
 {
-  map<std::string,pair<ArchiveList_struct*,vector<CFileInfo> > >::iterator j = m_ExFiles.find(strRarPath);
+  auto j = m_ExFiles.find(strRarPath);
   if (j == m_ExFiles.end())
     return false;
 
-  for (vector<CFileInfo>::iterator it2=j->second.second.begin(); it2 != j->second.second.end(); ++it2)
-    if (it2->m_strPathInRar == strPathInRar)
-      return kodi::vfs::FileExists(it2->m_strCachedPath, true);
+  for (const auto& it : j->second.second)
+  {
+    if (it.m_strPathInRar == strPathInRar)
+      return kodi::vfs::FileExists(it.m_strCachedPath, true);
+  }
 
   return false;
 }
@@ -363,11 +338,11 @@ bool CRarManager::IsFileInRar(bool& bResult, const std::string& strRarPath, cons
   bResult = false;
   std::vector<kodi::vfs::CDirEntry> ItemList;
 
-  if (!GetFilesInRar(ItemList,strRarPath,false))
+  if (!GetFilesInRar(ItemList, strRarPath, false))
     return false;
 
   size_t it;
-  for (it=0;it<ItemList.size();++it)
+  for (it = 0; it < ItemList.size(); ++it)
   {
     if (strPathInRar.compare(ItemList[it].Path()) == 0)
       break;
@@ -382,17 +357,16 @@ bool CRarManager::IsFileInRar(bool& bResult, const std::string& strRarPath, cons
 
 void CRarManager::ClearCache(bool force)
 {
-  P8PLATFORM::CLockObject lock(m_lock);
-  map<std::string, pair<ArchiveList_struct*,vector<CFileInfo> > >::iterator j;
-  for (j = m_ExFiles.begin() ; j != m_ExFiles.end() ; j++)
+  std::unique_lock<std::recursive_mutex> lock(m_lock);
+
+  for (const auto& it : m_ExFiles)
   {
-    for (vector<CFileInfo>::iterator it2 = j->second.second.begin(); it2 != j->second.second.end(); ++it2)
+    for (const auto& it2 : it.second.second)
     {
-      CFileInfo* pFile = &(*it2);
+      const CFileInfo* pFile = &it2;
       if (pFile->m_bAutoDel && (pFile->m_iUsed < 1 || force))
-        kodi::vfs::DeleteFile(pFile->m_strCachedPath.c_str());
+        kodi::vfs::DeleteFile(pFile->m_strCachedPath);
     }
-    urarlib_freelist(j->second.first);
   }
 
   m_ExFiles.clear();
@@ -400,19 +374,20 @@ void CRarManager::ClearCache(bool force)
 
 void CRarManager::ClearCachedFile(const std::string& strRarPath, const std::string& strPathInRar)
 {
-  P8PLATFORM::CLockObject lock(m_lock);
-  map<std::string,pair<ArchiveList_struct*,vector<CFileInfo> > >::iterator j = m_ExFiles.find(strRarPath);
+  std::unique_lock<std::recursive_mutex> lock(m_lock);
+
+  auto j = m_ExFiles.find(strRarPath);
   if (j == m_ExFiles.end())
   {
     return; // no such subpath
   }
 
-  for (vector<CFileInfo>::iterator it = j->second.second.begin(); it != j->second.second.end(); ++it)
+  for (auto& it : j->second.second)
   {
-    if (it->m_strPathInRar == strPathInRar)
-      if (it->m_iUsed > 0)
+    if (it.m_strPathInRar == strPathInRar)
+      if (it.m_iUsed > 0)
       {
-        it->m_iUsed--;
+        it.m_iUsed--;
         break;
       }
   }
@@ -420,16 +395,11 @@ void CRarManager::ClearCachedFile(const std::string& strRarPath, const std::stri
 
 void CRarManager::ExtractArchive(const std::string& strArchive, const std::string& strPath)
 {
+  CRARControl m_control(strArchive);
+
   std::string strPath2(strPath);
   if (!strPath2.empty() && strPath2[strPath2.size()-1] == '/')
     strPath2.erase(strPath2.end()-1);
-  if (!urarlib_get(const_cast<char*>(strArchive.c_str()), const_cast<char*>(strPath2.c_str()),NULL))
-    kodi::Log(ADDON_LOG_ERROR,"rarmanager::extractarchive error while extracting %s", strArchive.c_str());
-}
-
-int64_t CRarManager::CheckFreeSpace(const std::string& strDrive)
-{
-  return 100000000000000000;
-
-  return 0;
+  if (!m_control.ArchiveExtract(strPath2, ""))
+    kodiLog(ADDON_LOG_ERROR,"CRarManager::%s: error while extracting %s", __func__, strArchive.c_str());
 }

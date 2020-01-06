@@ -6,39 +6,61 @@ enum EXTRACT_ARC_CODE {EXTRACT_ARC_NEXT,EXTRACT_ARC_REPEAT};
 class CmdExtract
 {
   private:
+    EXTRACT_ARC_CODE ExtractArchive();
+    bool ExtractFileCopy(File &New,wchar *ArcName,wchar *NameNew,wchar *NameExisting,size_t NameExistingSize);
+    void ExtrPrepareName(Archive &Arc,const wchar *ArcFileName,wchar *DestName,size_t DestSize);
+#ifdef RARDLL
+    bool ExtrDllGetPassword();
+#else
+    bool ExtrGetPassword(Archive &Arc,const wchar *ArcFileName);
+#endif
+#if defined(_WIN_ALL) && !defined(SFX_MODULE)
+    void ConvertDosPassword(Archive &Arc,SecPassword &DestPwd);
+#endif
+    void ExtrCreateDir(Archive &Arc,const wchar *ArcFileName);
+    bool ExtrCreateFile(Archive &Arc,File &CurFile);
+    bool CheckUnpVer(Archive &Arc,const wchar *ArcFileName);
+
+    RarTime StartTime; // time when extraction started
+
+    CommandData *Cmd;
+
     ComprDataIO DataIO;
     Unpack *Unp;
-    long TotalFileCount;
+    unsigned long TotalFileCount;
 
-    long FileCount;
-    long MatchedArgs;
+    unsigned long FileCount;
+    unsigned long MatchedArgs;
     bool FirstFile;
     bool AllMatchesExact;
     bool ReconstructDone;
 
-    char ArcName[NM];
-    wchar ArcNameW[NM];
+    // If any non-zero solid file was successfully unpacked before current.
+    // If true and if current encrypted file is broken, obviously
+    // the password is correct and we can report broken CRC without
+    // any wrong password hints.
+    bool AnySolidDataUnpackedWell;
 
-    char Password[MAXPASSWORD];
-    bool PasswordAll;
-    bool PrevExtracted;
-    bool SignatureFound;
-    char DestFileName[NM];
-    wchar DestFileNameW[NM];
+    wchar ArcName[NM];
+
+    bool GlobalPassword;
+    bool PrevProcessed; // If previous file was successfully extracted or tested.
+    wchar DestFileName[NM];
     bool PasswordCancelled;
+#if defined(_WIN_ALL) && !defined(SFX_MODULE) && !defined(SILENT)
+    bool Fat32,NotFat32;
+#endif
   public:
-    CmdExtract();
+    CmdExtract(CommandData *Cmd);
     ~CmdExtract();
-    void DoExtract(CommandData *Cmd);
-    void ExtractArchiveInit(CommandData *Cmd,Archive &Arc);
-    EXTRACT_ARC_CODE ExtractArchive(CommandData *Cmd);
-    bool ExtractCurrentFile(CommandData *Cmd,Archive &Arc,int HeaderSize,
-                            bool &Repeat);
-    static void UnstoreFile(ComprDataIO &DataIO,Int64 DestUnpSize);
-//#ifdef XBMC
+    void DoExtract();
+    void ExtractArchiveInit(Archive &Arc);
+    bool ExtractCurrentFile(Archive &Arc,size_t HeaderSize,bool &Repeat);
+    static void UnstoreFile(ComprDataIO &DataIO,int64 DestUnpSize);
+
+#ifdef BUILD_KODI_ADDON
     ComprDataIO &GetDataIO() {return DataIO;}
-//#endif
+#endif
 };
 
 #endif
-

@@ -2,6 +2,11 @@
 
 ComprDataIO::ComprDataIO()
 {
+#ifndef RAR_NOCRYPT
+  Crypt=new CryptData;
+  Decrypt=new CryptData;
+#endif
+
   Init();
 }
 
@@ -15,138 +20,183 @@ void ComprDataIO::Init()
   ShowProgress=true;
   TestMode=false;
   SkipUnpCRC=true;
+  NoFileHeader=false;
   PackVolume=false;
   UnpVolume=false;
   NextVolumeMissing=false;
   SrcFile=NULL;
   DestFile=NULL;
+  UnpWrAddr=NULL;
   UnpWrSize=0;
   Command=NULL;
-  Encryption=0;
-  Decryption=0;
-  TotalPackRead=0;
+  Encryption=false;
+  Decryption=false;
   CurPackRead=CurPackWrite=CurUnpRead=CurUnpWrite=CurUnpStart=0;
-  PackFileCRC=UnpFileCRC=PackedCRC=0xffffffff;
   LastPercent=-1;
   SubHead=NULL;
   SubHeadPos=NULL;
   CurrentCommand=0;
   ProcessedArcSize=TotalArcSize=0;
-  bQuit = false;
-  //m_pDlgProgress = NULL;
- }
+}
 
-int ComprDataIO::UnpRead(byte *Addr,uint Count)
+
+ComprDataIO::~ComprDataIO()
 {
-  int RetCode=0,TotalRead=0;
+#ifndef RAR_NOCRYPT
+  delete Crypt;
+  delete Decrypt;
+#endif
+}
+
+
+
+
+int ComprDataIO::UnpRead(byte *Addr,size_t Count)
+{
+#ifndef RAR_NOCRYPT
+  // In case of encryption we need to align read size to encryption 
+  // block size. We can do it by simple masking, because unpack read code
+  // always reads more than CRYPT_BLOCK_SIZE, so we do not risk to make it 0.
+  if (Decryption)
+    Count &= ~CRYPT_BLOCK_MASK;
+#endif
+  
+  int ReadSize=0,TotalRead=0;
   byte *ReadAddr;
   ReadAddr=Addr;
   while (Count > 0)
   {
     Archive *SrcArc=(Archive *)SrcFile;
 
-    uint ReadSize=(Count>UnpPackedSize) ? int64to32(UnpPackedSize):Count;
     if (UnpackFromMemory)
     {
       memcpy(Addr,UnpackFromMemoryAddr,UnpackFromMemorySize);
-      RetCode=UnpackFromMemorySize;
+      ReadSize=(int)UnpackFromMemorySize;
       UnpackFromMemorySize=0;
     }
     else
     {
       bool bRead = true;
-      if (!SrcFile->IsOpened())
+      size_t SizeToRead=((int64)Count>UnpPackedSize) ? (size_t)UnpPackedSize:Count;
+      if (SizeToRead > 0)
       {
-        NextVolumeMissing = true;
-        return(-1);
-      }
-      if (UnpackToMemory)
-        if (hSeek->Wait(1)) // we are seeking
+        if (UnpVolume && Decryption && (int64)Count>UnpPackedSize)
         {
-          if (m_iSeekTo > CurUnpStart+SrcArc->NewLhd.FullPackSize) // need to seek outside this block
+          // We need aligned blocks for decryption and we want "Keep broken
+          // files" to work efficiently with missing encrypted volumes.
+          // So for last data block in volume we adjust the size to read to
+          // next equal or smaller block producing aligned total block size.
+          // So we'll ask for next volume only when processing few unaligned
+          // bytes left in the end, when most of data is already extracted.
+          size_t NewTotalRead = TotalRead + SizeToRead;
+          size_t Adjust = NewTotalRead - (NewTotalRead  & ~CRYPT_BLOCK_MASK);
+          size_t NewSizeToRead = SizeToRead - Adjust;
+          if ((int)NewSizeToRead > 0)
+            SizeToRead = NewSizeToRead;
+        }
+
+        if (!SrcFile->IsOpened())
+        {
+          NextVolumeMissing = true;
+          return(-1);
+        }
+        if (UnpackToMemory)
+        {
+          if (hSeek->Wait(1)) // we are seeking
           {
-            TotalRead += (int)(SrcArc->NextBlockPos-SrcFile->Tell());
-            CurUnpRead=CurUnpStart+SrcArc->NewLhd.FullPackSize;
-            UnpPackedSize=0;
-            RetCode = 0;
-            bRead = false;
-          }
-          else
-          {
-            Int64 iStartOfFile = SrcArc->NextBlockPos-SrcArc->NewLhd.FullPackSize;
-            m_iStartOfBuffer = CurUnpStart;
-            Int64 iSeekTo=m_iSeekTo-CurUnpStart<MAXWINMEMSIZE/2?iStartOfFile:iStartOfFile+m_iSeekTo-CurUnpStart-MAXWINMEMSIZE/2;
-            if (iSeekTo == iStartOfFile) // front
+            if (m_iSeekTo > CurUnpStart+SrcArc->FileHead.PackSize) // need to seek outside this block
             {
-              if (CurUnpStart+MAXWINMEMSIZE>SrcArc->NewLhd.FullUnpSize)
-              {
-                m_iSeekTo=iStartOfFile;
-                UnpPackedSize = SrcArc->NewLhd.FullPackSize;
-              }
-              else 
-              {
-                m_iSeekTo=MAXWINMEMSIZE-(m_iSeekTo-CurUnpStart);
-                UnpPackedSize = SrcArc->NewLhd.FullPackSize - (m_iStartOfBuffer - CurUnpStart);
-              }
+              TotalRead += (int)(SrcArc->NextBlockPos-SrcFile->Tell());
+              CurUnpRead=CurUnpStart+SrcArc->FileHead.PackSize;
+              UnpPackedSize=0;
+              ReadSize = 0;
+              bRead = false;
             }
             else
             {
-              m_iStartOfBuffer = m_iSeekTo-MAXWINMEMSIZE/2; // front
-              if (m_iSeekTo+MAXWINMEMSIZE/2>SrcArc->NewLhd.FullUnpSize)
+              size_t MaxWinSize = File::CopyBufferSize();
+              int64 iStartOfFile = SrcArc->NextBlockPos-SrcArc->FileHead.PackSize;
+              m_iStartOfBuffer = CurUnpStart;
+              int64 iSeekTo=m_iSeekTo-CurUnpStart<MaxWinSize/2?iStartOfFile:iStartOfFile+m_iSeekTo-CurUnpStart-MaxWinSize/2;
+              if (iSeekTo == iStartOfFile) // front
               {
-                iSeekTo = iStartOfFile+SrcArc->NewLhd.FullPackSize-MAXWINMEMSIZE;
-                m_iStartOfBuffer = CurUnpStart+SrcArc->NewLhd.FullPackSize-MAXWINMEMSIZE;
-                m_iSeekTo = MAXWINMEMSIZE-(m_iSeekTo-m_iStartOfBuffer);
-                UnpPackedSize = MAXWINMEMSIZE;
+                if (CurUnpStart+MaxWinSize>SrcArc->FileHead.UnpSize)
+                {
+                  m_iSeekTo=iStartOfFile;
+                  UnpPackedSize = SrcArc->FileHead.PackSize;
+                }
+                else
+                {
+                  m_iSeekTo=MaxWinSize-(m_iSeekTo-CurUnpStart);
+                  UnpPackedSize = SrcArc->FileHead.PackSize - (m_iStartOfBuffer - CurUnpStart);
+                }
               }
-              else 
+              else
               {
-                m_iSeekTo=MAXWINMEMSIZE/2;
-                UnpPackedSize = SrcArc->NewLhd.FullPackSize - (m_iStartOfBuffer - CurUnpStart);
-              }  
-            }
+                m_iStartOfBuffer = m_iSeekTo-MaxWinSize/2; // front
+                if (m_iSeekTo+MaxWinSize/2>SrcArc->FileHead.UnpSize)
+                {
+                  iSeekTo = iStartOfFile+SrcArc->FileHead.PackSize-MaxWinSize;
+                  m_iStartOfBuffer = CurUnpStart+SrcArc->FileHead.PackSize-MaxWinSize;
+                  m_iSeekTo = MaxWinSize-(m_iSeekTo-m_iStartOfBuffer);
+                  UnpPackedSize = MaxWinSize;
+                }
+                else
+                {
+                  m_iSeekTo=MaxWinSize/2;
+                  UnpPackedSize = SrcArc->FileHead.PackSize - (m_iStartOfBuffer - CurUnpStart);
+                }
+              }
 
-            SrcFile->Seek(iSeekTo,SEEK_SET);
-            TotalRead = 0;
-            CurUnpRead = CurUnpStart + iSeekTo - iStartOfFile;
-            CurUnpWrite = SrcFile->Tell() - iStartOfFile + CurUnpStart;
-            
-            hSeek->Reset();
-            hSeekDone->Signal();
+              SrcFile->Seek(iSeekTo,SEEK_SET);
+
+              TotalRead = 0;
+              CurUnpRead = CurUnpStart + iSeekTo - iStartOfFile;
+
+              CurUnpWrite = SrcFile->Tell() - iStartOfFile + CurUnpStart;
+              hSeek->Reset();
+              hSeekDone->Signal();
+            }
           }
         }
-      if (bRead)
-      {
-        ReadSize=(Count>UnpPackedSize) ? int64to32(UnpPackedSize):Count;
-        RetCode=SrcFile->Read(ReadAddr,ReadSize);
-        FileHeader *hd=SubHead!=NULL ? SubHead:&SrcArc->NewLhd;
-        if (hd->Flags & LHD_SPLIT_AFTER)
+        if (bRead)
         {
-          PackedCRC=CRC(PackedCRC,ReadAddr,ReadSize);
+          SizeToRead=(Count>UnpPackedSize) ? (int)(UnpPackedSize):Count;
+          ReadSize=SrcFile->Read(ReadAddr,SizeToRead);
+          FileHeader *hd=SubHead!=NULL ? SubHead:&SrcArc->FileHead;
+          if (!NoFileHeader && hd->SplitAfter)
+            PackedDataHash.Update(ReadAddr,ReadSize);
         }
       }
     }
-    CurUnpRead+=RetCode;
-    ReadAddr+=RetCode;
-    TotalRead+=RetCode;
-    Count-=RetCode;
-    UnpPackedSize-=RetCode;
-    if (UnpPackedSize == 0 && UnpVolume)
+    CurUnpRead+=ReadSize;
+    TotalRead+=ReadSize;
+#ifndef NOVOLUME
+    // These variable are not used in NOVOLUME mode, so it is better
+    // to exclude commands below to avoid compiler warnings.
+    ReadAddr+=ReadSize;
+    Count-=ReadSize;
+#endif
+    UnpPackedSize-=ReadSize;
+
+    // Do not ask for next volume if we read something from current volume.
+    // If next volume is missing, we need to process all data from current
+    // volume before aborting. It helps to recover all possible data
+    // in "Keep broken files" mode. But if we process encrypted data,
+    // we ask for next volume also if we have non-aligned encryption block.
+    // Since we adjust data size for decryption earlier above,
+    // it does not hurt "Keep broken files" mode efficiency.
+    if (UnpVolume && UnpPackedSize == 0 && 
+        (ReadSize==0 || Decryption && (TotalRead & CRYPT_BLOCK_MASK) != 0) )
     {
 #ifndef NOVOLUME
       if (!MergeArchive(*SrcArc,this,true,CurrentCommand))
 #endif
       {
         NextVolumeMissing=true;
-        return(-1);
+        return -1;
       }
       CurUnpStart = CurUnpRead;
-      /*if (m_pDlgProgress)
-      {
-        CURL url(SrcArc->FileName);
-        m_pDlgProgress->SetLine(0,url.GetWithoutUserDetails()); // update currently extracted rar file
-        m_pDlgProgress->Progress();
-      }*/
     }
     else
       break;
@@ -154,54 +204,66 @@ int ComprDataIO::UnpRead(byte *Addr,uint Count)
   Archive *SrcArc=(Archive *)SrcFile;
   if (SrcArc!=NULL)
     ShowUnpRead(SrcArc->CurBlockPos+CurUnpRead,UnpArcSize);
-  if (RetCode!=-1)
+  if (ReadSize!=-1)
   {
-    RetCode=TotalRead;
-#ifndef NOCRYPT
+    ReadSize=TotalRead;
+#ifndef RAR_NOCRYPT
     if (Decryption)
-    {
-#ifndef SFX_MODULE
-      if (Decryption<20)
-        Decrypt.Crypt(Addr,RetCode,(Decryption==15) ? NEW_CRYPT : OLD_DECODE);
-      else if (Decryption==20)
-        for (int I=0;I<RetCode;I+=16)
-          Decrypt.DecryptBlock20(&Addr[I]);
-      else
-#endif
-      {
-        int CryptSize=(RetCode & 0xf)==0 ? RetCode:((RetCode & ~0xf)+16);
-        Decrypt.DecryptBlock(Addr,CryptSize);
-      }
-    }
+      Decrypt->DecryptBlock(Addr,ReadSize);
 #endif
   }
   Wait();
-  return(RetCode);
+  return ReadSize;
 }
 
-void ComprDataIO::UnpWrite(byte *Addr,uint Count)
+
+#if defined(RARDLL) && defined(_MSC_VER) && !defined(_WIN_64) && !defined(_WIN_ARM)
+// Disable the run time stack check for unrar.dll, so we can manipulate
+// with ProcessDataProc call type below. Run time check would intercept
+// a wrong ESP before we restore it.
+#pragma runtime_checks( "s", off )
+#endif
+
+void ComprDataIO::UnpWrite(byte *Addr,size_t Count)
 {
+
 #ifdef RARDLL
   RAROptions *Cmd=((Archive *)SrcFile)->GetRAROptions();
   if (Cmd->DllOpMode!=RAR_SKIP)
   {
     if (Cmd->Callback!=NULL &&
-        Cmd->Callback(UCM_PROCESSDATA,Cmd->UserData,(LONG)Addr,Count)==-1)
-      ErrHandler.Exit(USER_BREAK);
+        Cmd->Callback(UCM_PROCESSDATA,Cmd->UserData,(LPARAM)Addr,Count)==-1)
+      ErrHandler.Exit(RARX_USERBREAK);
     if (Cmd->ProcessDataProc!=NULL)
     {
-#ifdef _WIN_32
+      // Here we preserve ESP value. It is necessary for those developers,
+      // who still define ProcessDataProc callback as "C" type function,
+      // even though in year 2001 we announced in unrar.dll whatsnew.txt
+      // that it will be PASCAL type (for compatibility with Visual Basic).
+#if defined(_MSC_VER)
+#if !defined(_WIN_64) && !defined(_M_ARM)
+      __asm mov ebx,esp
+#endif
+#elif defined(_WIN_ALL) && defined(__BORLANDC__)
       _EBX=_ESP;
 #endif
-      int RetCode=Cmd->ProcessDataProc(Addr,Count);
-#ifdef _WIN_32
+      int RetCode=Cmd->ProcessDataProc(Addr,(int)Count);
+
+      // Restore ESP after ProcessDataProc with wrongly defined calling
+      // convention broken it.
+#if defined(_MSC_VER)
+#if !defined(_WIN_64) && !defined(_WIN_ARM)
+      __asm mov esp,ebx
+#endif
+#elif defined(_WIN_ALL) && defined(__BORLANDC__)
       _ESP=_EBX;
 #endif
       if (RetCode==0)
-        ErrHandler.Exit(USER_BREAK);
+        ErrHandler.Exit(RARX_USERBREAK);
     }
   }
-#endif
+#endif // RARDLL
+
   UnpWrAddr=Addr;
   UnpWrSize=Count;
   if (UnpackToMemory)
@@ -209,13 +271,13 @@ void ComprDataIO::UnpWrite(byte *Addr,uint Count)
     while(UnpackToMemorySize < (int)Count)
     {
       hBufferEmpty->Broadcast();
-      while(!hBufferFilled->Wait(1)) 
+      while(!hBufferFilled->Wait(1))
       {
         if (hQuit->Wait(1))
           return;
       }
     }
-    
+
     if (!hSeek->Wait(1)) // we are seeking
     {
       memcpy(UnpackToMemoryAddr,Addr,Count);
@@ -228,51 +290,42 @@ void ComprDataIO::UnpWrite(byte *Addr,uint Count)
   else
     if (!TestMode)
       DestFile->Write(Addr,Count);
-  
   CurUnpWrite+=Count;
   if (!SkipUnpCRC)
-  {
-#ifndef SFX_MODULE
-    if (((Archive *)SrcFile)->OldFormat)
-      UnpFileCRC=OldCRC((ushort)UnpFileCRC,Addr,Count);
-    else
-#endif
-      UnpFileCRC=CRC(UnpFileCRC,Addr,Count);
-  }
+    UnpHash.Update(Addr,Count);
   ShowUnpWrite();
   Wait();
-  /*if (m_pDlgProgress)
-  {
-    m_pDlgProgress->ShowProgressBar(true);
-    m_pDlgProgress->SetPercentage(int(float(CurUnpWrite)/float(((Archive*)SrcFile)->NewLhd.FullUnpSize)*100));
-    m_pDlgProgress->Progress();
-    if (m_pDlgProgress->IsCanceled()) 
-      bQuit = true;
-  }*/
 }
 
+#if defined(RARDLL) && defined(_MSC_VER) && !defined(_WIN_64) && !defined(_WIN_ARM)
+// Restore the run time stack check for unrar.dll.
+#pragma runtime_checks( "s", restore )
+#endif
 
 
 
 
 
-void ComprDataIO::ShowUnpRead(Int64 ArcPos,Int64 ArcSize)
+
+void ComprDataIO::ShowUnpRead(int64 ArcPos,int64 ArcSize)
 {
   if (ShowProgress && SrcFile!=NULL)
   {
+    if (TotalArcSize!=0)
+    {
+      // important when processing several archives or multivolume archive
+      ArcSize=TotalArcSize;
+      ArcPos+=ProcessedArcSize;
+    }
+
     Archive *SrcArc=(Archive *)SrcFile;
     RAROptions *Cmd=SrcArc->GetRAROptions();
-    if (TotalArcSize!=0)
-      ArcSize=TotalArcSize;
-    ArcPos+=ProcessedArcSize;
-    if (!SrcArc->Volume)
+
+    int CurPercent=ToPercent(ArcPos,ArcSize);
+    if (!Cmd->DisablePercentage && CurPercent!=LastPercent)
     {
-      int CurPercent=ToPercent(ArcPos,ArcSize);
-      if (!Cmd->DisablePercentage && CurPercent!=LastPercent)
-      {
-        mprintf("\b\b\b\b%3d%%",CurPercent);
-        LastPercent=CurPercent;
-      }
+      uiExtractProgress(CurUnpWrite,SrcArc->FileHead.UnpSize,ArcPos,ArcSize);
+      LastPercent=CurPercent;
     }
   }
 }
@@ -281,6 +334,8 @@ void ComprDataIO::ShowUnpRead(Int64 ArcPos,Int64 ArcSize)
 void ComprDataIO::ShowUnpWrite()
 {
 }
+
+
 
 
 
@@ -299,46 +354,40 @@ void ComprDataIO::SetFiles(File *SrcFile,File *DestFile)
 }
 
 
-void ComprDataIO::GetUnpackedData(byte **Data,uint *Size)
+void ComprDataIO::GetUnpackedData(byte **Data,size_t *Size)
 {
   *Data=UnpWrAddr;
   *Size=UnpWrSize;
 }
 
 
-void ComprDataIO::SetEncryption(int Method,char *Password,byte *Salt,bool Encrypt)
+void ComprDataIO::SetEncryption(bool Encrypt,CRYPT_METHOD Method,
+     SecPassword *Password,const byte *Salt,const byte *InitV,
+     uint Lg2Cnt,byte *HashKey,byte *PswCheck)
 {
+#ifndef RAR_NOCRYPT
   if (Encrypt)
-  {
-    Encryption=*Password ? Method:0;
-#ifndef NOCRYPT
-    Crypt.SetCryptKeys(Password,Salt,Encrypt);
-#endif
-  }
+    Encryption=Crypt->SetCryptKeys(true,Method,Password,Salt,InitV,Lg2Cnt,HashKey,PswCheck);
   else
-  {
-    Decryption=*Password ? Method:0;
-#ifndef NOCRYPT
-    Decrypt.SetCryptKeys(Password,Salt,Encrypt,Method<29);
+    Decryption=Decrypt->SetCryptKeys(false,Method,Password,Salt,InitV,Lg2Cnt,HashKey,PswCheck);
 #endif
-  }
 }
 
 
-#ifndef SFX_MODULE
+#if !defined(SFX_MODULE) && !defined(RAR_NOCRYPT)
 void ComprDataIO::SetAV15Encryption()
 {
-  Decryption=15;
-  Decrypt.SetAV15Encryption();
+  Decryption=true;
+  Decrypt->SetAV15Encryption();
 }
 #endif
 
 
-#ifndef SFX_MODULE
+#if !defined(SFX_MODULE) && !defined(RAR_NOCRYPT)
 void ComprDataIO::SetCmt13Encryption()
 {
-  Decryption=13;
-  Decrypt.SetCmt13Encryption();
+  Decryption=true;
+  Decrypt->SetCmt13Encryption();
 }
 #endif
 

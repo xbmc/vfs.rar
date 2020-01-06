@@ -1,7 +1,16 @@
 # build artifacts
 build/
+vfs.*/addon.xml
+
+# Debian build files
+debian/changelog
+debian/files
+debian/*.log
+debian/*.substvars
+debian/.debhelper/
+debian/tmp/
+debian/kodi-vfs-*/
 obj-x86_64-linux-gnu/
-vfs.rar/addon.xml
 
 # commonly used editors
 # vim
@@ -26,6 +35,8 @@ vfs.rar/addon.xml
 # clion
 .idea/
 
-# KDev
-*.kdev4
-/.vs
+# to prevent add after a "git format-patch VALUE" and "git add ." call
+/*.patch
+
+# to prevent add if project code opened by Visual Studio over CMake file
+.vs/

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <addon
   id="vfs.rar"
-  version="2.1.0"
+  version="3.0.0"
   name="RAR archive support"
   provider-name="spiff">
   <requires>@ADDON_DEPENDS@</requires>
@@ -15,8 +15,19 @@
     encodedhostname="true"
     library_@PLATFORM@="@LIBRARY_FILENAME@" />
   <extension point="xbmc.addon.metadata">
-    <summary lang="en">RAR archive support</summary>
-    <description lang="en">RAR archive support</description>
+    <summary lang="en">Unarchiver for .rar files</summary>
+    <description lang="en">This addon is an extraction utility for RAR archives.
+
+It allows direct reading of uncompressed RAR files, so prior unpacking is not necessary. For all other types, it is temporarily unpacked and passed to Kodi.
+
+Attention: A "Solid RAR" archive type requires complete unpacking to use files within it. Hence access times may be long for larger packages.
+</description>
     <platform>@PLATFORM@</platform>
+    <license>GPL-2.0</license>
+    <source>https://github.com/xbmc/vfs.rar</source>
+    <assets>
+      <icon>resources/icon.png</icon>
+      <fanart>resources/fanart.jpg</fanart>
+    </assets>
   </extension>
 </addon>

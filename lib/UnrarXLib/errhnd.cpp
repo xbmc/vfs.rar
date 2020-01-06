@@ -1,8 +1,5 @@
 #include "rar.hpp"
 
-
-static bool UserBreak;
-
 ErrorHandler::ErrorHandler()
 {
   Clean();
@@ -11,241 +8,242 @@ ErrorHandler::ErrorHandler()
 
 void ErrorHandler::Clean()
 {
-  ExitCode=SUCCESS;
+  ExitCode=RARX_SUCCESS;
   ErrCount=0;
   EnableBreak=true;
   Silent=false;
-  DoShutdown=false;
+  UserBreak=false;
+  MainExit=false;
+  DisableShutdown=false;
 }
 
 
 void ErrorHandler::MemoryError()
 {
   MemoryErrorMsg();
-  Throw(MEMORY_ERROR);
+  Exit(RARX_MEMORY);
 }
 
 
-void ErrorHandler::OpenError(const char *FileName)
+void ErrorHandler::OpenError(const wchar *FileName)
 {
 #ifndef SILENT
   OpenErrorMsg(FileName);
-  Throw(OPEN_ERROR);
+  Exit(RARX_OPEN);
 #endif
 }
 
 
-void ErrorHandler::CloseError(const char *FileName)
+void ErrorHandler::CloseError(const wchar *FileName)
 {
-#ifndef SILENT
   if (!UserBreak)
   {
-    ErrMsg(NULL,St(MErrFClose),FileName);
+    uiMsg(UIERROR_FILECLOSE,FileName);
     SysErrMsg();
   }
-#endif
-#if !defined(SILENT) || defined(RARDLL)
-  Throw(FATAL_ERROR);
-#endif
+  // We must not call Exit and throw an exception here, because this function
+  // is called from File object destructor and can be invoked when stack
+  // unwinding while handling another exception. Throwing a new exception
+  // when stack unwinding is prohibited and terminates a program.
+  // If necessary, we can check std::uncaught_exception() before throw.
+  SetErrorCode(RARX_FATAL);
 }
 
 
-void ErrorHandler::ReadError(const char *FileName)
+void ErrorHandler::ReadError(const wchar *FileName)
 {
 #ifndef SILENT
-  ReadErrorMsg(NULL,FileName);
+  ReadErrorMsg(FileName);
 #endif
 #if !defined(SILENT) || defined(RARDLL)
-  Throw(FATAL_ERROR);
+  Exit(RARX_FATAL);
 #endif
 }
 
 
-bool ErrorHandler::AskRepeatRead(const char *FileName)
+bool ErrorHandler::AskRepeatRead(const wchar *FileName)
 {
-#if !defined(SILENT) && !defined(SFX_MODULE) && !defined(_WIN_CE)
+#if !defined(SILENT) && !defined(SFX_MODULE)
   if (!Silent)
   {
-    mprintf("\n");
-    RarLog(NULL,St(MErrRead),FileName);
-    return(Ask(St(MRetryAbort))==1);
+    SysErrMsg();
+    bool Repeat=uiAskRepeatRead(FileName);
+    if (!Repeat) // Disable shutdown if user pressed Cancel in error dialog.
+      DisableShutdown=true;
+    return Repeat;
   }
 #endif
-  return(false);
+  return false;
 }
 
 
-void ErrorHandler::WriteError(const char *ArcName,const char *FileName)
+void ErrorHandler::WriteError(const wchar *ArcName,const wchar *FileName)
 {
 #ifndef SILENT
   WriteErrorMsg(ArcName,FileName);
 #endif
 #if !defined(SILENT) || defined(RARDLL)
-  Throw(WRITE_ERROR);
+  Exit(RARX_WRITE);
 #endif
 }
 
 
-#ifdef _WIN_32
-void ErrorHandler::WriteErrorFAT(const char *FileName)
+#ifdef _WIN_ALL
+void ErrorHandler::WriteErrorFAT(const wchar *FileName)
 {
-#if !defined(SILENT) && !defined(SFX_MODULE)
   SysErrMsg();
-  ErrMsg(NULL,St(MNTFSRequired),FileName);
-#endif
+  uiMsg(UIERROR_NTFSREQUIRED,FileName);
 #if !defined(SILENT) && !defined(SFX_MODULE) || defined(RARDLL)
-  Throw(WRITE_ERROR);
+  Exit(RARX_WRITE);
 #endif
 }
 #endif
 
 
-bool ErrorHandler::AskRepeatWrite(const char *FileName)
-{
-#if !defined(SILENT) && !defined(_WIN_CE)
-  if (!Silent)
-  {
-    mprintf("\n");
-    RarLog(NULL,St(MErrWrite),FileName);
-    return(Ask(St(MRetryAbort))==1);
-  }
-#endif
-  return(false);
-}
-
-
-void ErrorHandler::SeekError(const char *FileName)
+bool ErrorHandler::AskRepeatWrite(const wchar *FileName,bool DiskFull)
 {
 #ifndef SILENT
-  if (!UserBreak)
+  if (!Silent)
   {
-    ErrMsg(NULL,St(MErrSeek),FileName);
+    // We do not display "repeat write" prompt in Android, so we do not
+    // need the matching system error message.
     SysErrMsg();
+    bool Repeat=uiAskRepeatWrite(FileName,DiskFull);
+    if (!Repeat) // Disable shutdown if user pressed Cancel in error dialog.
+      DisableShutdown=true;
+    return Repeat;
   }
 #endif
+  return false;
+}
+
+
+void ErrorHandler::SeekError(const wchar *FileName)
+{
+  if (!UserBreak)
+  {
+    uiMsg(UIERROR_FILESEEK,FileName);
+    SysErrMsg();
+  }
 #if !defined(SILENT) || defined(RARDLL)
-  Throw(FATAL_ERROR);
+  Exit(RARX_FATAL);
 #endif
+}
+
+
+void ErrorHandler::GeneralErrMsg(const wchar *fmt,...)
+{
+  va_list arglist;
+  va_start(arglist,fmt);
+  wchar Msg[1024];
+  vswprintf(Msg,ASIZE(Msg),fmt,arglist);
+  uiMsg(UIERROR_GENERALERRMSG,Msg);
+  SysErrMsg();
+  va_end(arglist);
 }
 
 
 void ErrorHandler::MemoryErrorMsg()
 {
-#ifndef SILENT
-  ErrMsg(NULL,St(MErrOutMem));
-#endif
+  uiMsg(UIERROR_MEMORY);
+  SetErrorCode(RARX_MEMORY);
 }
 
 
-void ErrorHandler::OpenErrorMsg(const char *FileName)
+void ErrorHandler::OpenErrorMsg(const wchar *FileName)
 {
   OpenErrorMsg(NULL,FileName);
 }
 
 
-void ErrorHandler::OpenErrorMsg(const char *ArcName,const char *FileName)
+void ErrorHandler::OpenErrorMsg(const wchar *ArcName,const wchar *FileName)
 {
-#ifndef SILENT
-  RarLog(ArcName && *ArcName ? ArcName:NULL,St(MCannotOpen),FileName);
-  Alarm();
+  uiMsg(UIERROR_FILEOPEN,ArcName,FileName);
   SysErrMsg();
-#endif
+  SetErrorCode(RARX_OPEN);
 }
 
 
-void ErrorHandler::CreateErrorMsg(const char *FileName)
+void ErrorHandler::CreateErrorMsg(const wchar *FileName)
 {
   CreateErrorMsg(NULL,FileName);
 }
 
 
-void ErrorHandler::CreateErrorMsg(const char *ArcName,const char *FileName)
+void ErrorHandler::CreateErrorMsg(const wchar *ArcName,const wchar *FileName)
 {
-#ifndef SILENT
-  RarLog(ArcName && *ArcName ? ArcName:NULL,St(MCannotCreate),FileName);
-  Alarm();
-#if defined(_WIN_32) && !defined(_WIN_CE) && !defined(SFX_MODULE) && defined(MAXPATH)
-  if (GetLastError()==ERROR_PATH_NOT_FOUND)
-  {
-    int NameLength=strlen(FileName);
-    if (!IsFullPath(FileName))
-    {
-      char CurDir[NM];
-      GetCurrentDirectory(sizeof(CurDir),CurDir);
-      NameLength+=strlen(CurDir)+1;
-    }
-    if (NameLength>MAXPATH)
-    {
-      RarLog(ArcName && *ArcName ? ArcName:NULL,St(MMaxPathLimit),MAXPATH);
-    }
-  }
-#endif
+  uiMsg(UIERROR_FILECREATE,ArcName,FileName);
   SysErrMsg();
-#endif
+  SetErrorCode(RARX_CREATE);
 }
 
 
-void ErrorHandler::ReadErrorMsg(const char *ArcName,const char *FileName)
+void ErrorHandler::ReadErrorMsg(const wchar *FileName)
 {
-#ifndef SILENT
-  ErrMsg(ArcName,St(MErrRead),FileName);
-  SysErrMsg();
-#endif
+  ReadErrorMsg(NULL,FileName);
 }
 
 
-void ErrorHandler::WriteErrorMsg(const char *ArcName,const char *FileName)
+void ErrorHandler::ReadErrorMsg(const wchar *ArcName,const wchar *FileName)
 {
-#ifndef SILENT
-  ErrMsg(ArcName,St(MErrWrite),FileName);
+  uiMsg(UIERROR_FILEREAD,ArcName,FileName);
   SysErrMsg();
-#endif
+  SetErrorCode(RARX_FATAL);
 }
 
 
-void ErrorHandler::Exit(int ExitCode)
+void ErrorHandler::WriteErrorMsg(const wchar *ArcName,const wchar *FileName)
 {
-#ifndef SFX_MODULE
-  Alarm();
-#endif
+  uiMsg(UIERROR_FILEWRITE,ArcName,FileName);
+  SysErrMsg();
+  SetErrorCode(RARX_WRITE);
+}
+
+
+void ErrorHandler::ArcBrokenMsg(const wchar *ArcName)
+{
+  uiMsg(UIERROR_ARCBROKEN,ArcName);
+  SetErrorCode(RARX_CRC);
+}
+
+
+void ErrorHandler::ChecksumFailedMsg(const wchar *ArcName,const wchar *FileName)
+{
+  uiMsg(UIERROR_CHECKSUM,ArcName,FileName);
+  SetErrorCode(RARX_CRC);
+}
+
+
+void ErrorHandler::UnknownMethodMsg(const wchar *ArcName,const wchar *FileName)
+{
+  uiMsg(UIERROR_UNKNOWNMETHOD,ArcName,FileName);
+  ErrHandler.SetErrorCode(RARX_FATAL);
+}
+
+
+void ErrorHandler::Exit(RAR_EXIT ExitCode)
+{
+  uiAlarm(UIALARM_ERROR);
   Throw(ExitCode);
 }
 
 
-#ifndef GUI
-void ErrorHandler::ErrMsg(const char *ArcName,const char *fmt,...)
-{
-  safebuf char Msg[NM+1024];
-  va_list argptr;
-  va_start(argptr,fmt);
-  vsprintf(Msg,fmt,argptr);
-  va_end(argptr);
-#ifdef _WIN_32
-  if (UserBreak)
-    Sleep(5000);
-#endif
-  Alarm();
-  if (*Msg)
-  {
-    RarLog(ArcName,"\n%s",Msg);
-    mprintf("\n%s\n",St(MProgAborted));
-  }
-}
-#endif
-
-
-void ErrorHandler::SetErrorCode(int Code)
+void ErrorHandler::SetErrorCode(RAR_EXIT Code)
 {
   switch(Code)
   {
-    case WARNING:
-    case USER_BREAK:
-      if (ExitCode==SUCCESS)
+    case RARX_WARNING:
+    case RARX_USERBREAK:
+      if (ExitCode==RARX_SUCCESS)
         ExitCode=Code;
       break;
-    case FATAL_ERROR:
-      if (ExitCode==SUCCESS || ExitCode==WARNING)
-        ExitCode=FATAL_ERROR;
+    case RARX_CRC:
+      if (ExitCode!=RARX_BADPWD)
+        ExitCode=Code;
+      break;
+    case RARX_FATAL:
+      if (ExitCode==RARX_SUCCESS || ExitCode==RARX_WARNING)
+        ExitCode=RARX_FATAL;
       break;
     default:
       ExitCode=Code;
@@ -255,8 +253,7 @@ void ErrorHandler::SetErrorCode(int Code)
 }
 
 
-#if !defined(GUI) && !defined(_SFX_RTL_)
-#ifdef _WIN_32
+#ifdef _WIN_ALL
 BOOL __stdcall ProcessSignal(DWORD SigType)
 #else
 #if defined(__sun)
@@ -265,93 +262,147 @@ extern "C"
 void _stdfunction ProcessSignal(int SigType)
 #endif
 {
-#if defined(_WIN_32) && !defined(TARGET_POSIX)
+#ifdef _WIN_ALL
+  // When a console application is run as a service, this allows the service
+  // to continue running after the user logs off. 
   if (SigType==CTRL_LOGOFF_EVENT)
-    return(TRUE);
+    return TRUE;
 #endif
-  UserBreak=true;
+
+  ErrHandler.UserBreak=true;
+  ErrHandler.SetDisableShutdown();
   mprintf(St(MBreak));
-  for (int I=0;!File::RemoveCreated() && I<3;I++)
-  {
-#ifdef _WIN_32
+
+#ifdef _WIN_ALL
+  // Let the main thread to handle 'throw' and destroy file objects.
+  for (uint I=0;!ErrHandler.MainExit && I<50;I++)
     Sleep(100);
-#endif
-  }
-#if defined(USE_RC) && !defined(SFX_MODULE) && !defined(_WIN_CE)
+#if defined(USE_RC) && !defined(SFX_MODULE) && !defined(RARDLL)
   ExtRes.UnloadDLL();
 #endif
-#if !defined(TARGET_POSIX)
-  exit(USER_BREAK);
+  exit(RARX_USERBREAK);
 #endif
-#ifdef _WIN_32
-  return(TRUE);
+
+#ifdef _UNIX
+  static uint BreakCount=0;
+  // User continues to press Ctrl+C, exit immediately without cleanup.
+  if (++BreakCount>1)
+    exit(RARX_USERBREAK);
+  // Otherwise return from signal handler and let Wait() function to close
+  // files and quit. We cannot use the same approach as in Windows,
+  // because Unix signal handler can block execution of our main code.
+#endif
+
+#if defined(_WIN_ALL) && !defined(_MSC_VER)
+  // Never reached, just to avoid a compiler warning
+  return TRUE;
 #endif
 }
-#endif
 
 
 void ErrorHandler::SetSignalHandlers(bool Enable)
 {
   EnableBreak=Enable;
-#if !defined(GUI) && !defined(_SFX_RTL_)
-#ifdef _WIN_32
-#if (WINAPI_FAMILY != WINAPI_FAMILY_APP)
+#ifdef _WIN_ALL
   SetConsoleCtrlHandler(Enable ? ProcessSignal:NULL,TRUE);
-#endif
 #else
   signal(SIGINT,Enable ? ProcessSignal:SIG_IGN);
   signal(SIGTERM,Enable ? ProcessSignal:SIG_IGN);
 #endif
-#endif
 }
 
 
-void ErrorHandler::Throw(int Code)
+void ErrorHandler::Throw(RAR_EXIT Code)
 {
-  if (Code==USER_BREAK && !EnableBreak)
+  if (Code==RARX_USERBREAK && !EnableBreak)
     return;
-  ErrHandler.SetErrorCode(Code);
-#ifdef ALLOW_EXCEPTIONS
+#if !defined(SILENT)
+  // Do not write "aborted" when just displaying online help.
+  if (Code!=RARX_SUCCESS && Code!=RARX_USERERROR)
+    mprintf(L"\n%s\n",St(MProgAborted));
+#endif
+  SetErrorCode(Code);
   throw Code;
-#else
-  File::RemoveCreated();
-#if !defined(_XBMC) && !defined(TARGET_POSIX)
-  exit(Code);
+}
+
+
+bool ErrorHandler::GetSysErrMsg(wchar *Msg,size_t Size)
+{
+#ifndef SILENT
+#ifdef _WIN_ALL
+  int ErrType=GetLastError();
+  if (ErrType!=0)
+    return FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
+                         NULL,ErrType,MAKELANGID(LANG_NEUTRAL,SUBLANG_DEFAULT),
+                         Msg,(DWORD)Size,NULL)!=0;
+#endif
+
+#if defined(_UNIX) || defined(_EMX)
+  if (errno!=0)
+  {
+    char *err=strerror(errno);
+    if (err!=NULL)
+    {
+      CharToWide(err,Msg,Size);
+      return true;
+    }
+  }
 #endif
 #endif
+  return false;
 }
 
 
 void ErrorHandler::SysErrMsg()
 {
-#if defined(_WIN_32) && !defined(SFX_MODULE) && !defined(SILENT)
-    #define STRCHR strchr
-    #define ERRCHAR char
-  ERRCHAR  *lpMsgBuf=NULL;
-  int ErrType=GetLastError();
-  if (ErrType!=0 && FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM,
-              NULL,ErrType,MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-              (LPTSTR)&lpMsgBuf,0,NULL))
+#if !defined(SFX_MODULE) && !defined(SILENT)
+  wchar Msg[1024];
+  if (!GetSysErrMsg(Msg,ASIZE(Msg)))
+    return;
+#ifdef _WIN_ALL
+  wchar *CurMsg=Msg;
+  while (CurMsg!=NULL) // Print string with \r\n as several strings to multiple lines.
   {
-    ERRCHAR  *CurMsg=lpMsgBuf;
-    while (CurMsg!=NULL)
+    while (*CurMsg=='\r' || *CurMsg=='\n')
+      CurMsg++;
+    if (*CurMsg==0)
+      break;
+    wchar *EndMsg=wcschr(CurMsg,'\r');
+    if (EndMsg==NULL)
+      EndMsg=wcschr(CurMsg,'\n');
+    if (EndMsg!=NULL)
     {
-      while (*CurMsg=='\r' || *CurMsg=='\n')
-        CurMsg++;
-      if (*CurMsg==0)
-        break;
-      ERRCHAR *EndMsg=STRCHR(CurMsg,'\r');
-      if (EndMsg==NULL)
-        EndMsg=STRCHR(CurMsg,'\n');
-      if (EndMsg!=NULL)
-      {
-        *EndMsg=0;
-        EndMsg++;
-      }
-      RarLog(NULL,"\n%s",CurMsg);
-      CurMsg=EndMsg;
+      *EndMsg=0;
+      EndMsg++;
     }
+    uiMsg(UIERROR_SYSERRMSG,CurMsg);
+    CurMsg=EndMsg;
   }
-  LocalFree( lpMsgBuf );
+#endif
+
+#if defined(_UNIX) || defined(_EMX)
+  uiMsg(UIERROR_SYSERRMSG,Msg);
+#endif
+
+#endif
+}
+
+
+int ErrorHandler::GetSystemErrorCode()
+{
+#ifdef _WIN_ALL
+  return GetLastError();
+#else
+  return errno;
+#endif
+}
+
+
+void ErrorHandler::SetSystemErrorCode(int Code)
+{
+#ifdef _WIN_ALL
+  SetLastError(Code);
+#else
+  errno=Code;
 #endif
 }

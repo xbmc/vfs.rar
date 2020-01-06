@@ -1,45 +1,69 @@
 #include "rar.hpp"
 
-RawRead::RawRead(File *SrcFile)
+RawRead::RawRead()
 {
-  RawRead::SrcFile=SrcFile;
-  ReadPos=0;
-  DataSize=0;
-#ifndef SHELL_EXT
-  Crypt=NULL;
-#endif
+  RawRead::SrcFile=NULL;
+  Reset();
 }
 
 
-void RawRead::Read(int Size)
+RawRead::RawRead(File *SrcFile)
 {
-#if !defined(SHELL_EXT) && !defined(NOCRYPT)
+  RawRead::SrcFile=SrcFile;
+  Reset();
+}
+
+
+void RawRead::Reset()
+{
+  Data.SoftReset();
+  ReadPos=0;
+  DataSize=0;
+  Crypt=NULL;
+}
+
+
+size_t RawRead::Read(size_t Size)
+{
+  size_t ReadSize=0;
+#if !defined(RAR_NOCRYPT)
   if (Crypt!=NULL)
   {
-    int CurSize=Data.Size();
-    int SizeToRead=Size-(CurSize-DataSize);
-    if (SizeToRead>0)
+    // Full size of buffer with already read data including data read 
+    // for encryption block alignment.
+    size_t FullSize=Data.Size();
+
+    // Data read for alignment and not processed yet.
+    size_t DataLeft=FullSize-DataSize;
+
+    if (Size>DataLeft) // Need to read more than we already have.
     {
-      int AlignedReadSize=SizeToRead+((~SizeToRead+1)&0xf);
+      size_t SizeToRead=Size-DataLeft;
+      size_t AlignedReadSize=SizeToRead+((~SizeToRead+1) & CRYPT_BLOCK_MASK);
       Data.Add(AlignedReadSize);
-      int ReadSize=SrcFile->Read(&Data[CurSize],AlignedReadSize);
-      Crypt->DecryptBlock(&Data[CurSize],AlignedReadSize);
+      ReadSize=SrcFile->Read(&Data[FullSize],AlignedReadSize);
+      Crypt->DecryptBlock(&Data[FullSize],AlignedReadSize);
       DataSize+=ReadSize==0 ? 0:Size;
     }
-    else
+    else // Use buffered data, no real read.
+    {
+      ReadSize=Size;
       DataSize+=Size;
+    }
   }
   else
 #endif
     if (Size!=0)
     {
       Data.Add(Size);
-      DataSize+=SrcFile->Read(&Data[DataSize],Size);
+      ReadSize=SrcFile->Read(&Data[DataSize],Size);
+      DataSize+=ReadSize;
     }
+  return ReadSize;
 }
 
 
-void RawRead::Read(byte *SrcData,int Size)
+void RawRead::Read(byte *SrcData,size_t Size)
 {
   if (Size!=0)
   {
@@ -50,52 +74,124 @@ void RawRead::Read(byte *SrcData,int Size)
 }
 
 
-void RawRead::Get(byte &Field)
+byte RawRead::Get1()
 {
-  Field=Data[ReadPos];
-  ReadPos++;
+  return ReadPos<DataSize ? Data[ReadPos++]:0;
 }
 
 
-void RawRead::Get(ushort &Field)
+ushort RawRead::Get2()
 {
-  Field=Data[ReadPos]+(Data[ReadPos+1]<<8);
-  ReadPos+=2;
+  if (ReadPos+1<DataSize)
+  {
+    ushort Result=Data[ReadPos]+(Data[ReadPos+1]<<8);
+    ReadPos+=2;
+    return Result;
+  }
+  return 0;
 }
 
 
-void RawRead::Get(uint &Field)
+uint RawRead::Get4()
 {
-  Field=Data[ReadPos]+(Data[ReadPos+1]<<8)+(Data[ReadPos+2]<<16)+
-        (Data[ReadPos+3]<<24);
-  ReadPos+=4;
+  if (ReadPos+3<DataSize)
+  {
+    uint Result=Data[ReadPos]+(Data[ReadPos+1]<<8)+(Data[ReadPos+2]<<16)+
+                (Data[ReadPos+3]<<24);
+    ReadPos+=4;
+    return Result;
+  }
+  return 0;
 }
 
 
-void RawRead::Get8(Int64 &Field)
+uint64 RawRead::Get8()
 {
-  uint Low,High;
-  Get(Low);
-  Get(High);
-  Field=int32to64(High,Low);
+  uint Low=Get4(),High=Get4();
+  return INT32TO64(High,Low);
 }
 
 
-void RawRead::Get(byte *Field,int Size)
+uint64 RawRead::GetV()
 {
-  memcpy(Field,&Data[ReadPos],Size);
-  ReadPos+=Size;
+  uint64 Result=0;
+  // Need to check Shift<64, because for shift greater than or equal to
+  // the width of the promoted left operand, the behavior is undefined.
+  for (uint Shift=0;ReadPos<DataSize && Shift<64;Shift+=7)
+  {
+    byte CurByte=Data[ReadPos++];
+    Result+=uint64(CurByte & 0x7f)<<Shift;
+    if ((CurByte & 0x80)==0)
+      return Result; // Decoded successfully.
+  }
+  return 0; // Out of buffer border.
 }
 
 
-void RawRead::Get(wchar *Field,int Size)
+// Return a number of bytes in current variable length integer.
+uint RawRead::GetVSize(size_t Pos)
 {
-  RawToWide(&Data[ReadPos],Field,Size);
-  ReadPos+=2*Size;
+  for (size_t CurPos=Pos;CurPos<DataSize;CurPos++)
+    if ((Data[CurPos] & 0x80)==0)
+      return int(CurPos-Pos+1);
+  return 0; // Buffer overflow.
 }
 
 
-uint RawRead::GetCRC(bool ProcessedOnly)
+size_t RawRead::GetB(void *Field,size_t Size)
 {
-  return(DataSize>2 ? CRC(0xffffffff,&Data[2],(ProcessedOnly ? ReadPos:DataSize)-2):0xffffffff);
+  byte *F=(byte *)Field;
+  size_t CopySize=Min(DataSize-ReadPos,Size);
+  if (CopySize>0)
+    memcpy(F,&Data[ReadPos],CopySize);
+  if (Size>CopySize)
+    memset(F+CopySize,0,Size-CopySize);
+  ReadPos+=CopySize;
+  return CopySize;
+}
+
+
+void RawRead::GetW(wchar *Field,size_t Size)
+{
+  if (ReadPos+2*Size-1<DataSize)
+  {
+    RawToWide(&Data[ReadPos],Field,Size);
+    ReadPos+=sizeof(wchar)*Size;
+  }
+  else
+    memset(Field,0,sizeof(wchar)*Size);
+}
+
+
+uint RawRead::GetCRC15(bool ProcessedOnly) // RAR 1.5 block CRC.
+{
+  if (DataSize<=2)
+    return 0;
+  uint HeaderCRC=CRC32(0xffffffff,&Data[2],(ProcessedOnly ? ReadPos:DataSize)-2);
+  return ~HeaderCRC & 0xffff;
+}
+
+
+uint RawRead::GetCRC50() // RAR 5.0 block CRC.
+{
+  if (DataSize<=4)
+    return 0xffffffff;
+  return CRC32(0xffffffff,&Data[4],DataSize-4) ^ 0xffffffff;
+}
+
+
+// Read vint from arbitrary byte array.
+uint64 RawGetV(const byte *Data,uint &ReadPos,uint DataSize,bool &Overflow)
+{
+  Overflow=false;
+  uint64 Result=0;
+  for (uint Shift=0;ReadPos<DataSize;Shift+=7)
+  {
+    byte CurByte=Data[ReadPos++];
+    Result+=uint64(CurByte & 0x7f)<<Shift;
+    if ((CurByte & 0x80)==0)
+      return Result; // Decoded successfully.
+  }
+  Overflow=true;
+  return 0; // Out of buffer border.
 }

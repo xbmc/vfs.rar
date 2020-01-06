@@ -1,12 +1,11 @@
 #include "rar.hpp"
 
-#ifdef _WIN_32
-int WinNT()
+#ifdef _WIN_ALL
+DWORD WinNT()
 {
-#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
-  return true;
-#else
-  static int dwPlatformId=-1,dwMajorVersion;
+#if !defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP)
+  static int dwPlatformId=-1;
+  static DWORD dwMajorVersion,dwMinorVersion;
   if (dwPlatformId==-1)
   {
     OSVERSIONINFO WinVer;
@@ -14,8 +13,16 @@ int WinNT()
     GetVersionEx(&WinVer);
     dwPlatformId=WinVer.dwPlatformId;
     dwMajorVersion=WinVer.dwMajorVersion;
+    dwMinorVersion=WinVer.dwMinorVersion;
   }
-  return(dwPlatformId==VER_PLATFORM_WIN32_NT ? dwMajorVersion:0);
+  DWORD Result=0;
+  if (dwPlatformId==VER_PLATFORM_WIN32_NT)
+    Result=dwMajorVersion*0x100+dwMinorVersion;
+
+
+  return Result;
+#else
+  return WNT_W10;
 #endif
 }
 #endif
