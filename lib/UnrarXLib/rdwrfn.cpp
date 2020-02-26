@@ -241,7 +241,7 @@ void ComprDataIO::UnpWrite(byte *Addr,size_t Count)
       // even though in year 2001 we announced in unrar.dll whatsnew.txt
       // that it will be PASCAL type (for compatibility with Visual Basic).
 #if defined(_MSC_VER)
-#if !defined(_WIN_64) && !defined(_M_ARM)
+#if !defined(_WIN_64) && !defined(_M_ARM) && !defined(_M_ARM64)
       __asm mov ebx,esp
 #endif
 #elif defined(_WIN_ALL) && defined(__BORLANDC__)
