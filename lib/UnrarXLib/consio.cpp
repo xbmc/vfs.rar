@@ -62,6 +62,7 @@ void SetConsoleRedirectCharset(RAR_CHARSET RedirectCharset)
   ::RedirectCharset=RedirectCharset;
 }
 
+
 #ifndef SILENT
 static void cvt_wprintf(FILE *dest,const wchar *fmt,va_list arglist)
 {

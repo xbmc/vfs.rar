@@ -582,6 +582,7 @@ SupportDBCS::SupportDBCS()
   Init();
 }
 
+
 void SupportDBCS::Init()
 {
   CPINFO CPInfo;
