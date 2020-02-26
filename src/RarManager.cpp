@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2019 Team Kodi
+ *      Copyright (C) 2005-2020 Team Kodi
  *      http://kodi.tv
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -22,7 +22,12 @@
 #include "RarControl.h"
 #include "Helpers.h"
 
+#if (defined(__GNUC__) || defined(__clang__)) && !defined(_LIBCPP_VERSION)
+#include "wstring_convert.h"
+#include "codecvt.h"
+#else
 #include <codecvt>
+#endif
 #include <kodi/General.h>
 #include <locale>
 #include <set>
