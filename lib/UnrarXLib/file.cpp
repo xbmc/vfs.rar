@@ -791,9 +791,11 @@ int64 File::FileLength()
 #ifdef BUILD_KODI_ADDON
   return hFile->GetLength();
 #else
-  SaveFilePos SavePos(*this);
+  int64 SavePos=Tell();
   Seek(0,SEEK_END);
-  return Tell();
+  int64 Length=Tell();
+  Seek(SavePos,SEEK_SET);
+  return Length;
 #endif
 }
 
