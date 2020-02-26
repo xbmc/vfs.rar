@@ -1,9 +1,9 @@
 Source: kodi-vfs-rar
 Priority: extra
-Maintainer: Arne Morten Kvarving <spiff@xbmc.org>
+Maintainer: Nobody <nobody@kodi.tv>
 Build-Depends: debhelper (>= 9.0.0), cmake,
                kodi-addon-dev, libtinyxml-dev
-Standards-Version: 3.9.4
+Standards-Version: 4.1.2
 Section: libs
 
 Package: kodi-vfs-rar
