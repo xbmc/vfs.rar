@@ -3,8 +3,8 @@ language: cpp
 #
 # Define the build matrix
 #
-# Travis defaults to building on Ubuntu Trusty when building on
-# Linux. We need Xenial in order to get up to date versions of
+# Travis defaults to building on Ubuntu Xenial when building on
+# Linux. We need Bionic in order to get up to date versions of
 # cmake and g++.
 #
 env:
@@ -14,15 +14,15 @@ env:
 matrix:
   include:
     - os: linux
-      dist: xenial
+      dist: bionic
       sudo: required
       compiler: gcc
     - os: linux
-      dist: xenial
+      dist: bionic
       sudo: required
       compiler: clang
     - os: osx
-      osx_image: xcode10.2
+      osx_image: xcode11.3
 
 #
 # The addon source is automatically checked out in $TRAVIS_BUILD_DIR,
