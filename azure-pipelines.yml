@@ -32,12 +32,12 @@ jobs:
           GENERATOR: "Visual Studio 15 2017"
           ARCHITECTURE: x64
           CONFIGURATION: Release
-          WINSTORE: -DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION="10.0.16299.0"
+          WINSTORE: -DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION="10.0.17763.0"
         ARM64-UWP:
           GENERATOR: "Visual Studio 15 2017"
           ARCHITECTURE: ARM64
           CONFIGURATION: Release
-          WINSTORE: -DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION="10.0.16299.0"
+          WINSTORE: -DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION="10.0.17763.0"
 
     workspace:
       clean: all
