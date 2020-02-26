@@ -24,7 +24,12 @@
 #include "Helpers.h"
 #include "encryption/encrypt.h"
 
+#if (defined(__GNUC__) || defined(__clang__)) && !defined(_LIBCPP_VERSION)
+#include "wstring_convert.h"
+#include "codecvt.h"
+#else
 #include <codecvt>
+#endif
 #include <kodi/General.h>
 #include <kodi/Filesystem.h>
 #include <kodi/gui/dialogs/Keyboard.h>
