@@ -14,7 +14,7 @@
   #define _WIN_ALL // Defined for all Windows platforms, 32 and 64 bit, mobile and desktop.
   #ifdef _M_X64
     #define _WIN_64
-  #elif defined(_M_ARM)
+  #elif defined(_M_ARM) || defined(_M_ARM64)
     #define _WIN_ARM
   #else
     #define _WIN_32
