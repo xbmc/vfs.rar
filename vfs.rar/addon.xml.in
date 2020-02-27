@@ -21,6 +21,7 @@
 It allows direct reading of uncompressed RAR files, so prior unpacking is not necessary. For all other types, it is temporarily unpacked and passed to Kodi.
 
 Attention: A "Solid RAR" archive type requires complete unpacking to use files within it. Hence access times may be long for larger packages.</description>
+    <disclaimer>This version requires at least Kodi Leia 18.6; please use 2.0.8 for earlier Leia versions</disclaimer>
     <platform>@PLATFORM@</platform>
     <license>GPL-2.0</license>
     <source>https://github.com/xbmc/vfs.rar</source>
