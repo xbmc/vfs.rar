@@ -32,6 +32,8 @@
 #define EXFILE_UNIXPATH 4
 #define EXFILE_NOCACHE 8
 
+#define MAX_PATH_LENGTH NM*6
+
 class CFileInfo
 {
 public:

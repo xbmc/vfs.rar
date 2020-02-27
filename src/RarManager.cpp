@@ -126,7 +126,7 @@ bool CRarManager::CacheRarredFile(std::string& strPathInCache, const std::string
 
   if (j != m_ExFiles.end())  // grab from list
   {
-    char name[NM];
+    char name[MAX_PATH_LENGTH];
     for (const auto& entry : j->second.first)
     {
       std::string strName;
@@ -218,7 +218,7 @@ bool CRarManager::GetFilesInRar(std::vector<kodi::vfs::CDirEntry>& vecpItems, co
   if (!strCompare.empty() && strCompare[strCompare.size()-1] != '/')
     strCompare += '/';
 
-  char name[NM];
+  char name[MAX_PATH_LENGTH];
   for (const auto& entry : pFileList)
   {
     std::string strName;
