@@ -6,13 +6,6 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 find_package(Kodi REQUIRED)
 find_package(TinyXML REQUIRED)
 
-include(CheckCXXSourceCompiles)
-check_cxx_source_compiles("#include <codecvt>
-                           int main() { return 0; }" HAS_CODECVT)
-if(HAS_CODECVT)
-  add_definitions(-DHAS_CODECVT)
-endif()
-
 include_directories(${KODI_INCLUDE_DIR}/.. # Hack way with "/..", need bigger Kodi cmake rework to match right include ways
                     ${TINYXML_INCLUDE_DIRS}
                     ${PROJECT_SOURCE_DIR}/lib/UnrarXLib)

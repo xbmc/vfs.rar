@@ -38,12 +38,6 @@
 #include <map>
 #include <sstream>
 #include <fcntl.h>
-#if (defined(__GNUC__) || defined(__clang__)) && !defined(HAS_CODECVT)
-#include "wstring_convert.h"
-#include "codecvt.h"
-#else
-#include <codecvt>
-#endif
 #include <locale>
 #include <regex>
 

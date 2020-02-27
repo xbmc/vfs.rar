@@ -24,12 +24,6 @@
 #include "Helpers.h"
 #include "encryption/encrypt.h"
 
-#if (defined(__GNUC__) || defined(__clang__)) && !defined(HAS_CODECVT)
-#include "wstring_convert.h"
-#include "codecvt.h"
-#else
-#include <codecvt>
-#endif
 #include <kodi/General.h>
 #include <kodi/Filesystem.h>
 #include <kodi/gui/dialogs/Keyboard.h>
@@ -620,6 +614,7 @@ bool RARContext::OpenInArchive()
     uint FileCount = 0;
     int iArchive = 0;
     bool found = false;
+    char name[NM];
     while (1)
     {
       if (!(m_arc.IsOpened() && m_arc.IsArchive(true)))
@@ -646,8 +641,8 @@ bool RARContext::OpenInArchive()
       {
         if (m_arc.GetHeaderType() == HEAD_FILE)
         {
-          std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
-          std::string strFileName = conv.to_bytes(m_arc.FileHead.FileName);
+          WideToUtf(m_arc.FileHead.FileName, name, sizeof(name));
+          std::string strFileName = name;
 
           /* replace back slashes into forward slashes */
           /* this could get us into troubles, file could two different files, one with / and one with \ */
@@ -697,8 +692,8 @@ bool RARContext::OpenInArchive()
             {
               if (arc.GetHeaderType() == HEAD_FILE || arc.GetHeaderType() == HEAD3_FILE)
               {
-                std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
-                std::string check = conv.to_bytes(arc.FileHead.FileName);
+                WideToUtf(arc.FileHead.FileName, name, sizeof(name));
+                std::string check = name;
 
                 /* replace back slashes into forward slashes */
                 /* this could get us into troubles, file could two different files, one with / and one with \ */
