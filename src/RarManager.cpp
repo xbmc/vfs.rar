@@ -22,7 +22,7 @@
 #include "RarControl.h"
 #include "Helpers.h"
 
-#if (defined(__GNUC__) || defined(__clang__)) && !defined(_LIBCPP_VERSION)
+#if (defined(__GNUC__) || defined(__clang__)) && !defined(HAS_CODECVT)
 #include "wstring_convert.h"
 #include "codecvt.h"
 #else

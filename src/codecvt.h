@@ -1,6 +1,6 @@
 // This comes from llvm's libcxx project. I've copied the code from there (with very minor modifications) for use with GCC and Clang when libcxx isn't being used.
 
-#if (defined(__GNUC__) || defined(__clang__)) && !defined(_LIBCPP_VERSION)
+#if (defined(__GNUC__) || defined(__clang__)) && !defined(HAS_CODECVT)
 #pragma once
 
 #include <locale>
