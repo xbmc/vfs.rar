@@ -22,12 +22,6 @@
 #include "RarControl.h"
 #include "Helpers.h"
 
-#if (defined(__GNUC__) || defined(__clang__)) && !defined(_LIBCPP_VERSION)
-#include "wstring_convert.h"
-#include "codecvt.h"
-#else
-#include <codecvt>
-#endif
 #include <kodi/General.h>
 #include <locale>
 #include <set>
@@ -132,6 +126,7 @@ bool CRarManager::CacheRarredFile(std::string& strPathInCache, const std::string
 
   if (j != m_ExFiles.end())  // grab from list
   {
+    char name[NM];
     for (const auto& entry : j->second.first)
     {
       std::string strName;
@@ -139,8 +134,8 @@ bool CRarManager::CacheRarredFile(std::string& strPathInCache, const std::string
       /* convert to utf8 */
       if (entry.FileNameW && wcslen(entry.FileNameW) > 0)
       {
-        std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
-        strName = conv.to_bytes(entry.FileNameW);
+        WideToUtf(entry.FileNameW, name, sizeof(name));
+        strName = name;
       }
       else
         kodi::UnknownToUTF8(entry.FileName, strName);
@@ -223,6 +218,7 @@ bool CRarManager::GetFilesInRar(std::vector<kodi::vfs::CDirEntry>& vecpItems, co
   if (!strCompare.empty() && strCompare[strCompare.size()-1] != '/')
     strCompare += '/';
 
+  char name[NM];
   for (const auto& entry : pFileList)
   {
     std::string strName;
@@ -230,8 +226,8 @@ bool CRarManager::GetFilesInRar(std::vector<kodi::vfs::CDirEntry>& vecpItems, co
     /* convert to utf8 */
     if (entry.FileNameW && wcslen(entry.FileNameW) > 0)
     {
-      std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
-      strName = conv.to_bytes(entry.FileNameW);
+      WideToUtf(entry.FileNameW, name, sizeof(name));
+      strName = name;
     }
     else
       kodi::UnknownToUTF8(entry.FileName, strName);
