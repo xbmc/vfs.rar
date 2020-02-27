@@ -676,13 +676,13 @@ bool RARContext::OpenInArchive()
           char nextNameA[NM];
           wchar lastName[NM];
           wcsncpyz(nextName, m_arc.FileName, ASIZE(nextName));
-          WideToChar(nextName, nextNameA, ASIZE(nextNameA));
+          WideToUtf(nextName, nextNameA, ASIZE(nextNameA));
 
           while (kodi::vfs::FileExists(nextNameA, true))
           {
             wcsncpyz(lastName, nextName, ASIZE(lastName));
             NextVolumeName(nextName, ASIZE(nextName), (m_arc.MainHead.Flags & MHD_NEWNUMBERING)==0 || m_arc.Format == RARFMT14);
-            WideToChar(nextName, nextNameA, ASIZE(nextNameA));
+            WideToUtf(nextName, nextNameA, ASIZE(nextNameA));
           }
           Archive arc;
           if (arc.WOpen(lastName))
