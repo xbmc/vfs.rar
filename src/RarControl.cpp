@@ -547,7 +547,7 @@ bool RARContext::OpenInArchive()
     m_cmd.DllError = 0;
 
     wcsncpyz(m_cmd.Command, L"X", ASIZE(m_cmd.Command));
-    char ExtrPathA[NM];
+    char ExtrPathA[MAX_PATH_LENGTH];
     strncpyz(ExtrPathA, m_cachedir.c_str(), ASIZE(ExtrPathA)-2);
 #if defined(_WIN_ALL) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP))
     // We must not apply OemToCharBuffA directly to DestPath,
@@ -560,7 +560,7 @@ bool RARContext::OpenInArchive()
     m_cmd.ParseArg(const_cast<wchar*>(L"-va"));
     m_cmd.DllOpMode = RAR_EXTRACT;
 
-    char AnsiArcName[NM];
+    char AnsiArcName[MAX_PATH_LENGTH];
     *AnsiArcName=0;
     if (!m_path.empty())
     {
@@ -574,7 +574,7 @@ bool RARContext::OpenInArchive()
 #endif
     }
 
-    wchar ArcName[NM];
+    wchar ArcName[MAX_PATH_LENGTH];
     GetWideName(AnsiArcName, nullptr, ArcName, ASIZE(ArcName));
 
     m_cmd.AddArcName(ArcName);
@@ -614,7 +614,7 @@ bool RARContext::OpenInArchive()
     uint FileCount = 0;
     int iArchive = 0;
     bool found = false;
-    char name[NM];
+    char name[MAX_PATH_LENGTH];
     while (1)
     {
       if (!(m_arc.IsOpened() && m_arc.IsArchive(true)))
@@ -672,9 +672,9 @@ bool RARContext::OpenInArchive()
       {
         if (/*FileCount == 1 && */iArchive == 0)
         {
-          wchar nextName[NM];
-          char nextNameA[NM];
-          wchar lastName[NM];
+          wchar nextName[MAX_PATH_LENGTH];
+          char nextNameA[MAX_PATH_LENGTH];
+          wchar lastName[MAX_PATH_LENGTH];
           wcsncpyz(nextName, m_arc.FileName, ASIZE(nextName));
           WideToUtf(nextName, nextNameA, ASIZE(nextNameA));
 
