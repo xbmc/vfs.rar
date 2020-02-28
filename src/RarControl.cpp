@@ -24,12 +24,6 @@
 #include "Helpers.h"
 #include "encryption/encrypt.h"
 
-#if (defined(__GNUC__) || defined(__clang__)) && !defined(HAS_CODECVT)
-#include "wstring_convert.h"
-#include "codecvt.h"
-#else
-#include <codecvt>
-#endif
 #include <kodi/General.h>
 #include <kodi/Filesystem.h>
 #include <kodi/gui/dialogs/Keyboard.h>
@@ -553,7 +547,7 @@ bool RARContext::OpenInArchive()
     m_cmd.DllError = 0;
 
     wcsncpyz(m_cmd.Command, L"X", ASIZE(m_cmd.Command));
-    char ExtrPathA[NM];
+    char ExtrPathA[MAX_PATH_LENGTH];
     strncpyz(ExtrPathA, m_cachedir.c_str(), ASIZE(ExtrPathA)-2);
 #if defined(_WIN_ALL) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_APP))
     // We must not apply OemToCharBuffA directly to DestPath,
@@ -566,7 +560,7 @@ bool RARContext::OpenInArchive()
     m_cmd.ParseArg(const_cast<wchar*>(L"-va"));
     m_cmd.DllOpMode = RAR_EXTRACT;
 
-    char AnsiArcName[NM];
+    char AnsiArcName[MAX_PATH_LENGTH];
     *AnsiArcName=0;
     if (!m_path.empty())
     {
@@ -580,7 +574,7 @@ bool RARContext::OpenInArchive()
 #endif
     }
 
-    wchar ArcName[NM];
+    wchar ArcName[MAX_PATH_LENGTH];
     GetWideName(AnsiArcName, nullptr, ArcName, ASIZE(ArcName));
 
     m_cmd.AddArcName(ArcName);
@@ -620,6 +614,7 @@ bool RARContext::OpenInArchive()
     uint FileCount = 0;
     int iArchive = 0;
     bool found = false;
+    char name[MAX_PATH_LENGTH];
     while (1)
     {
       if (!(m_arc.IsOpened() && m_arc.IsArchive(true)))
@@ -646,8 +641,8 @@ bool RARContext::OpenInArchive()
       {
         if (m_arc.GetHeaderType() == HEAD_FILE)
         {
-          std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
-          std::string strFileName = conv.to_bytes(m_arc.FileHead.FileName);
+          WideToUtf(m_arc.FileHead.FileName, name, sizeof(name));
+          std::string strFileName = name;
 
           /* replace back slashes into forward slashes */
           /* this could get us into troubles, file could two different files, one with / and one with \ */
@@ -677,17 +672,17 @@ bool RARContext::OpenInArchive()
       {
         if (/*FileCount == 1 && */iArchive == 0)
         {
-          wchar nextName[NM];
-          char nextNameA[NM];
-          wchar lastName[NM];
+          wchar nextName[MAX_PATH_LENGTH];
+          char nextNameA[MAX_PATH_LENGTH];
+          wchar lastName[MAX_PATH_LENGTH];
           wcsncpyz(nextName, m_arc.FileName, ASIZE(nextName));
-          WideToChar(nextName, nextNameA, ASIZE(nextNameA));
+          WideToUtf(nextName, nextNameA, ASIZE(nextNameA));
 
           while (kodi::vfs::FileExists(nextNameA, true))
           {
             wcsncpyz(lastName, nextName, ASIZE(lastName));
             NextVolumeName(nextName, ASIZE(nextName), (m_arc.MainHead.Flags & MHD_NEWNUMBERING)==0 || m_arc.Format == RARFMT14);
-            WideToChar(nextName, nextNameA, ASIZE(nextNameA));
+            WideToUtf(nextName, nextNameA, ASIZE(nextNameA));
           }
           Archive arc;
           if (arc.WOpen(lastName))
@@ -697,8 +692,8 @@ bool RARContext::OpenInArchive()
             {
               if (arc.GetHeaderType() == HEAD_FILE || arc.GetHeaderType() == HEAD3_FILE)
               {
-                std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
-                std::string check = conv.to_bytes(arc.FileHead.FileName);
+                WideToUtf(arc.FileHead.FileName, name, sizeof(name));
+                std::string check = name;
 
                 /* replace back slashes into forward slashes */
                 /* this could get us into troubles, file could two different files, one with / and one with \ */
