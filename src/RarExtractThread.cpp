@@ -1,6 +1,6 @@
 /*
- *      Copyright (C) 2005-2013 Team XBMC
- *      http://xbmc.org
+ *      Copyright (C) 2005-2020 Team Kodi
+ *      http://kodi.tv
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,26 +13,26 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, see
+ *  along with Kodi; see the file COPYING.  If not, see
  *  <http://www.gnu.org/licenses/>.
  *
  */
+
 #include "RarExtractThread.h"
-#include <kodi/General.h>
 #include "rar.hpp"
 
+#include <kodi/General.h>
 
-CRarFileExtractThread::CRarFileExtractThread() : hRunning(false)
+CRarFileExtractThread::CRarFileExtractThread() : hRunning(false), m_thread{}
 {
-  m_pArc = NULL;
-  m_pCmd = NULL;
-  m_pExtract = NULL;
 }
 
 CRarFileExtractThread::~CRarFileExtractThread()
 {
   hRestart.Wait();
-  StopThread();
+  m_stopThread = true;
+  if (m_thread.joinable())
+    m_thread.join();
 }
 
 void CRarFileExtractThread::Start(Archive* pArc, CommandData* pCmd, CmdExtract* pExtract, int iSize)
@@ -42,40 +42,42 @@ void CRarFileExtractThread::Start(Archive* pArc, CommandData* pCmd, CmdExtract* 
   m_pExtract = pExtract;
   m_iSize = iSize;
 
-  m_pExtract->GetDataIO().hBufferFilled = new P8PLATFORM::CEvent();
-  m_pExtract->GetDataIO().hBufferEmpty = new P8PLATFORM::CEvent();
-  m_pExtract->GetDataIO().hSeek = new P8PLATFORM::CEvent(false);
-  m_pExtract->GetDataIO().hSeekDone = new P8PLATFORM::CEvent();
-  m_pExtract->GetDataIO().hQuit = new P8PLATFORM::CEvent(false);
+  m_pExtract->GetDataIO().hBufferFilled = new ThreadHelpers::CEvent();
+  m_pExtract->GetDataIO().hBufferEmpty = new ThreadHelpers::CEvent();
+  m_pExtract->GetDataIO().hSeek = new ThreadHelpers::CEvent(false);
+  m_pExtract->GetDataIO().hSeekDone = new ThreadHelpers::CEvent();
+  m_pExtract->GetDataIO().hQuit = new ThreadHelpers::CEvent(false);
 
   hRunning.Signal();
   hRestart.Signal();
-  CreateThread();
+
+  m_thread = std::thread{&CRarFileExtractThread::Process, this};
+
 }
 
-void* CRarFileExtractThread::Process()
+void CRarFileExtractThread::Process()
 {
-  while (!m_pExtract->GetDataIO().hQuit->Wait(1))
+  while (!m_pExtract->GetDataIO().hQuit->Wait(1) && !m_stopThread)
   {
     if (hRestart.Wait(1))
     {
       bool Repeat = false;
       try
       {
-        m_pExtract->ExtractCurrentFile(m_pCmd,*m_pArc,m_iSize,Repeat);
+        m_pExtract->ExtractCurrentFile(*m_pArc, m_iSize, Repeat);
       }
       catch (int rarErrCode)
       {
-        kodi::Log(ADDON_LOG_ERROR,"CFileRarExtractThread::Process failed. CmdExtract::ExtractCurrentFile threw a UnrarXLib error code of %d",rarErrCode);
+        kodiLog(ADDON_LOG_ERROR, "CFileRarExtractThread::%s: failed. CmdExtract::ExtractCurrentFile threw a UnrarXLib error code of %d", __func__, rarErrCode);
       }
       catch (...)
       {
-        kodi::Log(ADDON_LOG_ERROR,"filerar CFileRarExtractThread::Process failed. CmdExtract::ExtractCurrentFile threw an Unknown exception");
+        kodiLog(ADDON_LOG_ERROR, "CFileRarExtractThread::%s: failed. CmdExtract::ExtractCurrentFile threw an Unknown exception", __func__);
       }
 
       hRunning.Reset();
     }
   }
+
   hRestart.Signal();
-  return NULL;
 }

@@ -1,6 +1,6 @@
 /*
- *      Copyright (C) 2005-2013 Team XBMC
- *      http://xbmc.org
+ *      Copyright (C) 2005-2020 Team Kodi
+ *      http://kodi.tv
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,21 +13,22 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, see
+ *  along with Kodi; see the file COPYING.  If not, see
  *  <http://www.gnu.org/licenses/>.
  *
  */
 
-#ifndef RAR_EXTRACT_THREAD_H_
-#define RAR_EXTRACT_THREAD_H_
+#pragma once
 
-#include "p8-platform/threads/threads.h"
+#include "Helpers.h"
+
+#include <thread>
 
 class Archive;
 class CmdExtract;
 class CommandData;
 
-class CRarFileExtractThread : public P8PLATFORM::CThread
+class CRarFileExtractThread
 {
 public:
   CRarFileExtractThread();
@@ -35,16 +36,16 @@ public:
 
   void Start(Archive* pArc, CommandData* pCmd, CmdExtract* pExtract, int iSize);
 
-  virtual void* Process();
-
-  P8PLATFORM::CEvent hRunning;
-  P8PLATFORM::CEvent hRestart;
+  ThreadHelpers::CEvent hRunning;
+  ThreadHelpers::CEvent hRestart;
 
 protected:
-  Archive* m_pArc;
-  CommandData* m_pCmd;
-  CmdExtract* m_pExtract;
-  int m_iSize;
-};
+  void Process();
 
-#endif
+  Archive* m_pArc = nullptr;
+  CommandData* m_pCmd = nullptr;
+  CmdExtract* m_pExtract = nullptr;
+  int m_iSize = 0;
+  std::thread m_thread;
+  bool m_stopThread = false;
+};
