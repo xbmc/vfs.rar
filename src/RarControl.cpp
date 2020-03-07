@@ -26,7 +26,6 @@
 
 #include <kodi/General.h>
 #include <kodi/gui/dialogs/Keyboard.h>
-#include <regex>
 #include <thread>
 #include <tinyxml.h>
 
