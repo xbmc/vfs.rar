@@ -831,12 +831,7 @@ void CmdExtract::UnstoreFile(ComprDataIO &DataIO,int64 DestUnpSize)
       }
       if (ReadSize > 0)
       {
-        int WriteSize=ReadSize<DestUnpSize ? ReadSize:(int)DestUnpSize;
-        if (WriteSize>0)
-        {
-          DataIO.UnpWrite(&Buffer[0],WriteSize);
-          DestUnpSize-=WriteSize;
-        }
+        DataIO.UnpWrite(&Buffer[0],ReadSize);
       }
       else
       {
@@ -848,8 +843,11 @@ void CmdExtract::UnstoreFile(ComprDataIO &DataIO,int64 DestUnpSize)
         DataIO.hBufferFilled->Reset();
         DataIO.hBufferEmpty->Signal();
         while (!DataIO.hBufferFilled->Wait(1))
+        {
+          DataIO.hBufferEmpty->Signal();
           if (DataIO.hQuit->Wait(1))
             return;
+        }
       }
     }
   }

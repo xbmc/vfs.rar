@@ -188,18 +188,27 @@ ssize_t CRARFile::Read(void* context, void* lpBuf, size_t uiBufSize)
     return -1;
   }
 
+  // In case of encryption we need to align read size to encryption
+  // block size. We can do it by simple masking, because unpack read code
+  // always reads more than CRYPT_BLOCK_SIZE, so we do not risk to make it 0.
+  bool decryption = ctx->m_extract.GetDataIO().Decryption;
+  if (decryption)
+    uiBufSize &= ~CRYPT_BLOCK_MASK;
+
   size_t bufferSize = File::CopyBufferSize();
   uint8_t* pBuf = static_cast<uint8_t*>(lpBuf);
   ssize_t uicBufSize = uiBufSize;
   if (ctx->m_inbuffer > 0)
   {
-    ssize_t iCopy = uiBufSize<ctx->m_inbuffer ? uiBufSize : ctx->m_inbuffer;
-    memcpy(lpBuf, ctx->m_head, size_t(iCopy));
-    ctx->m_head += iCopy;
-    ctx->m_inbuffer -= int(iCopy);
-    pBuf += iCopy;
-    uicBufSize -= iCopy;
-    ctx->m_fileposition += iCopy;
+    ssize_t copy = std::min(static_cast<ssize_t>(ctx->m_inbuffer), uicBufSize);
+    if (decryption)
+      copy &= ~CRYPT_BLOCK_MASK;
+    memcpy(lpBuf, ctx->m_head, size_t(copy));
+    ctx->m_head += copy;
+    ctx->m_inbuffer -= copy;
+    ctx->m_fileposition += copy;
+    pBuf += copy;
+    uicBufSize -= copy;
   }
 
   while ((uicBufSize > 0) && ctx->m_fileposition < GetLength(context))
@@ -231,11 +240,13 @@ ssize_t CRARFile::Read(void* context, void* lpBuf, size_t uiBufSize)
       break;
 
     ssize_t copy = std::min(static_cast<ssize_t>(ctx->m_inbuffer), uicBufSize);
+    if (decryption)
+      copy &= ~CRYPT_BLOCK_MASK;
     memcpy(pBuf, ctx->m_head, copy);
     ctx->m_head += copy;
-    pBuf += copy;
-    ctx->m_fileposition += copy;
     ctx->m_inbuffer -= copy;
+    ctx->m_fileposition += copy;
+    pBuf += copy;
     uicBufSize -= copy;
   }
 
@@ -332,8 +343,16 @@ int64_t CRARFile::Seek(void* context, int64_t iFilePosition, int iWhence)
       return -1;
   }
 
+  // In case of encryption we need to align read size to encryption
+  // block size. We can do it by simple masking, because unpack read code
+  // always reads more than CRYPT_BLOCK_SIZE, so we do not risk to make it 0.
+  if (ctx->m_extract.GetDataIO().Decryption)
+    iFilePosition &= ~CRYPT_BLOCK_MASK;
+
   if (iFilePosition > GetLength(context))
+  {
     return -1;
+  }
 
   if (iFilePosition == ctx->m_fileposition) // happens a lot
     return ctx->m_fileposition;
@@ -352,7 +371,9 @@ int64_t CRARFile::Seek(void* context, int64_t iFilePosition, int iWhence)
   {
     ctx->CleanUp();
     if (!ctx->OpenInArchive())
+    {
       return -1;
+    }
 
     if( !ctx->m_extract.GetDataIO().hBufferEmpty->Wait(SEEKTIMOUT) )
     {

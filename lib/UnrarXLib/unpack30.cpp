@@ -257,12 +257,15 @@ void Unpack::Unpack29(bool Solid)
   }
   UnpWriteBuf30();
 
-  if (UnpIO->UnpackToMemorySize > -1)
+  if (UnpIO->UnpackToMemorySize != -1)
   {
     UnpIO->hBufferEmpty->Signal();
     while (! UnpIO->hBufferFilled->Wait(1))
+    {
+      UnpIO->hBufferEmpty->Signal();
       if (UnpIO->hQuit->Wait(1))
         return;
+    }
   }
 }
 
