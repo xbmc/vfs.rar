@@ -21,11 +21,10 @@
 #include "RarControl.h"
 #include "RarExtractThread.h"
 #include "RarManager.h"
+#include "RarPassword.h"
 #include "Helpers.h"
-#include "encryption/encrypt.h"
 
 #include <kodi/General.h>
-#include <kodi/Filesystem.h>
 #include <kodi/gui/dialogs/Keyboard.h>
 #include <regex>
 #include <thread>
@@ -35,10 +34,14 @@
 #define CONTINUE_PROCESSING 1
 #define SUCCESS 0
 
+// Amount of standard passwords where can available on settings
+#define MAX_STANDARD_PASSWORDS 5
+
 CRARControl::CRARControl(const std::string& rarPath)
   : m_path(rarPath)
 {
   SetCallback(reinterpret_cast<UNRARCALLBACK>(UnRarCallback), reinterpret_cast<LPARAM>(this));
+  m_passwordAskAllowed = kodi::GetSettingBoolean("usercheck_for_password");
 }
 
 void CRARControl::SetCallback(UNRARCALLBACK callback, LPARAM userdata)
@@ -55,57 +58,83 @@ bool CRARControl::ArchiveList(std::vector<RARHeaderDataEx>& list)
     return false;
   }
 
-  RAROpenArchiveDataEx archiveData = {0};
-  archiveData.OpenMode = RAR_OM_LIST;
-  archiveData.ArcName = const_cast<char*>(m_path.c_str());
-  archiveData.CmtBuf = nullptr;
-  archiveData.CmtBufSize = 0;
+  bool needPassword = false;
+  bool firstTry = true;
+  bool ret = false;
 
-  HANDLE archive = RAROpenArchiveEx(&archiveData);
-  if (!archive)
+  m_passwordStandardCheck = 0;
+
+  while (firstTry || (needPassword && m_passwordStandardCheck < MAX_STANDARD_PASSWORDS))
   {
-    RarErrorLog(__func__, archiveData.OpenResult);
-    return 0;
-  }
-  RARSetCallback(archive, m_callback, m_userData);
+    RAROpenArchiveDataEx archiveData = {0};
+    archiveData.OpenMode = RAR_OM_LIST;
+    archiveData.ArcName = const_cast<char*>(m_path.c_str());
+    archiveData.CmtBuf = nullptr;
+    archiveData.CmtBufSize = 0;
 
-  int result;
-  RARHeaderDataEx fileHeader = {0};
-  while ((result = RARReadHeaderEx(archive, &fileHeader)) == SUCCESS)
-  {
-    kodiLog(ADDON_LOG_DEBUG, "CRARControl::%s: List file from %s: %s", __func__, fileHeader.ArcName, fileHeader.FileName);
-
-    result = RARProcessFile(archive, RAR_SKIP, nullptr, nullptr);
-    if (result != SUCCESS)
+    HANDLE archive = RAROpenArchiveEx(&archiveData);
+    if (!archive)
     {
-      kodiLog(ADDON_LOG_DEBUG, "CRARControl::%s: Error processing file %s", __func__, m_path.c_str());
-      RARCloseArchive(archive);
-      return false;
+      RarErrorLog(__func__, archiveData.OpenResult);
+      return 0;
+    }
+    RARSetCallback(archive, m_callback, m_userData);
+
+    std::string currentPw = m_password;
+
+    needPassword = archiveData.Flags && ROADF_ENCHEADERS;
+    if (needPassword)
+    {
+      CRARPasswordControl::GetPassword(m_path, m_password, m_passwordSeemsBad);
+      currentPw = m_password;
     }
 
-    list.push_back(fileHeader);
-  }
+    int result;
+    RARHeaderDataEx fileHeader = {0};
+    while ((result = RARReadHeaderEx(archive, &fileHeader)) == SUCCESS)
+    {
+      if (firstTry)
+        kodiLog(ADDON_LOG_DEBUG, "CRARControl::%s: List file from %s: %s (encrypted: %s)", __func__, fileHeader.ArcName, fileHeader.FileName, fileHeader.Flags & ROADF_LOCK ? "yes" : "no");
 
-  if (m_xmlWasAsked && list.empty())
-  {
-    m_passwordSeemsBad = true;
-    SavePassword();
-  }
-  else if (m_passwordSeemsBad)
-  {
-    m_passwordSeemsBad = false;
-    SavePassword();
-  }
+      result = RARProcessFile(archive, RAR_SKIP, nullptr, nullptr);
+      if (result != SUCCESS)
+      {
+        kodiLog(ADDON_LOG_DEBUG, "CRARControl::%s: Error processing file %s", __func__, m_path.c_str());
+        RARCloseArchive(archive);
+        break;
+      }
 
-  if (result != ERAR_END_ARCHIVE)
-  {
-    kodiLog(ADDON_LOG_DEBUG, "CRARControl::%s: Error in archive %s", __func__, m_path.c_str());
+      list.push_back(fileHeader);
+    }
+
+    firstTry = false;
+
+    m_passwordStandardCheck++;
+
+    if (m_xmlWasAsked && list.empty())
+    {
+      m_passwordSeemsBad = true;
+      CRARPasswordControl::SavePassword(m_path, m_password, m_passwordSeemsBad);
+    }
+
+    if (result != ERAR_END_ARCHIVE)
+    {
+      RarErrorLog(__func__, result);
+      RARCloseArchive(archive);
+      ret = false;
+      continue;
+    }
+    else if ((needPassword && currentPw != m_password) || m_passwordSeemsBad)
+    {
+      m_passwordSeemsBad = false;
+      CRARPasswordControl::SavePassword(m_path, m_password, m_passwordSeemsBad);
+    }
+
     RARCloseArchive(archive);
-    return false;
+    ret = true;
+    break;
   }
-
-  RARCloseArchive(archive);
-  return true;
+  return ret;
 }
 
 int CRARControl::ArchiveExtract(const std::string& targetPath, const std::string& fileToExtract, bool showProgress/* = false*/)
@@ -155,87 +184,120 @@ int CRARControl::ArchiveExtract(const std::string& targetPath, const std::string
     m_progress->SetText(m_path);
   }
 
-  RAROpenArchiveDataEx archiveData = {0};
-  archiveData.OpenMode = RAR_OM_EXTRACT;
-  archiveData.ArcName = const_cast<char*>(m_path.c_str());
-  archiveData.CmtBuf = nullptr;
-  archiveData.CmtBufSize = 0;
+  bool needPassword = false;
+  bool firstTry = true;
 
-  HANDLE archive = RAROpenArchiveEx(&archiveData);
-  if (!archive)
+  m_passwordStandardCheck = 0;
+
+  while (firstTry || (needPassword && m_passwordStandardCheck < MAX_STANDARD_PASSWORDS))
   {
-    RarErrorLog(__func__, archiveData.OpenResult);
-    return retValue;
-  }
-  RARSetCallback(archive, m_callback, m_userData);
 
-  int result;
-  RARHeaderDataEx fileHeader = {0};
-  retValue = 1;
-  while ((result = RARReadHeaderEx(archive, &fileHeader)) == SUCCESS)
-  {
-    kodiLog(ADDON_LOG_DEBUG, "CRARControl::%s: List file from %s: %s", __func__, fileHeader.ArcName, fileHeader.FileName);
+    RAROpenArchiveDataEx archiveData = {0};
+    archiveData.OpenMode = RAR_OM_EXTRACT;
+    archiveData.ArcName = const_cast<char*>(m_path.c_str());
+    archiveData.CmtBuf = nullptr;
+    archiveData.CmtBufSize = 0;
 
-    int operation = (all || fileToExtract == fileHeader.FileName) ? RAR_EXTRACT : RAR_SKIP;
-    if (operation == RAR_EXTRACT)
+    HANDLE archive = RAROpenArchiveEx(&archiveData);
+    if (!archive)
     {
-      m_extractedFileSize = 0;
-      m_extractFileSize = fileHeader.UnpSize;
-      if (m_progress)
+      RarErrorLog(__func__, archiveData.OpenResult);
+      return retValue;
+    }
+    RARSetCallback(archive, m_callback, m_userData);
+
+    std::string currentPw = m_password;
+
+    needPassword = archiveData.Flags && ROADF_ENCHEADERS;
+    if (currentPw.empty() && needPassword)
+    {
+      CRARPasswordControl::GetPassword(m_path, m_password, m_passwordSeemsBad);
+      currentPw = m_password;
+    }
+
+    int result;
+    RARHeaderDataEx fileHeader = {0};
+    retValue = 1;
+    while ((result = RARReadHeaderEx(archive, &fileHeader)) == SUCCESS)
+    {
+      if (firstTry)
       {
-        // After wanted file is found to progress with his real extract
-        m_progress->SetTitle(kodi::GetLocalizedString(30000));
-        m_progress->SetText(fileHeader.FileName);
-        m_progress->SetProgress(m_extractedFileSize, m_extractFileSize);
+        kodiLog(ADDON_LOG_DEBUG, "CRARControl::%s: List file from %s: %s", __func__, fileHeader.ArcName, fileHeader.FileName);
+
+        needPassword = fileHeader.Flags & ROADF_LOCK;
+        if (needPassword)
+        {
+          CRARPasswordControl::GetPassword(m_path, m_password, m_passwordSeemsBad);
+          currentPw = m_password;
+        }
       }
+
+      int operation = (all || fileToExtract == fileHeader.FileName) ? RAR_EXTRACT : RAR_SKIP;
+      if (operation == RAR_EXTRACT)
+      {
+        m_extractedFileSize = 0;
+        m_extractFileSize = (uint64_t(fileHeader.UnpSizeHigh)<<32)|fileHeader.UnpSize;
+        if (m_progress)
+        {
+          // After wanted file is found to progress with his real extract
+          m_progress->SetTitle(kodi::GetLocalizedString(30000));
+          m_progress->SetText(fileHeader.FileName);
+          m_progress->SetProgress(m_extractedFileSize, m_extractFileSize);
+        }
+      }
+
+      result = RARProcessFile(archive, operation, const_cast<char*>(targetPath.c_str()), nullptr);
+
+      if (m_progress && operation == RAR_EXTRACT)
+      {
+        m_progress->MarkFinished();
+      }
+
+      if (result != SUCCESS)
+      {
+        kodiLog(ADDON_LOG_DEBUG, "CRARControl::%s: Error processing file %s", __func__, m_path.c_str());
+        result = ERAR_END_ARCHIVE;
+        retValue = 0;
+        break;
+      }
+
+      if (operation != RAR_SKIP && !all)
+      {
+        result = ERAR_END_ARCHIVE;
+        retValue = 1;
+        break;
+      }
+
+      current++;
+      if (m_progress)
+        m_progress->SetProgress(current, amount);
     }
 
-    result = RARProcessFile(archive, operation, const_cast<char*>(targetPath.c_str()), nullptr);
+    firstTry = false;
 
-    if (m_progress && operation == RAR_EXTRACT)
-    {
-      m_progress->MarkFinished();
-    }
+    m_passwordStandardCheck++;
 
-    if (result != SUCCESS)
+    if (result != ERAR_END_ARCHIVE)
     {
-      kodiLog(ADDON_LOG_DEBUG, "CRARControl::%s: Error processing file %s", __func__, m_path.c_str());
-      result = ERAR_END_ARCHIVE;
+      if (m_xmlWasAsked)
+      {
+        m_passwordSeemsBad = true;
+        CRARPasswordControl::SavePassword(m_path, m_password, m_passwordSeemsBad);
+      }
+
+      RarErrorLog(__func__, result);
       retValue = 0;
-      break;
+      continue;
     }
-
-    if (operation != RAR_SKIP && !all)
+    else if ((needPassword && currentPw != m_password) || m_passwordSeemsBad)
     {
-      result = ERAR_END_ARCHIVE;
-      retValue = 1;
-      break;
+      m_passwordSeemsBad = false;
+      CRARPasswordControl::SavePassword(m_path, m_password, m_passwordSeemsBad);
     }
 
-    current++;
-    if (m_progress)
-      m_progress->SetProgress(current, amount);
+    RARCloseArchive(archive);
+    break;
   }
-
-  if (result != ERAR_END_ARCHIVE)
-  {
-    if (m_xmlWasAsked)
-    {
-      m_passwordSeemsBad = true;
-      SavePassword();
-    }
-
-    kodiLog(ADDON_LOG_DEBUG, "CRARControl::%s: Error in archive %s", __func__, m_path.c_str());
-    retValue = 0;
-  }
-
-  if (m_passwordSeemsBad)
-  {
-    m_passwordSeemsBad = false;
-    SavePassword();
-  }
-
-  RARCloseArchive(archive);
 
   m_progress = nullptr;
 
@@ -314,15 +376,39 @@ int CRARControl::NeedPassword(char* password, size_t size)
 {
   bool xmlPwPresent = false;
   std::string pw;
+
   if (!m_xmlWasAsked || !m_passwordSeemsBad)
   {
     m_xmlWasAsked = true;
-    if (GetPassword() && !m_passwordSeemsBad)
+    if (CRARPasswordControl::GetPassword(m_path, m_password, m_passwordSeemsBad) && !m_passwordSeemsBad)
     {
       pw = m_password;
       xmlPwPresent = true;
     }
   }
+
+  if (pw.empty())
+  {
+    // Prevent ask and stop if no user ask enabled and nothing as standard inside settings
+    if (!m_passwordAskAllowed && m_passwordStandardCheck >= MAX_STANDARD_PASSWORDS)
+      return STOP_PROCESSING;
+
+    // Check about standard passwords defined in settings.xml
+    for (unsigned int i = m_passwordStandardCheck; i < MAX_STANDARD_PASSWORDS; ++i)
+    {
+      pw = kodi::GetSettingString("standard_password_" + std::to_string(i+1));
+      if (!pw.empty())
+      {
+        strncpy(password, pw.c_str(), size);
+        m_password = pw;
+        return CONTINUE_PROCESSING;
+      }
+    }
+  }
+
+  // Break if nothing defined inside settings
+  if (!m_passwordAskAllowed && pw.empty())
+    return STOP_PROCESSING;
 
   std::string header = StringFormat(kodi::GetLocalizedString(30003).c_str(), m_path.length() > 45 ? kodi::vfs::GetFileName(m_path).c_str() : m_path.c_str());
   if (!pw.empty() || kodi::gui::dialogs::Keyboard::ShowAndGetInput(pw, header, false, true))
@@ -330,7 +416,7 @@ int CRARControl::NeedPassword(char* password, size_t size)
     strncpy(password, pw.c_str(), size);
     m_password = pw;
     if (!xmlPwPresent)
-      SavePassword();
+      CRARPasswordControl::SavePassword(m_path, m_password, m_passwordSeemsBad);
     return CONTINUE_PROCESSING;
   }
 
@@ -359,6 +445,9 @@ void CRARControl::RarErrorLog(const std::string& func, int ErrCode)
     case RARX_MEMORY:
       kodiLog(ADDON_LOG_ERROR, "CRARControl::%s: memory error on '%s'", func.c_str(), m_path.c_str());
       break;
+    case ERAR_MISSING_PASSWORD:
+      kodiLog(ADDON_LOG_WARNING, "CRARControl::%s: missing password on '%s'", func.c_str(), m_path.c_str());
+      break;
     case RARX_BADPWD:
       kodiLog(ADDON_LOG_WARNING, "CRARControl::%s: wrong password on '%s'", func.c_str(), m_path.c_str());
       break;
@@ -371,130 +460,6 @@ void CRARControl::RarErrorLog(const std::string& func, int ErrCode)
       kodiLog(ADDON_LOG_ERROR, "CRARControl::%s: unknown error %i on '%s'", func.c_str(), ErrCode, m_path.c_str());
       break;
   }
-}
-
-bool CRARControl::GetPassword()
-{
-  TiXmlDocument xmlDoc;
-  std::string strSettingsFile = kodi::GetBaseUserPath("rar-control.xml");
-
-  if (!xmlDoc.LoadFile(strSettingsFile))
-  {
-    kodiLog(ADDON_LOG_ERROR, "CRARControl::%s: invalid data (no/invalid data file found at '%s')", __func__, strSettingsFile.c_str());
-    return false;
-  }
-
-  TiXmlElement *pElement = xmlDoc.FirstChildElement("data");
-  if (pElement)
-  {
-    pElement = pElement->FirstChildElement("path");
-    for (pElement; pElement; pElement = pElement->NextSiblingElement())
-    {
-      const TiXmlNode* pNode = pElement->FirstChild();
-      if (pNode != nullptr)
-      {
-        const char* added = pElement->Attribute("added");
-        if (!added)
-          return false;
-        if (m_path == decrypt(pNode->Value(), added))
-        {
-          const char* attr;
-
-          attr = pElement->Attribute("pw");
-          if (!attr)
-            return false;
-          m_password = decrypt(attr, added);
-
-          attr = pElement->Attribute("bad");
-          if (!attr)
-            return false;
-          m_passwordSeemsBad = std::string(attr) == "true" ? true : false;
-          return true;
-        }
-      }
-    }
-  }
-
-  return false;
-}
-
-bool CRARControl::SavePassword()
-{
-  TiXmlDocument xmlDoc;
-  std::string strSettingsFile = kodi::GetBaseUserPath("rar-control.xml");
-
-  if (kodi::vfs::FileExists(strSettingsFile))
-  {
-    if (!xmlDoc.LoadFile(strSettingsFile))
-    {
-      kodiLog(ADDON_LOG_ERROR, "invalid data (no/invalid data file found at '%s')", strSettingsFile.c_str());
-      return false;
-    }
-  }
-  else
-    kodi::vfs::CreateDirectory(kodi::GetBaseUserPath());
-
-  bool isUpdated = false;
-  TiXmlElement *pElement = xmlDoc.FirstChildElement("data");
-  if (pElement)
-  {
-    pElement = pElement->FirstChildElement("path");
-    for (pElement; pElement; pElement = pElement->NextSiblingElement())
-    {
-      const TiXmlNode* pNode = pElement->FirstChild();
-      if (pNode != nullptr)
-      {
-        const char* attr = pElement->Attribute("added");
-        if (!attr)
-          return false;
-        if (m_path == decrypt(pNode->Value(), attr))
-        {
-          pElement->SetAttribute("pw", encrypt(m_password, attr).c_str());
-          pElement->SetAttribute("bad", m_passwordSeemsBad ? "true" : "false");
-          isUpdated = true;
-          break;
-        }
-      }
-    }
-  }
-
-  if (!isUpdated)
-  {
-    TiXmlNode* pNode;
-    TiXmlElement *pElement = xmlDoc.FirstChildElement("data");
-    if (!pElement)
-    {
-      TiXmlElement xmlSetting("data");
-      pNode = xmlDoc.InsertEndChild(xmlSetting);
-    }
-    else
-    {
-      pNode = pElement;
-    }
-
-    if (pNode)
-    {
-      std::string addTime = NowToString();
-      TiXmlElement newElement("path");
-      newElement.SetAttribute("pw", encrypt(m_password, addTime).c_str());
-      newElement.SetAttribute("added", addTime.c_str());
-      newElement.SetAttribute("bad", m_passwordSeemsBad ? "true" : "false");
-      TiXmlNode *pNewNode = pNode->InsertEndChild(newElement);
-      if (pNewNode)
-      {
-        TiXmlText value(encrypt(m_path, addTime).c_str());
-        pNewNode->InsertEndChild(value);
-      }
-    }
-  }
-
-  if (!xmlDoc.SaveFile(strSettingsFile))
-  {
-    kodiLog(ADDON_LOG_ERROR, "CRARControl::%s: failed to write settings data", __func__);
-    return false;
-  }
-
-  return true;
 }
 
 //------------------------------------------------------------------------------
@@ -589,7 +554,7 @@ bool RARContext::OpenInArchive()
     if (!m_xmlWasAsked || !m_passwordSeemsBad)
     {
       m_xmlWasAsked = true;
-      if (GetPassword() && !m_passwordSeemsBad)
+      if (CRARPasswordControl::GetPassword(m_path, m_password, m_passwordSeemsBad) && !m_passwordSeemsBad)
       {
         // Set password for encrypted archives
         if ((!m_password.empty()) &&

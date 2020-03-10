@@ -555,13 +555,6 @@ void File::Seek(int64 Offset,int Method)
 
 bool File::RawSeek(int64 Offset,int Method)
 {
-#ifdef BUILD_KODI_ADDON
-  if (Offset > FileLength())
-    return false;
-
-  if (hFile->Seek(Offset,Method) < 0)
-    return false;
-#else
   if (hFile==FILE_BAD_HANDLE)
     return true;
   if (Offset<0 && Method!=SEEK_SET)
@@ -569,6 +562,14 @@ bool File::RawSeek(int64 Offset,int Method)
     Offset=(Method==SEEK_CUR ? Tell():FileLength())+Offset;
     Method=SEEK_SET;
   }
+
+#ifdef BUILD_KODI_ADDON
+  if (Offset > FileLength())
+    return false;
+
+  if (hFile->Seek(Offset,Method) < 0)
+    return false;
+#else
 #ifdef _WIN_ALL
   LONG HighDist=(LONG)(Offset>>32);
   if (SetFilePointer(hFile,(LONG)Offset,&HighDist,Method)==0xffffffff &&
@@ -624,7 +625,7 @@ int64 File::Tell()
 
 void File::Prealloc(int64 Size)
 {
-#ifdef _WIN_ALL
+#if defined(_WIN_ALL) || defined(BUILD_KODI_ADDON)
   if (RawSeek(Size,SEEK_SET))
   {
     Truncate();
@@ -632,7 +633,7 @@ void File::Prealloc(int64 Size)
   }
 #endif
 
-#if defined(_UNIX) && defined(USE_FALLOCATE)
+#if defined(_UNIX) && defined(USE_FALLOCATE) && !defined(BUILD_KODI_ADDON)
   // fallocate is rather new call. Only latest kernels support it.
   // So we are not using it by default yet.
   int fd = GetFD();

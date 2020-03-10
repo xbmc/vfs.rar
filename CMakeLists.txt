@@ -15,12 +15,14 @@ add_subdirectory(lib/UnrarXLib)
 set(RAR_SOURCES src/RarControl.cpp
                 src/RarFile.cpp
                 src/RarExtractThread.cpp
-                src/RarManager.cpp)
+                src/RarManager.cpp
+                src/RarPassword.cpp)
 
 set(RAR_HEADERS src/Helpers.h
                 src/RarControl.h
                 src/RarExtractThread.h
-                src/RarManager.h)
+                src/RarManager.h
+                src/RarPassword.h)
 
 add_definitions(-D_LARGEFILE64_SOURCE
                 -D_FILE_OFFSET_BITS=64

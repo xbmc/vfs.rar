@@ -77,91 +77,91 @@ int ComprDataIO::UnpRead(byte *Addr,size_t Count)
     else
     {
       bool bRead = true;
-      size_t SizeToRead=((int64)Count>UnpPackedSize) ? (size_t)UnpPackedSize:Count;
-      if (SizeToRead > 0)
+      if (!SrcFile->IsOpened())
       {
-        if (UnpVolume && Decryption && (int64)Count>UnpPackedSize)
+        NextVolumeMissing = true;
+        return(-1);
+      }
+      if (UnpackToMemory)
+      {
+        if (hSeek->Wait(1)) // we are seeking
         {
-          // We need aligned blocks for decryption and we want "Keep broken
-          // files" to work efficiently with missing encrypted volumes.
-          // So for last data block in volume we adjust the size to read to
-          // next equal or smaller block producing aligned total block size.
-          // So we'll ask for next volume only when processing few unaligned
-          // bytes left in the end, when most of data is already extracted.
-          size_t NewTotalRead = TotalRead + SizeToRead;
-          size_t Adjust = NewTotalRead - (NewTotalRead  & ~CRYPT_BLOCK_MASK);
-          size_t NewSizeToRead = SizeToRead - Adjust;
-          if ((int)NewSizeToRead > 0)
-            SizeToRead = NewSizeToRead;
-        }
-
-        if (!SrcFile->IsOpened())
-        {
-          NextVolumeMissing = true;
-          return(-1);
-        }
-        if (UnpackToMemory)
-        {
-          if (hSeek->Wait(1)) // we are seeking
+          if (m_iSeekTo > CurUnpStart+SrcArc->FileHead.PackSize) // need to seek outside this block
           {
-            if (m_iSeekTo > CurUnpStart+SrcArc->FileHead.PackSize) // need to seek outside this block
+            TotalRead += (int)(SrcArc->NextBlockPos-SrcFile->Tell());
+            CurUnpRead=CurUnpStart+SrcArc->FileHead.PackSize;
+            UnpPackedSize=0;
+            ReadSize = 0;
+            bRead = false;
+          }
+          else
+          {
+            size_t MaxWinSize = File::CopyBufferSize();
+            int64 iStartOfFile = SrcArc->NextBlockPos-SrcArc->FileHead.PackSize;
+            m_iStartOfBuffer = CurUnpStart;
+            int64 iSeekTo=m_iSeekTo-CurUnpStart<MaxWinSize/2?iStartOfFile:iStartOfFile+m_iSeekTo-CurUnpStart-MaxWinSize/2;
+            if (iSeekTo == iStartOfFile) // front
             {
-              TotalRead += (int)(SrcArc->NextBlockPos-SrcFile->Tell());
-              CurUnpRead=CurUnpStart+SrcArc->FileHead.PackSize;
-              UnpPackedSize=0;
-              ReadSize = 0;
-              bRead = false;
-            }
-            else
-            {
-              size_t MaxWinSize = File::CopyBufferSize();
-              int64 iStartOfFile = SrcArc->NextBlockPos-SrcArc->FileHead.PackSize;
-              m_iStartOfBuffer = CurUnpStart;
-              int64 iSeekTo=m_iSeekTo-CurUnpStart<MaxWinSize/2?iStartOfFile:iStartOfFile+m_iSeekTo-CurUnpStart-MaxWinSize/2;
-              if (iSeekTo == iStartOfFile) // front
+              if (CurUnpStart+MaxWinSize>SrcArc->FileHead.UnpSize)
               {
-                if (CurUnpStart+MaxWinSize>SrcArc->FileHead.UnpSize)
-                {
-                  m_iSeekTo=iStartOfFile;
-                  UnpPackedSize = SrcArc->FileHead.PackSize;
-                }
-                else
-                {
-                  m_iSeekTo=MaxWinSize-(m_iSeekTo-CurUnpStart);
-                  UnpPackedSize = SrcArc->FileHead.PackSize - (m_iStartOfBuffer - CurUnpStart);
-                }
+                m_iSeekTo=iStartOfFile;
+                UnpPackedSize = SrcArc->FileHead.PackSize;
               }
               else
               {
-                m_iStartOfBuffer = m_iSeekTo-MaxWinSize/2; // front
-                if (m_iSeekTo+MaxWinSize/2>SrcArc->FileHead.UnpSize)
-                {
-                  iSeekTo = iStartOfFile+SrcArc->FileHead.PackSize-MaxWinSize;
-                  m_iStartOfBuffer = CurUnpStart+SrcArc->FileHead.PackSize-MaxWinSize;
-                  m_iSeekTo = MaxWinSize-(m_iSeekTo-m_iStartOfBuffer);
-                  UnpPackedSize = MaxWinSize;
-                }
-                else
-                {
-                  m_iSeekTo=MaxWinSize/2;
-                  UnpPackedSize = SrcArc->FileHead.PackSize - (m_iStartOfBuffer - CurUnpStart);
-                }
+                m_iSeekTo=MaxWinSize-(m_iSeekTo-CurUnpStart);
+                UnpPackedSize = SrcArc->FileHead.PackSize - (m_iStartOfBuffer - CurUnpStart);
               }
-
-              SrcFile->Seek(iSeekTo,SEEK_SET);
-
-              TotalRead = 0;
-              CurUnpRead = CurUnpStart + iSeekTo - iStartOfFile;
-
-              CurUnpWrite = SrcFile->Tell() - iStartOfFile + CurUnpStart;
-              hSeek->Reset();
-              hSeekDone->Signal();
             }
+            else
+            {
+              m_iStartOfBuffer = m_iSeekTo-MaxWinSize/2; // front
+              if (m_iSeekTo+MaxWinSize/2>SrcArc->FileHead.UnpSize)
+              {
+                iSeekTo = iStartOfFile+SrcArc->FileHead.PackSize-MaxWinSize;
+                m_iStartOfBuffer = CurUnpStart+SrcArc->FileHead.PackSize-MaxWinSize;
+                m_iSeekTo = MaxWinSize-(m_iSeekTo-m_iStartOfBuffer);
+                UnpPackedSize = MaxWinSize;
+              }
+              else
+              {
+                m_iSeekTo=MaxWinSize/2;
+                UnpPackedSize = SrcArc->FileHead.PackSize - (m_iStartOfBuffer - CurUnpStart);
+              }
+            }
+
+            SrcFile->Seek(iSeekTo,SEEK_SET);
+
+            TotalRead = 0;
+            CurUnpRead = CurUnpStart + iSeekTo - iStartOfFile;
+
+            CurUnpWrite = SrcFile->Tell() - iStartOfFile + CurUnpStart;
+            hSeek->Reset();
+            hSeekDone->Signal();
           }
         }
-        if (bRead)
+      }
+
+      if (bRead)
+      {
+        size_t SizeToRead=((int64)Count>UnpPackedSize) ? (size_t)UnpPackedSize:Count;
+        if (SizeToRead > 0)
         {
-          SizeToRead=(Count>UnpPackedSize) ? (int)(UnpPackedSize):Count;
+          if (UnpVolume && Decryption && (int64)Count>UnpPackedSize)
+          {
+            // We need aligned blocks for decryption and we want "Keep broken
+            // files" to work efficiently with missing encrypted volumes.
+            // So for last data block in volume we adjust the size to read to
+            // next equal or smaller block producing aligned total block size.
+            // So we'll ask for next volume only when processing few unaligned
+            // bytes left in the end, when most of data is already extracted.
+            size_t NewTotalRead = TotalRead + SizeToRead;
+            size_t Adjust = NewTotalRead - (NewTotalRead  & ~CRYPT_BLOCK_MASK);
+            size_t NewSizeToRead = SizeToRead - Adjust;
+            if ((int)NewSizeToRead > 0)
+              SizeToRead = NewSizeToRead;
+          }
+
           ReadSize=SrcFile->Read(ReadAddr,SizeToRead);
           FileHeader *hd=SubHead!=NULL ? SubHead:&SrcArc->FileHead;
           if (!NoFileHeader && hd->SplitAfter)
@@ -268,17 +268,21 @@ void ComprDataIO::UnpWrite(byte *Addr,size_t Count)
   UnpWrSize=Count;
   if (UnpackToMemory)
   {
+#ifdef BUILD_KODI_ADDON
     while(UnpackToMemorySize < (int)Count)
     {
       hBufferEmpty->Broadcast();
       while(!hBufferFilled->Wait(1))
       {
+        hBufferEmpty->Signal();
         if (hQuit->Wait(1))
           return;
       }
     }
 
     if (!hSeek->Wait(1)) // we are seeking
+#endif
+    if (Count <= UnpackToMemorySize)
     {
       memcpy(UnpackToMemoryAddr,Addr,Count);
       UnpackToMemoryAddr+=Count;
