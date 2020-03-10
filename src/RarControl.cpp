@@ -236,7 +236,7 @@ int CRARControl::ArchiveExtract(const std::string& targetPath, const std::string
       if (operation == RAR_EXTRACT)
       {
         m_extractedFileSize = 0;
-        m_extractFileSize = fileHeader.UnpSize;
+        m_extractFileSize = (uint64_t(fileHeader.UnpSizeHigh)<<32)|fileHeader.UnpSize;
         if (m_progress)
         {
           // After wanted file is found to progress with his real extract
