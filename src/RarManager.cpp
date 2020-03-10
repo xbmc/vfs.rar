@@ -289,7 +289,7 @@ bool CRarManager::GetFilesInRar(std::vector<kodi::vfs::CDirEntry>& vecpItems, co
         else
           file.SetLabel(vec[iDepth]);
         file.SetPath(strName.c_str() + strPathInRar.size());
-        file.SetSize(entry.UnpSize);
+        file.SetSize((uint64_t(entry.UnpSizeHigh)<<32)|entry.UnpSize);
         file.SetFolder(false);
 
         char tmp[16];

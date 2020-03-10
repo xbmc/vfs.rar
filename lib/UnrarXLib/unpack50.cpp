@@ -159,12 +159,15 @@ void Unpack::Unpack5(bool Solid)
   }
   UnpWriteBuf();
 
-  if (UnpIO->UnpackToMemorySize > -1)
+  if (UnpIO->UnpackToMemorySize != -1)
   {
     UnpIO->hBufferEmpty->Signal();
     while (! UnpIO->hBufferFilled->Wait(1))
+    {
+      UnpIO->hBufferEmpty->Signal();
       if (UnpIO->hQuit->Wait(1))
         return;
+    }
   }
 }
 
