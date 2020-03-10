@@ -75,9 +75,6 @@ protected:
   void RarErrorLog(const std::string& func, int errCode);
   static int UnRarCallback(UINT msg, LPARAM UserData, LPARAM P1, LPARAM P2);
 
-  bool GetPassword();
-  bool SavePassword();
-
   std::string m_path;
   std::string m_password;
   bool m_passwordSeemsBad = false;
@@ -87,6 +84,8 @@ protected:
   size_t m_extractFileSize = 0;
   size_t m_extractedFileSize = 0;
   bool m_xmlWasAsked = false;
+  bool m_passwordAskAllowed = false;
+  int m_passwordStandardCheck = 0;
 };
 
 class RARContext : public CRARControl

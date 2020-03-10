@@ -20,6 +20,7 @@
 
 #include "RarExtractThread.h"
 #include "RarManager.h"
+#include "RarPassword.h"
 #include "Helpers.h"
 
 #include "rar.hpp"
@@ -555,6 +556,11 @@ class ATTRIBUTE_HIDDEN CMyAddon : public kodi::addon::CAddonBase
 {
 public:
   CMyAddon() = default;
+  ~CMyAddon()
+  {
+    CRARPasswordControl::CleanupPasswordList();
+  }
+
   ADDON_STATUS CreateInstance(int instanceType, std::string instanceID, KODI_HANDLE instance, KODI_HANDLE& addonInstance) override
   {
     addonInstance = new CRARFile(instance);
