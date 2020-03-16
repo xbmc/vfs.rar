@@ -176,9 +176,9 @@ ssize_t CRARFile::Read(void* context, void* lpBuf, size_t uiBufSize)
   if (ctx->m_file)
     return ctx->m_file->Read(lpBuf, uiBufSize);
 
-  if (ctx->m_fileposition >= GetLength(context)) // we are done
+  if (ctx->m_fileposition >= ctx->m_size) // we are done
   {
-    ctx->m_seekable = false;
+    kodiLog(ADDON_LOG_DEBUG, "CRarFile::%s: Read reached end of file", __func__);
     return 0;
   }
 
@@ -188,21 +188,14 @@ ssize_t CRARFile::Read(void* context, void* lpBuf, size_t uiBufSize)
     return -1;
   }
 
-  // In case of encryption we need to align read size to encryption
-  // block size. We can do it by simple masking, because unpack read code
-  // always reads more than CRYPT_BLOCK_SIZE, so we do not risk to make it 0.
-  bool decryption = ctx->m_extract.GetDataIO().Decryption;
-  if (decryption)
-    uiBufSize &= ~CRYPT_BLOCK_MASK;
-
   size_t bufferSize = File::CopyBufferSize();
   uint8_t* pBuf = static_cast<uint8_t*>(lpBuf);
   ssize_t uicBufSize = uiBufSize;
   if (ctx->m_inbuffer > 0)
   {
     ssize_t copy = std::min(static_cast<ssize_t>(ctx->m_inbuffer), uicBufSize);
-    if (decryption)
-      copy &= ~CRYPT_BLOCK_MASK;
+    if (copy + ctx->m_fileposition >= ctx->m_size)
+      copy = ctx->m_size - ctx->m_fileposition;
     memcpy(lpBuf, ctx->m_head, size_t(copy));
     ctx->m_head += copy;
     ctx->m_inbuffer -= copy;
@@ -211,7 +204,7 @@ ssize_t CRARFile::Read(void* context, void* lpBuf, size_t uiBufSize)
     uicBufSize -= copy;
   }
 
-  while ((uicBufSize > 0) && ctx->m_fileposition < GetLength(context))
+  while ((uicBufSize > 0) && ctx->m_fileposition < ctx->m_size)
   {
     if (ctx->m_inbuffer <= 0)
     {
@@ -240,8 +233,8 @@ ssize_t CRARFile::Read(void* context, void* lpBuf, size_t uiBufSize)
       break;
 
     ssize_t copy = std::min(static_cast<ssize_t>(ctx->m_inbuffer), uicBufSize);
-    if (decryption)
-      copy &= ~CRYPT_BLOCK_MASK;
+    if (copy + ctx->m_fileposition >= ctx->m_size)
+      copy = ctx->m_size - ctx->m_fileposition;
     memcpy(pBuf, ctx->m_head, copy);
     ctx->m_head += copy;
     ctx->m_inbuffer -= copy;
@@ -302,13 +295,18 @@ int64_t CRARFile::Seek(void* context, int64_t iFilePosition, int iWhence)
 {
   RARContext* ctx = static_cast<RARContext*>(context);
 
+  kodiLog(ADDON_LOG_DEBUG, "CRarFile::%s: Started seek to position %li with whence %i", __func__, iFilePosition, iWhence);
+
   if (!ctx->m_seekable)
+  {
+    kodiLog(ADDON_LOG_DEBUG, "CRarFile::%s: Seek not supported", __func__);
     return -1;
+  }
 
   if (ctx->m_file)
     return ctx->m_file->Seek(iFilePosition, iWhence);
 
-  if( !ctx->m_extract.GetDataIO().hBufferEmpty->Wait(SEEKTIMOUT) )
+  if (!ctx->m_extract.GetDataIO().hBufferEmpty->Wait(SEEKTIMOUT))
   {
     kodiLog(ADDON_LOG_ERROR, "CRarFile::%s: Timeout waiting for buffer to empty", __func__);
     return -1;
@@ -329,41 +327,52 @@ int64_t CRARFile::Seek(void* context, int64_t iFilePosition, int iWhence)
     case SEEK_END:
       if (iFilePosition == 0) // do not seek to end
       {
-        ctx->m_fileposition = GetLength(context);
+        ctx->m_fileposition = ctx->m_size;
         ctx->m_inbuffer = 0;
-        ctx->m_bufferstart = GetLength(context);
+        ctx->m_bufferstart = ctx->m_size;
 
-        return GetLength(context);
+        kodiLog(ADDON_LOG_DEBUG, "CRarFile::%s: Seek to end size %li", __func__, iFilePosition, ctx->m_size);
+        return ctx->m_size;
       }
 
-      iFilePosition += GetLength(context);
+      iFilePosition += ctx->m_size;
     case SEEK_SET:
       break;
     default:
+      kodiLog(ADDON_LOG_ERROR, "CRarFile::%s: Not maintened seek whence called: %i", __func__, iWhence);
       return -1;
   }
 
-  // In case of encryption we need to align read size to encryption
-  // block size. We can do it by simple masking, because unpack read code
-  // always reads more than CRYPT_BLOCK_SIZE, so we do not risk to make it 0.
-  if (ctx->m_extract.GetDataIO().Decryption)
-    iFilePosition &= ~CRYPT_BLOCK_MASK;
-
-  if (iFilePosition > GetLength(context))
+  if (iFilePosition > ctx->m_size)
   {
+    kodiLog(ADDON_LOG_DEBUG, "CRarFile::%s: Seek position %li higher as file position %li", __func__, iFilePosition, ctx->m_size);
     return -1;
   }
 
   if (iFilePosition == ctx->m_fileposition) // happens a lot
     return ctx->m_fileposition;
 
+  // In case of encryption we need to align read size to encryption
+  // block size. We can do it by simple masking, because unpack read code
+  // always reads more than CRYPT_BLOCK_SIZE, so we do not risk to make it 0.
+  int64_t iFilePositionRest = 0;
+  bool decryption = ctx->m_extract.GetDataIO().Decryption;
+  if (decryption)
+  {
+    iFilePositionRest = iFilePosition & CRYPT_BLOCK_MASK;
+    iFilePosition &= ~CRYPT_BLOCK_MASK;
+
+    kodiLog(ADDON_LOG_DEBUG, "CRarFile::%s: Seek on enrypted package with corrected size to %li and rest process with %li", __func__, iFilePosition, iFilePositionRest);
+  }
+
   if ((iFilePosition >= ctx->m_bufferstart) && (iFilePosition < ctx->m_bufferstart+bufferSize)
-                                          && (ctx->m_inbuffer > 0)) // we are within current buffer
+                                            && (ctx->m_inbuffer > 0)) // we are within current buffer
   {
     ctx->m_inbuffer = bufferSize-(iFilePosition - ctx->m_bufferstart);
     ctx->m_head = ctx->m_buffer + bufferSize - ctx->m_inbuffer;
     ctx->m_fileposition = iFilePosition;
 
+    kodiLog(ADDON_LOG_DEBUG, "CRarFile::%s: Seek by buffered file position to %li", __func__, iFilePosition, ctx->m_fileposition);
     return ctx->m_fileposition;
   }
 
@@ -372,6 +381,7 @@ int64_t CRARFile::Seek(void* context, int64_t iFilePosition, int iWhence)
     ctx->CleanUp();
     if (!ctx->OpenInArchive())
     {
+      kodiLog(ADDON_LOG_ERROR, "CRarFile::%s: Failed to call OpenInArchive", __func__);
       return -1;
     }
 
@@ -399,6 +409,7 @@ int64_t CRARFile::Seek(void* context, int64_t iFilePosition, int iWhence)
   if (ctx->m_extract.GetDataIO().NextVolumeMissing)
   {
     ctx->m_fileposition = ctx->m_size;
+    kodiLog(ADDON_LOG_ERROR, "CRarFile::%s: Next RAR volume is missing", __func__);
     return -1;
   }
 
@@ -421,6 +432,16 @@ int64_t CRARFile::Seek(void* context, int64_t iFilePosition, int iWhence)
   ctx->m_head = ctx->m_buffer + bufferSize - ctx->m_inbuffer;
   ctx->m_fileposition = iFilePosition;
 
+  // Process the the rest outside of encrypted block place by dummy read, to
+  // become correct seek position.
+  if (decryption && iFilePositionRest > 0)
+  {
+    uint8_t* lpBuf = new uint8_t[iFilePositionRest+1];
+    Read(context, lpBuf, iFilePositionRest);
+    delete[] lpBuf;
+  }
+
+  kodiLog(ADDON_LOG_DEBUG, "CRarFile::%s: Seek completed to file position %li", __func__, ctx->m_fileposition);
   return ctx->m_fileposition;
 }
 
