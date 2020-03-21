@@ -80,7 +80,7 @@ public:
   int64_t Seek(void* context, int64_t position, int whence) override;
   int64_t GetLength(void* context) override;
   int64_t GetPosition(void* context) override;
-  int IoControl(void* context, XFILE::EIoControl request, void* param) override;
+  int IoControl(void* context, VFS_IOCTRL request, void* param) override;
   int Stat(const VFSURL& url, struct __stat64* buffer) override;
   bool Close(void* context) override;
   bool Exists(const VFSURL& url) override;
@@ -488,11 +488,11 @@ int CRARFile::Stat(const VFSURL& url, struct __stat64* buffer)
   return -1;
 }
 
-int CRARFile::IoControl(void* context, XFILE::EIoControl request, void* param)
+int CRARFile::IoControl(void* context, VFS_IOCTRL request, void* param)
 {
   RARContext* ctx = static_cast<RARContext*>(context);
 
-  if(request == XFILE::IOCTRL_SEEK_POSSIBLE)
+  if(request == VFS_IOCTRL_SEEK_POSSIBLE)
     return ctx->m_seekable ? 1 : 0;
 
   return -1;
