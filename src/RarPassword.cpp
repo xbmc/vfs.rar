@@ -19,6 +19,10 @@ void CRARPasswordControl::CleanupPasswordList()
   TiXmlDocument xmlDoc;
   std::string strSettingsFile = kodi::GetBaseUserPath("rar-control.xml");
 
+  // Check file present and available, if not do nothing
+  if (!kodi::vfs::FileExists(strSettingsFile))
+    return;
+
   if (!xmlDoc.LoadFile(strSettingsFile))
   {
     kodiLog(ADDON_LOG_ERROR, "CRARControl::%s: invalid data (no/invalid data file found at '%s')", __func__, strSettingsFile.c_str());
