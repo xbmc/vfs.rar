@@ -22,7 +22,7 @@ It allows direct reading of uncompressed RAR files, so prior unpacking is not ne
 
 Attention: A "Solid RAR" archive type requires complete unpacking to use files within it. Hence access times may be long for larger packages.</description>
     <platform>@PLATFORM@</platform>
-    <license>GPL-2.0</license>
+    <license>GPL-2.0-or-later</license>
     <source>https://github.com/xbmc/vfs.rar</source>
     <assets>
       <icon>resources/icon.png</icon>
