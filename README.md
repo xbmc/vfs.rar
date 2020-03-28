@@ -1,9 +1,11 @@
 # VFS RAR addon for Kodi
 
-This is a [Kodi](http://kodi.tv) VFS addon to extract RAR archives or direct playback stored files in RAR archives.
+This is a [Kodi](https://kodi.tv) VFS addon to extract RAR archives or direct playback stored files in RAR archives.
 
+[![License: GPL-2.0-or-later](https://img.shields.io/badge/License-GPL%20v2+-blue.svg)](LICENSE.md)
 [![Build Status](https://travis-ci.org/xbmc/vfs.rar.svg?branch=Matrix)](https://travis-ci.org/xbmc/vfs.rar/branches)
 [![Build Status](https://dev.azure.com/teamkodi/binary-addons/_apis/build/status/xbmc.vfs.rar?branchName=Matrix)](https://dev.azure.com/teamkodi/binary-addons/_build/latest?definitionId=52&branchName=Matrix)
+[![Build Status](https://jenkins.kodi.tv/view/Addons/job/xbmc/job/vfs.rar/job/Matrix/badge/icon)](https://jenkins.kodi.tv/blue/organizations/jenkins/xbmc%2Fvfs.rar/branches/)
 <!--- [![Build Status](https://ci.appveyor.com/api/projects/status/github/xbmc/vfs.rar?svg=true)](https://ci.appveyor.com/project/xbmc/vfs-rar) -->
 
 ## Build instructions
