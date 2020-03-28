@@ -15,8 +15,8 @@
     encodedhostname="true"
     library_@PLATFORM@="@LIBRARY_FILENAME@" />
   <extension point="xbmc.addon.metadata">
-    <summary lang="en">Unarchiver for .rar files</summary>
-    <description lang="en">This addon is an extraction utility for RAR archives.
+    <summary lang="en_GB">Unarchiver for .rar files</summary>
+    <description lang="en_GB">This addon is an extraction utility for RAR archives.
 
 It allows direct reading of uncompressed RAR files, so prior unpacking is not necessary. For all other types, it is temporarily unpacked and passed to Kodi.
 
