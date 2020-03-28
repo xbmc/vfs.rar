@@ -38,5 +38,13 @@ obj-x86_64-linux-gnu/
 # to prevent add after a "git format-patch VALUE" and "git add ." call
 /*.patch
 
+# Visual Studio Code
+.vscode
+
 # to prevent add if project code opened by Visual Studio over CMake file
 .vs/
+
+# General MacOS
+.DS_Store
+.AppleDouble
+.LSOverride
