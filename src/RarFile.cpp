@@ -6,6 +6,7 @@
  *  See LICENSE.md for more information.
  */
 
+#include "RarFile.h"
 #include "RarExtractThread.h"
 #include "RarManager.h"
 #include "RarPassword.h"
@@ -13,7 +14,6 @@
 
 #include "rar.hpp"
 
-#include <kodi/addon-instance/VFS.h>
 #include <kodi/General.h>
 #include <kodi/gui/dialogs/Keyboard.h>
 #if defined(CreateDirectory)
@@ -58,26 +58,6 @@ static std::string URLEncode(const std::string& strURLData)
   return strResult;
 }
 
-class CRARFile : public kodi::addon::CInstanceVFS
-{
-public:
-  CRARFile(KODI_HANDLE instance) : CInstanceVFS(instance) { }
-
-  void* Open(const VFSURL& url) override;
-  ssize_t Read(void* context, void* buffer, size_t uiBufSize) override;
-  int64_t Seek(void* context, int64_t position, int whence) override;
-  int64_t GetLength(void* context) override;
-  int64_t GetPosition(void* context) override;
-  int IoControl(void* context, VFS_IOCTRL request, void* param) override;
-  int Stat(const VFSURL& url, struct __stat64* buffer) override;
-  bool Close(void* context) override;
-  bool Exists(const VFSURL& url) override;
-  void ClearOutIdle() override;
-  void DisconnectAll() override;
-  bool DirectoryExists(const VFSURL& url) override;
-  bool GetDirectory(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>& items, CVFSCallbacks callbacks) override;
-  bool ContainsFiles(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>& items, std::string& rootpath) override;
-};
 
 void* CRARFile::Open(const VFSURL& url)
 {
