@@ -381,8 +381,7 @@ void CRarManager::ExtractArchive(const std::string& strArchive, const std::strin
   CRARControl m_control(strArchive);
 
   std::string strPath2(strPath);
-  if (!strPath2.empty() && strPath2[strPath2.size()-1] == '/')
-    strPath2.erase(strPath2.end()-1);
+  kodi::vfs::RemoveSlashAtEnd(strPath2);
   if (!m_control.ArchiveExtract(strPath2, ""))
     kodiLog(ADDON_LOG_ERROR,"CRarManager::%s: error while extracting %s", __func__, strArchive.c_str());
 }
