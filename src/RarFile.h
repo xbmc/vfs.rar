@@ -29,4 +29,7 @@ public:
   bool DirectoryExists(const VFSURL& url) override;
   bool GetDirectory(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>& items, CVFSCallbacks callbacks) override;
   bool ContainsFiles(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>& items, std::string& rootpath) override;
+
+private:
+  std::string URLEncode(const std::string& strURLData);
 };
