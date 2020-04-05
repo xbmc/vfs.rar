@@ -32,33 +32,6 @@
 
 #define SEEKTIMOUT 30000
 
-static std::string URLEncode(const std::string& strURLData)
-{
-  std::string strResult;
-
-  /* wonder what a good value is here is, depends on how often it occurs */
-  strResult.reserve( strURLData.length() * 2 );
-
-  for (size_t i = 0; i < strURLData.size(); ++i)
-  {
-    const unsigned char kar = strURLData[i];
-
-    // Don't URL encode "-_.!()" according to RFC1738
-    //! @todo Update it to "-_.~" after Gotham according to RFC3986
-    if (std::isalnum(kar) || kar == '-' || kar == '.' || kar == '_' || kar == '!' || kar == '(' || kar == ')')
-      strResult.push_back(kar);
-    else
-    {
-      char temp[128];
-      sprintf(temp,"%%%2.2X", (unsigned int)((unsigned char)kar));
-      strResult += temp;
-    }
-  }
-
-  return strResult;
-}
-
-
 void* CRARFile::Open(const VFSURL& url)
 {
   RARContext* result = new RARContext(url);
@@ -561,6 +534,33 @@ bool CRARFile::ContainsFiles(const VFSURL& url, std::vector<kodi::vfs::CDirEntry
   return !items.empty();
 }
 
+std::string CRARFile::URLEncode(const std::string& strURLData)
+{
+  std::string strResult;
+
+  /* wonder what a good value is here is, depends on how often it occurs */
+  strResult.reserve( strURLData.length() * 2 );
+
+  for (size_t i = 0; i < strURLData.size(); ++i)
+  {
+    const unsigned char kar = strURLData[i];
+
+    // Don't URL encode "-_.!()" according to RFC1738
+    //! @todo Update it to "-_.~" after Gotham according to RFC3986
+    if (std::isalnum(kar) || kar == '-' || kar == '.' || kar == '_' || kar == '!' || kar == '(' || kar == ')')
+      strResult.push_back(kar);
+    else
+    {
+      char temp[MAX_PATH_LENGTH];
+      sprintf(temp,"%%%2.2X", (unsigned int)((unsigned char)kar));
+      strResult += temp;
+    }
+  }
+
+  return strResult;
+}
+
+//------------------------------------------------------------------------------
 
 class ATTRIBUTE_HIDDEN CMyAddon : public kodi::addon::CAddonBase
 {
