@@ -474,7 +474,7 @@ RARContext::RARContext(const VFSURL& url)
       std::string strValue = it.substr(iEqual+1);
 
       if (strOption == "flags")
-        m_fileoptions = atoi(strValue.c_str());
+        m_fileoptions = std::stoi(strValue);
       else if (strOption == "cache")
         m_cachedir = strValue;
     }
