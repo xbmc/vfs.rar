@@ -226,6 +226,20 @@ int CRARControl::ArchiveExtract(const std::string& targetPath, const std::string
       {
         m_extractedFileSize = 0;
         m_extractFileSize = (uint64_t(fileHeader.UnpSizeHigh)<<32)|fileHeader.UnpSize;
+
+        wchar path[MAX_PATH_LENGTH];
+        GetWideName(targetPath.c_str(), nullptr, path, ASIZE(path));
+        int64 diskSpace = GetFreeDisk(path);
+
+        // Check filesize + 10 MByte is available on disk
+        if (m_extractFileSize + (10 * 1024 * 1024) >= diskSpace)
+        {
+          kodiLog(ADDON_LOG_ERROR, "CRARControl::%s: Not enough diskSpace with %li MB for file %s with size %li MB",
+                      __func__, diskSpace / 1024 / 1024, m_path.c_str(), m_extractFileSize / 1024 / 1024);
+          kodi::QueueNotification(QUEUE_ERROR, kodi::GetLocalizedString(30000), kodi::GetLocalizedString(30004));
+          return 0;
+        }
+
         if (m_progress)
         {
           // After wanted file is found to progress with his real extract
