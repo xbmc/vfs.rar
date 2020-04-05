@@ -517,8 +517,8 @@ bool CRARFile::ContainsFiles(const VFSURL& url, std::vector<kodi::vfs::CDirEntry
     if ((pos=strPath.find("?")) != std::string::npos)
       strPath.erase(strPath.begin()+pos, strPath.end());
 
-    if (strPath[strPath.size()-1] == '/')
-      strPath.erase(strPath.end()-1);
+    kodi::vfs::RemoveSlashAtEnd(strPath);
+
     std::string encoded = URLEncode(strPath);
     std::stringstream str;
     str << "rar://" << encoded << "/";
