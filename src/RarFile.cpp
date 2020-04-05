@@ -552,7 +552,7 @@ std::string CRARFile::URLEncode(const std::string& strURLData)
     else
     {
       char temp[MAX_PATH_LENGTH];
-      sprintf(temp,"%%%2.2X", (unsigned int)((unsigned char)kar));
+      snprintf(temp, MAX_PATH_LENGTH, "%%%2.2X", (unsigned int)((unsigned char)kar));
       strResult += temp;
     }
   }
