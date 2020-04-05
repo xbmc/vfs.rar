@@ -286,6 +286,53 @@ bool CRarManager::GetFilesInRar(std::vector<kodi::vfs::CDirEntry>& vecpItems, co
   return true;
 }
 
+bool CRarManager::GetFileInRar(const std::string& strRarPath, const std::string& strPathInRar, kodi::vfs::CDirEntry& item)
+{
+  std::unique_lock<std::recursive_mutex> lock(m_lock);
+
+  std::vector<RARHeaderDataEx> pFileList;
+  auto it = m_ExFiles.find(strRarPath);
+  if (it == m_ExFiles.end())
+  {
+    CRARControl control(strRarPath);
+    if (control.ArchiveList(pFileList))
+      m_ExFiles.insert(std::make_pair(strRarPath, std::make_pair(pFileList, std::vector<CFileInfo>())));
+    else
+      return false;
+  }
+  else
+    pFileList = it->second.first;
+
+  char name[MAX_PATH_LENGTH];
+  for (const auto& entry : pFileList)
+  {
+    std::string strName;
+
+    /* convert to utf8 */
+    if (entry.FileNameW && wcslen(entry.FileNameW) > 0)
+    {
+      WideToUtf(entry.FileNameW, name, sizeof(name));
+      strName = name;
+    }
+    else
+      kodi::UnknownToUTF8(entry.FileName, strName);
+
+    if (strPathInRar != strName)
+      continue;
+
+    unsigned int iMask = (entry.HostOS==3 ? 0x0040000 : 16); // win32 or unix attribs?
+
+    item.SetLabel(strName);
+    item.SetPath(strName.c_str() + strPathInRar.size());
+    item.SetSize((uint64_t(entry.UnpSizeHigh)<<32)|entry.UnpSize);
+    item.SetFolder(((entry.FileAttr & iMask) == iMask));
+    item.AddProperty("rarcompressionmethod", std::to_string(entry.Method));
+    return true;
+  }
+
+  return false;
+}
+
 CFileInfo* CRarManager::GetFileInRar(const std::string& strRarPath, const std::string& strPathInRar)
 {
   auto j = m_ExFiles.find(strRarPath);
@@ -316,26 +363,10 @@ bool CRarManager::GetPathInCache(std::string& strPathInCache, const std::string&
   return false;
 }
 
-bool CRarManager::IsFileInRar(bool& bResult, const std::string& strRarPath, const std::string& strPathInRar)
+bool CRarManager::IsFileInRar(const std::string& strRarPath, const std::string& strPathInRar)
 {
-  bResult = false;
-  std::vector<kodi::vfs::CDirEntry> ItemList;
-
-  if (!GetFilesInRar(ItemList, strRarPath, false))
-    return false;
-
-  size_t it;
-  for (it = 0; it < ItemList.size(); ++it)
-  {
-    if (strPathInRar.compare(ItemList[it].Path()) == 0)
-      break;
-  }
-  if (it != ItemList.size())
-    bResult = true;
-
-  // LEAKs the list
-
-  return true;
+  kodi::vfs::CDirEntry item;
+  return GetFileInRar(strRarPath, strPathInRar, item);
 }
 
 void CRarManager::ClearCache(bool force)
