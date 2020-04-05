@@ -491,11 +491,7 @@ bool CRARFile::GetDirectory(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>
 bool CRARFile::ContainsFiles(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>& items, std::string& rootpath)
 {
   // only list .part1.rar
-  std::string fname(url.filename);
-  size_t spos = fname.rfind('/');
-  if (spos == std::string::npos)
-    spos = fname.rfind('\\');
-  fname.erase(0, spos);
+  std::string fname = kodi::vfs::GetFileName(url.filename);
   std::regex part_re("\\.part([0-9]+)\\.rar$");
   std::smatch match;
   if (std::regex_search(fname, match, part_re))
