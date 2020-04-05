@@ -40,6 +40,10 @@ msgctxt "#30003"
 msgid "Enter RAR package password for:\n%s"
 msgstr ""
 
+msgctxt "#30004"
+msgid "Not enough disk space available"
+msgstr ""
+
 # Following strings used for addon settings dialog
 
 msgctxt "#30010"
