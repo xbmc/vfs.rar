@@ -450,7 +450,7 @@ int File::Read(void *Data,size_t Size)
     }
     break;
   }
-  return ReadSize;
+  return ReadSize; // It can return -1 only if AllowExceptions is disabled.
 }
 
 
