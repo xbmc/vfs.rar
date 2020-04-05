@@ -259,10 +259,7 @@ bool CRarManager::GetFilesInRar(std::vector<kodi::vfs::CDirEntry>& vecpItems, co
         file.SetPath(vec[iDepth] + '/');
         file.SetSize(0);
         file.SetFolder(true);
-
-        char tmp[16];
-        sprintf(tmp, "%i", entry.Method);
-        file.AddProperty("rarcompressionmethod", tmp);
+        file.AddProperty("rarcompressionmethod", std::to_string(entry.Method));
 
         vecpItems.push_back(file);
       }
@@ -279,10 +276,7 @@ bool CRarManager::GetFilesInRar(std::vector<kodi::vfs::CDirEntry>& vecpItems, co
         file.SetPath(strName.c_str() + strPathInRar.size());
         file.SetSize((uint64_t(entry.UnpSizeHigh)<<32)|entry.UnpSize);
         file.SetFolder(false);
-
-        char tmp[16];
-        sprintf(tmp, "%i", entry.Method);
-        file.AddProperty("rarcompressionmethod", tmp);
+        file.AddProperty("rarcompressionmethod", std::to_string(entry.Method));
 
         vecpItems.push_back(file);
       }
