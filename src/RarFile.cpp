@@ -36,74 +36,63 @@ void* CRARFile::Open(const VFSURL& url)
 {
   RARContext* result = new RARContext(url);
 
-  std::vector<kodi::vfs::CDirEntry> items;
-  CRarManager::Get().GetFilesInRar(items, result->GetPath(), false);
-
-  size_t i;
-  for (i = 0; i < items.size(); ++i)
+  kodi::vfs::CDirEntry item;
+  if (CRarManager::Get().GetFileInRar(result->GetPath(), result->m_pathinrar, item) &&
+      item.GetProperties().size() == 1 && std::stoi(item.GetProperties().begin()->second) == 0x30)
   {
-    if (result->m_pathinrar == items[i].Label())
-      break;
-  }
-
-  if (i < items.size())
-  {
-    if (items[i].GetProperties().size() == 1 && std::stoi(items[i].GetProperties().begin()->second) == 0x30)
+    if (!result->OpenInArchive())
     {
-      if (!result->OpenInArchive())
-      {
-        delete result;
-        return nullptr;
-      }
+      delete result;
+      return nullptr;
+    }
 
-      result->m_size = items[i].Size();
+    result->m_size = item.Size();
 
-      // perform 'noidx' check
-      CFileInfo* pFile = CRarManager::Get().GetFileInRar(result->GetPath(), result->m_pathinrar);
-      if (pFile)
+    // perform 'noidx' check
+    CFileInfo* pFile = CRarManager::Get().GetFileInRar(result->GetPath(), result->m_pathinrar);
+    if (pFile)
+    {
+      if (pFile->m_iIsSeekable == -1)
       {
-        if (pFile->m_iIsSeekable == -1)
+        if (Seek(result, -1, SEEK_END) == -1)
         {
-          if (Seek(result, -1, SEEK_END) == -1)
-          {
-            result->m_seekable = false;
-            pFile->m_iIsSeekable = 0;
-          }
+          result->m_seekable = false;
+          pFile->m_iIsSeekable = 0;
         }
-        else
-          result->m_seekable = (pFile->m_iIsSeekable == 1);
       }
-      return result;
+      else
+        result->m_seekable = (pFile->m_iIsSeekable == 1);
     }
-    else
+    return result;
+  }
+  else
+  {
+    CFileInfo* info = CRarManager::Get().GetFileInRar(result->GetPath(), result->m_pathinrar);
+    if ((!info || !kodi::vfs::FileExists(info->m_strCachedPath, true)) && result->m_fileoptions & EXFILE_NOCACHE)
     {
-      CFileInfo* info = CRarManager::Get().GetFileInRar(result->GetPath(), result->m_pathinrar);
-      if ((!info || !kodi::vfs::FileExists(info->m_strCachedPath, true)) && result->m_fileoptions & EXFILE_NOCACHE)
-      {
-        delete result;
-        return nullptr;
-      }
-      std::string strPathInCache;
-
-      if (!CRarManager::Get().CacheRarredFile(strPathInCache, result->GetPath(), result->m_pathinrar,
-                                              EXFILE_AUTODELETE | result->m_fileoptions, result->m_cachedir,
-                                              items[i].Size()))
-      {
-        kodiLog(ADDON_LOG_ERROR,"CRarFile::%s: Open failed to cache file %s", __func__, result->m_pathinrar.c_str());
-        delete result;
-        return nullptr;
-      }
-
-      result->m_file = new kodi::vfs::CFile;
-      if (!result->m_file->OpenFile(strPathInCache, 0))
-      {
-        kodiLog(ADDON_LOG_ERROR,"CRarFile::%s: Open failed to open file in cache: %s", __func__, strPathInCache.c_str());
-        delete result;
-        return nullptr;
-      }
-
-      return result;
+      delete result;
+      return nullptr;
     }
+    std::string strPathInCache;
+
+    if (!CRarManager::Get().CacheRarredFile(strPathInCache, result->GetPath(), result->m_pathinrar,
+                                            EXFILE_AUTODELETE | result->m_fileoptions, result->m_cachedir,
+                                            item.Size()))
+    {
+      kodiLog(ADDON_LOG_ERROR,"CRarFile::%s: Open failed to cache file %s", __func__, result->m_pathinrar.c_str());
+      delete result;
+      return nullptr;
+    }
+
+    result->m_file = new kodi::vfs::CFile;
+    if (!result->m_file->OpenFile(strPathInCache, 0))
+    {
+      kodiLog(ADDON_LOG_ERROR,"CRarFile::%s: Open failed to open file in cache: %s", __func__, strPathInCache.c_str());
+      delete result;
+      return nullptr;
+    }
+
+    return result;
   }
 
   delete result;
@@ -397,12 +386,7 @@ bool CRARFile::Exists(const VFSURL& url)
 
   // Second step:
   // Make sure that the requested file exists in the archive.
-  bool bResult;
-
-  if (!CRarManager::Get().IsFileInRar(bResult, ctx.GetPath(), ctx.m_pathinrar))
-    return false;
-
-  return bResult;
+  return CRarManager::Get().IsFileInRar(ctx.GetPath(), ctx.m_pathinrar);
 }
 
 int CRARFile::Stat(const VFSURL& url, struct __stat64* buffer)

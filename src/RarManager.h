@@ -49,8 +49,9 @@ public:
                       const std::string& strPathInRar = "");
   bool GetFilesInRar(std::vector<kodi::vfs::CDirEntry>& vecpItems, const std::string& strRarPath,
                      bool bMask=true, const std::string& strPathInRar="");
+  bool GetFileInRar(const std::string& strRarPath, const std::string& strPathInRar, kodi::vfs::CDirEntry& item);
   CFileInfo* GetFileInRar(const std::string& strRarPath, const std::string& strPathInRar);
-  bool IsFileInRar(bool& bResult, const std::string& strRarPath, const std::string& strPathInRar);
+  bool IsFileInRar(const std::string& strRarPath, const std::string& strPathInRar);
   void ClearCache(bool force=false);
   void ClearCachedFile(const std::string& strRarPath, const std::string& strPathInRar);
   void ExtractArchive(const std::string& strArchive, const std::string& strPath);
