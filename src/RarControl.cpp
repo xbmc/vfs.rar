@@ -89,6 +89,7 @@ bool CRARControl::ArchiveList(std::vector<RARHeaderDataEx>& list)
       {
         kodiLog(ADDON_LOG_DEBUG, "CRARControl::%s: Error processing file %s", __func__, m_path.c_str());
         RARCloseArchive(archive);
+        archive = nullptr;
         break;
       }
 
