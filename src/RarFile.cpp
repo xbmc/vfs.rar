@@ -48,7 +48,7 @@ void* CRARFile::Open(const VFSURL& url)
 
   if (i < items.size())
   {
-    if (items[i].GetProperties().size() == 1 && atoi(items[i].GetProperties().begin()->second.c_str()) == 0x30)
+    if (items[i].GetProperties().size() == 1 && std::stoi(items[i].GetProperties().begin()->second) == 0x30)
     {
       if (!result->OpenInArchive())
       {
@@ -507,8 +507,8 @@ bool CRARFile::ContainsFiles(const VFSURL& url, std::vector<kodi::vfs::CDirEntry
   if (CRarManager::Get().GetFilesInRar(items, url.url))
   {
     if (items.size() == 1 && items[0].GetProperties().size() == 1 &&
-        atoi(items[0].GetProperties().begin()->second.c_str()) < 0x30 &&
-        atoi(items[0].GetProperties().begin()->second.c_str()) > 0x35)
+        std::stoi(items[0].GetProperties().begin()->second) < 0x30 &&
+        std::stoi(items[0].GetProperties().begin()->second) > 0x35)
       return false;
 
     // fill in paths
