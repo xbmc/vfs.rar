@@ -22,16 +22,12 @@
 #define CONTINUE_PROCESSING 1
 #define SUCCESS 0
 
-// Amount of standard passwords where can available on settings
-#define MAX_STANDARD_PASSWORDS 5
-
 CRARControl::CRARControl(const std::string& rarPath)
   : m_path(rarPath)
 {
   std::replace(m_path.begin(), m_path.end(), '\\', '/');
 
   SetCallback(reinterpret_cast<UNRARCALLBACK>(UnRarCallback), reinterpret_cast<LPARAM>(this));
-  m_passwordAskAllowed = kodi::GetSettingBoolean("usercheck_for_password");
 }
 
 void CRARControl::SetCallback(UNRARCALLBACK callback, LPARAM userdata)
@@ -380,6 +376,7 @@ int CRARControl::ProcessData(uint8_t* block, size_t size)
 int CRARControl::NeedPassword(char* password, size_t size)
 {
   bool xmlPwPresent = false;
+  bool passwordAskAllowed = CRarManager::Get().PasswordAskAllowed();
   std::string pw;
 
   if (!m_xmlWasAsked || !m_passwordSeemsBad)
@@ -395,13 +392,13 @@ int CRARControl::NeedPassword(char* password, size_t size)
   if (pw.empty())
   {
     // Prevent ask and stop if no user ask enabled and nothing as standard inside settings
-    if (!m_passwordAskAllowed && m_passwordStandardCheck >= MAX_STANDARD_PASSWORDS)
+    if (!passwordAskAllowed && m_passwordStandardCheck >= MAX_STANDARD_PASSWORDS)
       return STOP_PROCESSING;
 
     // Check about standard passwords defined in settings.xml
     for (unsigned int i = m_passwordStandardCheck; i < MAX_STANDARD_PASSWORDS; ++i)
     {
-      pw = kodi::GetSettingString("standard_password_" + std::to_string(i+1));
+      pw = CRarManager::Get().StandardPassword(i);
       if (!pw.empty())
       {
         strncpy(password, pw.c_str(), size);
@@ -412,7 +409,7 @@ int CRARControl::NeedPassword(char* password, size_t size)
   }
 
   // Break if nothing defined inside settings
-  if (!m_passwordAskAllowed && pw.empty())
+  if (!passwordAskAllowed && pw.empty())
     return STOP_PROCESSING;
 
   std::string header = StringFormat(kodi::GetLocalizedString(30003).c_str(), m_path.length() > 45 ? kodi::vfs::GetFileName(m_path).c_str() : m_path.c_str());
