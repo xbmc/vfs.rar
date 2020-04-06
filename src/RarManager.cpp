@@ -10,6 +10,7 @@
 #include "RarControl.h"
 #include "Helpers.h"
 
+#include <algorithm>
 #include <kodi/General.h>
 #include <locale>
 #include <set>
@@ -33,7 +34,7 @@ void CRarManager::Tokenize(const std::string& input, std::vector<std::string>& t
 CRarManager& CRarManager::Get()
 {
   static CRarManager instance;
-  
+
   return instance;
 }
 
@@ -222,15 +223,7 @@ bool CRarManager::GetFilesInRar(std::vector<kodi::vfs::CDirEntry>& vecpItems, co
 
     /* replace back slashes into forward slashes */
     /* this could get us into troubles, file could two different files, one with / and one with \ */
-    //StringUtils::Replace(strName, '\\', '/');
-    size_t index = 0;
-    std::string oldStr = "\\";
-    std::string newStr = "/";
-    while (index < strName.size() && (index = strName.find(oldStr, index)) != std::string::npos)
-    {
-      strName.replace(index, oldStr.size(), newStr);
-      index += newStr.size();
-    }
+    std::replace(strName.begin(), strName.end(), '\\', '/');
 
     if (bMask)
     {
@@ -318,6 +311,10 @@ bool CRarManager::GetFileInRar(const std::string& strRarPath, const std::string&
     }
     else
       kodi::UnknownToUTF8(entry.FileName, strName);
+
+    /* replace back slashes into forward slashes */
+    /* this could get us into troubles, file could two different files, one with / and one with \ */
+    std::replace(strName.begin(), strName.end(), '\\', '/');
 
     if (strPathInRar != strName)
       continue;
