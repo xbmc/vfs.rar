@@ -41,9 +41,35 @@ CRarManager& CRarManager::Get()
 
 /////////////////////////////////////////////////
 
+CRarManager::CRarManager()
+{
+  // Load the current settings and store to reduce call amount of them
+  m_passwordAskAllowed = kodi::GetSettingBoolean("usercheck_for_password");
+  for (unsigned int i = 0; i < MAX_STANDARD_PASSWORDS; ++i)
+    m_standardPasswords[i] = kodi::GetSettingString("standard_password_" + std::to_string(i+1));
+}
+
 CRarManager::~CRarManager()
 {
   ClearCache(true);
+}
+
+void CRarManager::SettingsUpdate(const std::string& settingName, const kodi::CSettingValue& settingValue)
+{
+  // Update the by CMyAddon called settings values, done after change inside
+  // addon settings by e.g. user.
+  if (settingName == "usercheck_for_password")
+    m_passwordAskAllowed = settingValue.GetBoolean();
+  else if (settingName == "standard_password_1")
+    m_standardPasswords[0] = settingValue.GetString();
+  else if (settingName == "standard_password_2")
+    m_standardPasswords[1] = settingValue.GetString();
+  else if (settingName == "standard_password_3")
+    m_standardPasswords[2] = settingValue.GetString();
+  else if (settingName == "standard_password_4")
+    m_standardPasswords[3] = settingValue.GetString();
+  else if (settingName == "standard_password_5")
+    m_standardPasswords[4] = settingValue.GetString();
 }
 
 bool CRarManager::CacheRarredFile(std::string& strPathInCache, const std::string& strRarPath,

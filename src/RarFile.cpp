@@ -563,6 +563,12 @@ public:
     addonInstance = new CRARFile(instance);
     return ADDON_STATUS_OK;
   }
+
+  ADDON_STATUS SetSetting(const std::string& settingName, const kodi::CSettingValue& settingValue) override
+  {
+    CRarManager::Get().SettingsUpdate(settingName, settingValue);
+    return ADDON_STATUS_OK;
+  }
 };
 
 ADDONCREATOR(CMyAddon);
