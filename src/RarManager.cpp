@@ -244,7 +244,9 @@ bool CRarManager::GetFilesInRar(std::vector<kodi::vfs::CDirEntry>& vecpItems, co
     }
 
     unsigned int iMask = (entry.HostOS==3 ? 0x0040000 : 16); // win32 or unix attribs?
-    if (((entry.FileAttr & iMask) == iMask) || (vec.size() > iDepth + 1 && bMask)) // we have a directory
+    if (entry.Flags & RHDF_DIRECTORY ||
+        entry.FileAttr & iMask ||
+        (vec.size() > iDepth + 1 && bMask)) // we have a directory
     {
       if (!bMask)
         continue;
@@ -325,7 +327,7 @@ bool CRarManager::GetFileInRar(const std::string& strRarPath, const std::string&
     item.SetLabel(strName);
     item.SetPath(strName.c_str() + strPathInRar.size());
     item.SetSize((uint64_t(entry.UnpSizeHigh)<<32)|entry.UnpSize);
-    item.SetFolder(((entry.FileAttr & iMask) == iMask));
+    item.SetFolder(entry.Flags & RHDF_DIRECTORY || entry.FileAttr & iMask ? true : false);
     item.AddProperty("rarcompressionmethod", std::to_string(entry.Method));
     return true;
   }
