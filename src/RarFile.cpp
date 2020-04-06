@@ -442,6 +442,8 @@ bool CRARFile::DirectoryExists(const VFSURL& url)
 bool CRARFile::GetDirectory(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>& items, CVFSCallbacks callbacks)
 {
   std::string strPath(url.url);
+  std::replace(strPath.begin(), strPath.end(), '\\', '/');
+
   size_t pos;
   if ((pos=strPath.find("?")) != std::string::npos)
     strPath.erase(strPath.begin()+pos, strPath.end());
@@ -453,6 +455,9 @@ bool CRARFile::GetDirectory(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>
   std::string strArchive = url.hostname;
   std::string strOptions = url.options;
   std::string strPathInArchive = url.filename;
+
+  std::replace(strArchive.begin(), strArchive.end(), '\\', '/');
+  std::replace(strPathInArchive.begin(), strPathInArchive.end(), '\\', '/');
 
   if (CRarManager::Get().GetFilesInRar(items, strArchive, true, strPathInArchive))
   {
@@ -484,7 +489,10 @@ bool CRARFile::ContainsFiles(const VFSURL& url, std::vector<kodi::vfs::CDirEntry
       return false;
   }
 
-  if (CRarManager::Get().GetFilesInRar(items, url.url))
+  std::string strPath(url.url);
+  std::replace(strPath.begin(), strPath.end(), '\\', '/');
+
+  if (CRarManager::Get().GetFilesInRar(items, strPath))
   {
     if (items.size() == 1 && items[0].GetProperties().size() == 1 &&
         std::stoi(items[0].GetProperties().begin()->second) < 0x30 &&
@@ -492,7 +500,6 @@ bool CRARFile::ContainsFiles(const VFSURL& url, std::vector<kodi::vfs::CDirEntry
       return false;
 
     // fill in paths
-    std::string strPath(url.url);
     size_t pos;
     if ((pos=strPath.find("?")) != std::string::npos)
       strPath.erase(strPath.begin()+pos, strPath.end());

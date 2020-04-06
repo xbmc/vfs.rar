@@ -12,6 +12,7 @@
 #include "RarPassword.h"
 #include "Helpers.h"
 
+#include <algorithm>
 #include <kodi/General.h>
 #include <kodi/gui/dialogs/Keyboard.h>
 #include <thread>
@@ -27,6 +28,8 @@
 CRARControl::CRARControl(const std::string& rarPath)
   : m_path(rarPath)
 {
+  std::replace(m_path.begin(), m_path.end(), '\\', '/');
+
   SetCallback(reinterpret_cast<UNRARCALLBACK>(UnRarCallback), reinterpret_cast<LPARAM>(this));
   m_passwordAskAllowed = kodi::GetSettingBoolean("usercheck_for_password");
 }
@@ -474,6 +477,8 @@ RARContext::RARContext(const VFSURL& url)
   m_cachedir = kodi::GetTempAddonPath("/");
   m_password = url.password;
   m_pathinrar = url.filename;
+  std::replace(m_pathinrar.begin(), m_pathinrar.end(), '\\', '/');
+
   std::vector<std::string> options;
   std::string options2(url.options);
   if (!options2.empty())
@@ -664,15 +669,8 @@ bool RARContext::OpenInArchive()
 
                 /* replace back slashes into forward slashes */
                 /* this could get us into troubles, file could two different files, one with / and one with \ */
-                //          StringUtils::Replace(strFileName, '\\', '/');
-                size_t index = 0;
-                std::string oldStr = "\\";
-                std::string newStr = "/";
-                while (index < check.size() && (index = check.find(oldStr, index)) != std::string::npos)
-                {
-                  check.replace(index, oldStr.size(), newStr);
-                  index += newStr.size();
-                }
+                std::replace(check.begin(), check.end(), '\\', '/');
+
                 if (check == m_pathinrar)
                 {
                   break;
