@@ -12,6 +12,7 @@
 #include "RarPassword.h"
 #include "Helpers.h"
 
+#include <algorithm>
 #include <kodi/General.h>
 #include <kodi/gui/dialogs/Keyboard.h>
 #include <thread>
@@ -21,14 +22,12 @@
 #define CONTINUE_PROCESSING 1
 #define SUCCESS 0
 
-// Amount of standard passwords where can available on settings
-#define MAX_STANDARD_PASSWORDS 5
-
 CRARControl::CRARControl(const std::string& rarPath)
   : m_path(rarPath)
 {
+  std::replace(m_path.begin(), m_path.end(), '\\', '/');
+
   SetCallback(reinterpret_cast<UNRARCALLBACK>(UnRarCallback), reinterpret_cast<LPARAM>(this));
-  m_passwordAskAllowed = kodi::GetSettingBoolean("usercheck_for_password");
 }
 
 void CRARControl::SetCallback(UNRARCALLBACK callback, LPARAM userdata)
@@ -48,9 +47,9 @@ bool CRARControl::ArchiveList(std::vector<RARHeaderDataEx>& list)
   bool needPassword = false;
   bool firstTry = true;
   bool ret = false;
+  char name[MAX_PATH_LENGTH];
 
   m_passwordStandardCheck = 0;
-
   while (firstTry || (needPassword && m_passwordStandardCheck < MAX_STANDARD_PASSWORDS))
   {
     RAROpenArchiveDataEx archiveData = {0};
@@ -81,13 +80,19 @@ bool CRARControl::ArchiveList(std::vector<RARHeaderDataEx>& list)
     while ((result = RARReadHeaderEx(archive, &fileHeader)) == SUCCESS)
     {
       if (firstTry)
-        kodiLog(ADDON_LOG_DEBUG, "CRARControl::%s: List file from %s: %s (encrypted: %s)", __func__, fileHeader.ArcName, fileHeader.FileName, fileHeader.Flags & ROADF_LOCK ? "yes" : "no");
+      {
+        WideToUtf(fileHeader.FileNameW, name, sizeof(name));
+        kodiLog(ADDON_LOG_DEBUG, "CRARControl::%s: List file from %s: %s (encrypted: %s)",
+                    __func__, fileHeader.ArcName, name, fileHeader.Flags & ROADF_LOCK ? "yes" : "no");
+      }
 
       result = RARProcessFile(archive, RAR_SKIP, nullptr, nullptr);
       if (result != SUCCESS)
       {
         kodiLog(ADDON_LOG_DEBUG, "CRARControl::%s: Error processing file %s", __func__, m_path.c_str());
+        RarErrorLog(__func__, result);
         RARCloseArchive(archive);
+        archive = nullptr;
         break;
       }
 
@@ -127,6 +132,7 @@ bool CRARControl::ArchiveList(std::vector<RARHeaderDataEx>& list)
 int CRARControl::ArchiveExtract(const std::string& targetPath, const std::string& fileToExtract, bool showProgress/* = false*/)
 {
   int retValue = 0;
+  char name[MAX_PATH_LENGTH];
 
   if (!kodi::vfs::FileExists(m_path))
   {
@@ -148,7 +154,11 @@ int CRARControl::ArchiveExtract(const std::string& targetPath, const std::string
     ArchiveList(list);
     for (const auto& entry : list)
     {
-      if (entry.FileName == fileToExtract)
+      WideToUtf(entry.FileNameW, name, sizeof(name));
+      std::string filename = name;
+      std::replace(filename.begin(), filename.end(), '\\', '/');
+
+      if (filename == fileToExtract)
       {
         solid = entry.Flags & RHDF_SOLID;
         break;
@@ -178,7 +188,6 @@ int CRARControl::ArchiveExtract(const std::string& targetPath, const std::string
 
   while (firstTry || (needPassword && m_passwordStandardCheck < MAX_STANDARD_PASSWORDS))
   {
-
     RAROpenArchiveDataEx archiveData = {0};
     archiveData.OpenMode = RAR_OM_EXTRACT;
     archiveData.ArcName = const_cast<char*>(m_path.c_str());
@@ -207,9 +216,13 @@ int CRARControl::ArchiveExtract(const std::string& targetPath, const std::string
     retValue = 1;
     while ((result = RARReadHeaderEx(archive, &fileHeader)) == SUCCESS)
     {
+      WideToUtf(fileHeader.FileNameW, name, sizeof(name));
+      std::string filename = name;
+      std::replace(filename.begin(), filename.end(), '\\', '/');
+
       if (firstTry)
       {
-        kodiLog(ADDON_LOG_DEBUG, "CRARControl::%s: List file from %s: %s", __func__, fileHeader.ArcName, fileHeader.FileName);
+        kodiLog(ADDON_LOG_DEBUG, "CRARControl::%s: List file from %s: %s", __func__, fileHeader.ArcName, filename.c_str());
 
         needPassword = fileHeader.Flags & ROADF_LOCK;
         if (needPassword)
@@ -219,16 +232,30 @@ int CRARControl::ArchiveExtract(const std::string& targetPath, const std::string
         }
       }
 
-      int operation = (all || fileToExtract == fileHeader.FileName) ? RAR_EXTRACT : RAR_SKIP;
+      int operation = (all || fileToExtract == filename) ? RAR_EXTRACT : RAR_SKIP;
       if (operation == RAR_EXTRACT)
       {
         m_extractedFileSize = 0;
         m_extractFileSize = (uint64_t(fileHeader.UnpSizeHigh)<<32)|fileHeader.UnpSize;
+
+        wchar path[MAX_PATH_LENGTH];
+        GetWideName(targetPath.c_str(), nullptr, path, ASIZE(path));
+        int64 diskSpace = GetFreeDisk(path);
+
+        // Check filesize + 10 MByte is available on disk
+        if (m_extractFileSize + (10 * 1024 * 1024) >= diskSpace)
+        {
+          kodiLog(ADDON_LOG_ERROR, "CRARControl::%s: Not enough diskSpace with %li MB for file %s with size %li MB",
+                      __func__, diskSpace / 1024 / 1024, m_path.c_str(), m_extractFileSize / 1024 / 1024);
+          kodi::QueueNotification(QUEUE_ERROR, kodi::GetLocalizedString(30000), kodi::GetLocalizedString(30004));
+          return 0;
+        }
+
         if (m_progress)
         {
           // After wanted file is found to progress with his real extract
           m_progress->SetTitle(kodi::GetLocalizedString(30000));
-          m_progress->SetText(fileHeader.FileName);
+          m_progress->SetText(filename);
           m_progress->SetProgress(m_extractedFileSize, m_extractFileSize);
         }
       }
@@ -243,6 +270,7 @@ int CRARControl::ArchiveExtract(const std::string& targetPath, const std::string
       if (result != SUCCESS)
       {
         kodiLog(ADDON_LOG_DEBUG, "CRARControl::%s: Error processing file %s", __func__, m_path.c_str());
+        RarErrorLog(__func__, result);
         result = ERAR_END_ARCHIVE;
         retValue = 0;
         break;
@@ -362,6 +390,7 @@ int CRARControl::ProcessData(uint8_t* block, size_t size)
 int CRARControl::NeedPassword(char* password, size_t size)
 {
   bool xmlPwPresent = false;
+  bool passwordAskAllowed = CRarManager::Get().PasswordAskAllowed();
   std::string pw;
 
   if (!m_xmlWasAsked || !m_passwordSeemsBad)
@@ -377,13 +406,13 @@ int CRARControl::NeedPassword(char* password, size_t size)
   if (pw.empty())
   {
     // Prevent ask and stop if no user ask enabled and nothing as standard inside settings
-    if (!m_passwordAskAllowed && m_passwordStandardCheck >= MAX_STANDARD_PASSWORDS)
+    if (!passwordAskAllowed && m_passwordStandardCheck >= MAX_STANDARD_PASSWORDS)
       return STOP_PROCESSING;
 
     // Check about standard passwords defined in settings.xml
     for (unsigned int i = m_passwordStandardCheck; i < MAX_STANDARD_PASSWORDS; ++i)
     {
-      pw = kodi::GetSettingString("standard_password_" + std::to_string(i+1));
+      pw = CRarManager::Get().StandardPassword(i);
       if (!pw.empty())
       {
         strncpy(password, pw.c_str(), size);
@@ -394,7 +423,7 @@ int CRARControl::NeedPassword(char* password, size_t size)
   }
 
   // Break if nothing defined inside settings
-  if (!m_passwordAskAllowed && pw.empty())
+  if (!passwordAskAllowed && pw.empty())
     return STOP_PROCESSING;
 
   std::string header = StringFormat(kodi::GetLocalizedString(30003).c_str(), m_path.length() > 45 ? kodi::vfs::GetFileName(m_path).c_str() : m_path.c_str());
@@ -459,6 +488,8 @@ RARContext::RARContext(const VFSURL& url)
   m_cachedir = kodi::GetTempAddonPath("/");
   m_password = url.password;
   m_pathinrar = url.filename;
+  std::replace(m_pathinrar.begin(), m_pathinrar.end(), '\\', '/');
+
   std::vector<std::string> options;
   std::string options2(url.options);
   if (!options2.empty())
@@ -473,7 +504,7 @@ RARContext::RARContext(const VFSURL& url)
       std::string strValue = it.substr(iEqual+1);
 
       if (strOption == "flags")
-        m_fileoptions = atoi(strValue.c_str());
+        m_fileoptions = std::stoi(strValue);
       else if (strOption == "cache")
         m_cachedir = strValue;
     }
@@ -649,21 +680,14 @@ bool RARContext::OpenInArchive()
 
                 /* replace back slashes into forward slashes */
                 /* this could get us into troubles, file could two different files, one with / and one with \ */
-                //          StringUtils::Replace(strFileName, '\\', '/');
-                size_t index = 0;
-                std::string oldStr = "\\";
-                std::string newStr = "/";
-                while (index < check.size() && (index = check.find(oldStr, index)) != std::string::npos)
-                {
-                  check.replace(index, oldStr.size(), newStr);
-                  index += newStr.size();
-                }
+                std::replace(check.begin(), check.end(), '\\', '/');
+
                 if (check == m_pathinrar)
                 {
                   break;
                 }
               }
-              //                  iOffset = pArc->Tell();
+              // iOffset = pArc->Tell();
               arc.SeekToNext();
             }
             if (bBreak)

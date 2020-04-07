@@ -6,6 +6,7 @@
  *  See LICENSE.md for more information.
  */
 
+#include "RarFile.h"
 #include "RarExtractThread.h"
 #include "RarManager.h"
 #include "RarPassword.h"
@@ -13,7 +14,6 @@
 
 #include "rar.hpp"
 
-#include <kodi/addon-instance/VFS.h>
 #include <kodi/General.h>
 #include <kodi/gui/dialogs/Keyboard.h>
 #if defined(CreateDirectory)
@@ -32,125 +32,67 @@
 
 #define SEEKTIMOUT 30000
 
-static std::string URLEncode(const std::string& strURLData)
-{
-  std::string strResult;
-
-  /* wonder what a good value is here is, depends on how often it occurs */
-  strResult.reserve( strURLData.length() * 2 );
-
-  for (size_t i = 0; i < strURLData.size(); ++i)
-  {
-    const unsigned char kar = strURLData[i];
-
-    // Don't URL encode "-_.!()" according to RFC1738
-    //! @todo Update it to "-_.~" after Gotham according to RFC3986
-    if (std::isalnum(kar) || kar == '-' || kar == '.' || kar == '_' || kar == '!' || kar == '(' || kar == ')')
-      strResult.push_back(kar);
-    else
-    {
-      char temp[128];
-      sprintf(temp,"%%%2.2X", (unsigned int)((unsigned char)kar));
-      strResult += temp;
-    }
-  }
-
-  return strResult;
-}
-
-class CRARFile : public kodi::addon::CInstanceVFS
-{
-public:
-  CRARFile(KODI_HANDLE instance) : CInstanceVFS(instance) { }
-
-  void* Open(const VFSURL& url) override;
-  ssize_t Read(void* context, void* buffer, size_t uiBufSize) override;
-  int64_t Seek(void* context, int64_t position, int whence) override;
-  int64_t GetLength(void* context) override;
-  int64_t GetPosition(void* context) override;
-  int IoControl(void* context, XFILE::EIoControl request, void* param) override;
-  int Stat(const VFSURL& url, struct __stat64* buffer) override;
-  bool Close(void* context) override;
-  bool Exists(const VFSURL& url) override;
-  void ClearOutIdle() override;
-  void DisconnectAll() override;
-  bool DirectoryExists(const VFSURL& url) override;
-  bool GetDirectory(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>& items, CVFSCallbacks callbacks) override;
-  bool ContainsFiles(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>& items, std::string& rootpath) override;
-};
-
 void* CRARFile::Open(const VFSURL& url)
 {
   RARContext* result = new RARContext(url);
 
-  std::vector<kodi::vfs::CDirEntry> items;
-  CRarManager::Get().GetFilesInRar(items, result->GetPath(), false);
-
-  size_t i;
-  for (i = 0; i < items.size(); ++i)
+  kodi::vfs::CDirEntry item;
+  if (CRarManager::Get().GetFileInRar(result->GetPath(), result->m_pathinrar, item) &&
+      item.GetProperties().size() == 1 && std::stoi(item.GetProperties().begin()->second) == 0x30)
   {
-    if (result->m_pathinrar == items[i].Label())
-      break;
-  }
-
-  if (i < items.size())
-  {
-    if (items[i].GetProperties().size() == 1 && atoi(items[i].GetProperties().begin()->second.c_str()) == 0x30)
+    if (!result->OpenInArchive())
     {
-      if (!result->OpenInArchive())
-      {
-        delete result;
-        return nullptr;
-      }
+      delete result;
+      return nullptr;
+    }
 
-      result->m_size = items[i].Size();
+    result->m_size = item.Size();
 
-      // perform 'noidx' check
-      CFileInfo* pFile = CRarManager::Get().GetFileInRar(result->GetPath(), result->m_pathinrar);
-      if (pFile)
+    // perform 'noidx' check
+    CFileInfo* pFile = CRarManager::Get().GetFileInRar(result->GetPath(), result->m_pathinrar);
+    if (pFile)
+    {
+      if (pFile->m_iIsSeekable == -1)
       {
-        if (pFile->m_iIsSeekable == -1)
+        if (Seek(result, -1, SEEK_END) == -1)
         {
-          if (Seek(result, -1, SEEK_END) == -1)
-          {
-            result->m_seekable = false;
-            pFile->m_iIsSeekable = 0;
-          }
+          result->m_seekable = false;
+          pFile->m_iIsSeekable = 0;
         }
-        else
-          result->m_seekable = (pFile->m_iIsSeekable == 1);
       }
-      return result;
+      else
+        result->m_seekable = (pFile->m_iIsSeekable == 1);
     }
-    else
+    return result;
+  }
+  else
+  {
+    CFileInfo* info = CRarManager::Get().GetFileInRar(result->GetPath(), result->m_pathinrar);
+    if ((!info || !kodi::vfs::FileExists(info->m_strCachedPath, true)) && result->m_fileoptions & EXFILE_NOCACHE)
     {
-      CFileInfo* info = CRarManager::Get().GetFileInRar(result->GetPath(), result->m_pathinrar);
-      if ((!info || !kodi::vfs::FileExists(info->m_strCachedPath, true)) && result->m_fileoptions & EXFILE_NOCACHE)
-      {
-        delete result;
-        return nullptr;
-      }
-      std::string strPathInCache;
-
-      if (!CRarManager::Get().CacheRarredFile(strPathInCache, result->GetPath(), result->m_pathinrar,
-                                              EXFILE_AUTODELETE | result->m_fileoptions, result->m_cachedir,
-                                              items[i].Size()))
-      {
-        kodiLog(ADDON_LOG_ERROR,"CRarFile::%s: Open failed to cache file %s", __func__, result->m_pathinrar.c_str());
-        delete result;
-        return nullptr;
-      }
-
-      result->m_file = new kodi::vfs::CFile;
-      if (!result->m_file->OpenFile(strPathInCache, 0))
-      {
-        kodiLog(ADDON_LOG_ERROR,"CRarFile::%s: Open failed to open file in cache: %s", __func__, strPathInCache.c_str());
-        delete result;
-        return nullptr;
-      }
-
-      return result;
+      delete result;
+      return nullptr;
     }
+
+    std::string strPathInCache;
+    if (!CRarManager::Get().CacheRarredFile(strPathInCache, result->GetPath(), result->m_pathinrar,
+                                            EXFILE_AUTODELETE | result->m_fileoptions, result->m_cachedir,
+                                            item.Size()))
+    {
+      kodiLog(ADDON_LOG_ERROR,"CRarFile::%s: Open failed to cache file %s", __func__, result->m_pathinrar.c_str());
+      delete result;
+      return nullptr;
+    }
+
+    result->m_file = new kodi::vfs::CFile;
+    if (!result->m_file->OpenFile(strPathInCache, 0))
+    {
+      kodiLog(ADDON_LOG_ERROR,"CRarFile::%s: Open failed to open file in cache: %s", __func__, strPathInCache.c_str());
+      delete result;
+      return nullptr;
+    }
+
+    return result;
   }
 
   delete result;
@@ -444,12 +386,7 @@ bool CRARFile::Exists(const VFSURL& url)
 
   // Second step:
   // Make sure that the requested file exists in the archive.
-  bool bResult;
-
-  if (!CRarManager::Get().IsFileInRar(bResult, ctx.GetPath(), ctx.m_pathinrar))
-    return false;
-
-  return bResult;
+  return CRarManager::Get().IsFileInRar(ctx.GetPath(), ctx.m_pathinrar);
 }
 
 int CRARFile::Stat(const VFSURL& url, struct __stat64* buffer)
@@ -505,6 +442,8 @@ bool CRARFile::DirectoryExists(const VFSURL& url)
 bool CRARFile::GetDirectory(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>& items, CVFSCallbacks callbacks)
 {
   std::string strPath(url.url);
+  std::replace(strPath.begin(), strPath.end(), '\\', '/');
+
   size_t pos;
   if ((pos=strPath.find("?")) != std::string::npos)
     strPath.erase(strPath.begin()+pos, strPath.end());
@@ -516,6 +455,9 @@ bool CRARFile::GetDirectory(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>
   std::string strArchive = url.hostname;
   std::string strOptions = url.options;
   std::string strPathInArchive = url.filename;
+
+  std::replace(strArchive.begin(), strArchive.end(), '\\', '/');
+  std::replace(strPathInArchive.begin(), strPathInArchive.end(), '\\', '/');
 
   if (CRarManager::Get().GetFilesInRar(items, strArchive, true, strPathInArchive))
   {
@@ -538,11 +480,7 @@ bool CRARFile::GetDirectory(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>
 bool CRARFile::ContainsFiles(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>& items, std::string& rootpath)
 {
   // only list .part1.rar
-  std::string fname(url.filename);
-  size_t spos = fname.rfind('/');
-  if (spos == std::string::npos)
-    spos = fname.rfind('\\');
-  fname.erase(0, spos);
+  std::string fname = kodi::vfs::GetFileName(url.filename);
   std::regex part_re("\\.part([0-9]+)\\.rar$");
   std::smatch match;
   if (std::regex_search(fname, match, part_re))
@@ -551,21 +489,23 @@ bool CRARFile::ContainsFiles(const VFSURL& url, std::vector<kodi::vfs::CDirEntry
       return false;
   }
 
-  if (CRarManager::Get().GetFilesInRar(items, url.url))
+  std::string strPath(url.url);
+  std::replace(strPath.begin(), strPath.end(), '\\', '/');
+
+  if (CRarManager::Get().GetFilesInRar(items, strPath))
   {
     if (items.size() == 1 && items[0].GetProperties().size() == 1 &&
-        atoi(items[0].GetProperties().begin()->second.c_str()) < 0x30 &&
-        atoi(items[0].GetProperties().begin()->second.c_str()) > 0x35)
+        std::stoi(items[0].GetProperties().begin()->second) < 0x30 &&
+        std::stoi(items[0].GetProperties().begin()->second) > 0x35)
       return false;
 
     // fill in paths
-    std::string strPath(url.url);
     size_t pos;
     if ((pos=strPath.find("?")) != std::string::npos)
       strPath.erase(strPath.begin()+pos, strPath.end());
 
-    if (strPath[strPath.size()-1] == '/')
-      strPath.erase(strPath.end()-1);
+    kodi::vfs::RemoveSlashAtEnd(strPath);
+
     std::string encoded = URLEncode(strPath);
     std::stringstream str;
     str << "rar://" << encoded << "/";
@@ -581,6 +521,33 @@ bool CRARFile::ContainsFiles(const VFSURL& url, std::vector<kodi::vfs::CDirEntry
   return !items.empty();
 }
 
+std::string CRARFile::URLEncode(const std::string& strURLData)
+{
+  std::string strResult;
+
+  /* wonder what a good value is here is, depends on how often it occurs */
+  strResult.reserve(strURLData.length() * 2);
+
+  for (size_t i = 0; i < strURLData.size(); ++i)
+  {
+    const unsigned char kar = strURLData[i];
+
+    // Don't URL encode "-_.!()" according to RFC1738
+    //! @todo Update it to "-_.~" after Gotham according to RFC3986
+    if (std::isalnum(kar) || kar == '-' || kar == '.' || kar == '_' || kar == '!' || kar == '(' || kar == ')')
+      strResult.push_back(kar);
+    else
+    {
+      char temp[MAX_PATH_LENGTH];
+      snprintf(temp, MAX_PATH_LENGTH, "%%%2.2X", (unsigned int)((unsigned char)kar));
+      strResult += temp;
+    }
+  }
+
+  return strResult;
+}
+
+//------------------------------------------------------------------------------
 
 class ATTRIBUTE_HIDDEN CMyAddon : public kodi::addon::CAddonBase
 {
@@ -594,6 +561,12 @@ public:
   ADDON_STATUS CreateInstance(int instanceType, std::string instanceID, KODI_HANDLE instance, KODI_HANDLE& addonInstance) override
   {
     addonInstance = new CRARFile(instance);
+    return ADDON_STATUS_OK;
+  }
+
+  ADDON_STATUS SetSetting(const std::string& settingName, const kodi::CSettingValue& settingValue) override
+  {
+    CRarManager::Get().SettingsUpdate(settingName, settingValue);
     return ADDON_STATUS_OK;
   }
 };

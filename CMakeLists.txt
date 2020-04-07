@@ -21,6 +21,7 @@ set(RAR_SOURCES src/RarControl.cpp
 set(RAR_HEADERS src/Helpers.h
                 src/RarControl.h
                 src/RarExtractThread.h
+                src/RarFile.h
                 src/RarManager.h
                 src/RarPassword.h)
 
