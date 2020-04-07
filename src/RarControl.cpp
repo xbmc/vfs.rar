@@ -48,10 +48,9 @@ bool CRARControl::ArchiveList(std::vector<RARHeaderDataEx>& list)
   bool needPassword = false;
   bool firstTry = true;
   bool ret = false;
-
-  m_passwordStandardCheck = 0;
   char name[MAX_PATH_LENGTH];
 
+  m_passwordStandardCheck = 0;
   while (firstTry || (needPassword && m_passwordStandardCheck < MAX_STANDARD_PASSWORDS))
   {
     RAROpenArchiveDataEx archiveData = {0};
@@ -190,7 +189,6 @@ int CRARControl::ArchiveExtract(const std::string& targetPath, const std::string
 
   while (firstTry || (needPassword && m_passwordStandardCheck < MAX_STANDARD_PASSWORDS))
   {
-
     RAROpenArchiveDataEx archiveData = {0};
     archiveData.OpenMode = RAR_OM_EXTRACT;
     archiveData.ArcName = const_cast<char*>(m_path.c_str());
@@ -690,7 +688,7 @@ bool RARContext::OpenInArchive()
                   break;
                 }
               }
-              //                  iOffset = pArc->Tell();
+              // iOffset = pArc->Tell();
               arc.SeekToNext();
             }
             if (bBreak)

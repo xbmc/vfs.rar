@@ -526,7 +526,7 @@ std::string CRARFile::URLEncode(const std::string& strURLData)
   std::string strResult;
 
   /* wonder what a good value is here is, depends on how often it occurs */
-  strResult.reserve( strURLData.length() * 2 );
+  strResult.reserve(strURLData.length() * 2);
 
   for (size_t i = 0; i < strURLData.size(); ++i)
   {
