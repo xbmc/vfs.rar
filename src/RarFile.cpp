@@ -73,8 +73,8 @@ void* CRARFile::Open(const VFSURL& url)
       delete result;
       return nullptr;
     }
-    std::string strPathInCache;
 
+    std::string strPathInCache;
     if (!CRarManager::Get().CacheRarredFile(strPathInCache, result->GetPath(), result->m_pathinrar,
                                             EXFILE_AUTODELETE | result->m_fileoptions, result->m_cachedir,
                                             item.Size()))

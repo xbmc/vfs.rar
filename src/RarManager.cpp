@@ -155,6 +155,10 @@ bool CRarManager::CacheRarredFile(std::string& strPathInCache, const std::string
       else
         kodi::UnknownToUTF8(entry.FileName, strName);
 
+      /* replace back slashes into forward slashes */
+      /* this could get us into troubles, file could two different files, one with / and one with \ */
+      std::replace(strName.begin(), strName.end(), '\\', '/');
+
       if (strName == strPath)
       {
         break;

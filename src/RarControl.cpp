@@ -50,6 +50,7 @@ bool CRARControl::ArchiveList(std::vector<RARHeaderDataEx>& list)
   bool ret = false;
 
   m_passwordStandardCheck = 0;
+  char name[MAX_PATH_LENGTH];
 
   while (firstTry || (needPassword && m_passwordStandardCheck < MAX_STANDARD_PASSWORDS))
   {
@@ -81,12 +82,17 @@ bool CRARControl::ArchiveList(std::vector<RARHeaderDataEx>& list)
     while ((result = RARReadHeaderEx(archive, &fileHeader)) == SUCCESS)
     {
       if (firstTry)
-        kodiLog(ADDON_LOG_DEBUG, "CRARControl::%s: List file from %s: %s (encrypted: %s)", __func__, fileHeader.ArcName, fileHeader.FileName, fileHeader.Flags & ROADF_LOCK ? "yes" : "no");
+      {
+        WideToUtf(fileHeader.FileNameW, name, sizeof(name));
+        kodiLog(ADDON_LOG_DEBUG, "CRARControl::%s: List file from %s: %s (encrypted: %s)",
+                    __func__, fileHeader.ArcName, name, fileHeader.Flags & ROADF_LOCK ? "yes" : "no");
+      }
 
       result = RARProcessFile(archive, RAR_SKIP, nullptr, nullptr);
       if (result != SUCCESS)
       {
         kodiLog(ADDON_LOG_DEBUG, "CRARControl::%s: Error processing file %s", __func__, m_path.c_str());
+        RarErrorLog(__func__, result);
         RARCloseArchive(archive);
         archive = nullptr;
         break;
@@ -128,6 +134,7 @@ bool CRARControl::ArchiveList(std::vector<RARHeaderDataEx>& list)
 int CRARControl::ArchiveExtract(const std::string& targetPath, const std::string& fileToExtract, bool showProgress/* = false*/)
 {
   int retValue = 0;
+  char name[MAX_PATH_LENGTH];
 
   if (!kodi::vfs::FileExists(m_path))
   {
@@ -149,7 +156,11 @@ int CRARControl::ArchiveExtract(const std::string& targetPath, const std::string
     ArchiveList(list);
     for (const auto& entry : list)
     {
-      if (entry.FileName == fileToExtract)
+      WideToUtf(entry.FileNameW, name, sizeof(name));
+      std::string filename = name;
+      std::replace(filename.begin(), filename.end(), '\\', '/');
+
+      if (filename == fileToExtract)
       {
         solid = entry.Flags & RHDF_SOLID;
         break;
@@ -208,9 +219,13 @@ int CRARControl::ArchiveExtract(const std::string& targetPath, const std::string
     retValue = 1;
     while ((result = RARReadHeaderEx(archive, &fileHeader)) == SUCCESS)
     {
+      WideToUtf(fileHeader.FileNameW, name, sizeof(name));
+      std::string filename = name;
+      std::replace(filename.begin(), filename.end(), '\\', '/');
+
       if (firstTry)
       {
-        kodiLog(ADDON_LOG_DEBUG, "CRARControl::%s: List file from %s: %s", __func__, fileHeader.ArcName, fileHeader.FileName);
+        kodiLog(ADDON_LOG_DEBUG, "CRARControl::%s: List file from %s: %s", __func__, fileHeader.ArcName, filename.c_str());
 
         needPassword = fileHeader.Flags & ROADF_LOCK;
         if (needPassword)
@@ -220,7 +235,7 @@ int CRARControl::ArchiveExtract(const std::string& targetPath, const std::string
         }
       }
 
-      int operation = (all || fileToExtract == fileHeader.FileName) ? RAR_EXTRACT : RAR_SKIP;
+      int operation = (all || fileToExtract == filename) ? RAR_EXTRACT : RAR_SKIP;
       if (operation == RAR_EXTRACT)
       {
         m_extractedFileSize = 0;
@@ -243,7 +258,7 @@ int CRARControl::ArchiveExtract(const std::string& targetPath, const std::string
         {
           // After wanted file is found to progress with his real extract
           m_progress->SetTitle(kodi::GetLocalizedString(30000));
-          m_progress->SetText(fileHeader.FileName);
+          m_progress->SetText(filename);
           m_progress->SetProgress(m_extractedFileSize, m_extractFileSize);
         }
       }
@@ -258,6 +273,7 @@ int CRARControl::ArchiveExtract(const std::string& targetPath, const std::string
       if (result != SUCCESS)
       {
         kodiLog(ADDON_LOG_DEBUG, "CRARControl::%s: Error processing file %s", __func__, m_path.c_str());
+        RarErrorLog(__func__, result);
         result = ERAR_END_ARCHIVE;
         retValue = 0;
         break;
