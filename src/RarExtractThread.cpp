@@ -67,5 +67,6 @@ void CRarFileExtractThread::Process()
     }
   }
 
+  hRunning.Reset();
   hRestart.Signal();
 }

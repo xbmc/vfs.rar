@@ -1124,7 +1124,7 @@ void CmdExtract::ExtrCreateDir(Archive &Arc,const wchar *ArcFileName)
 
 #ifdef BUILD_KODI_ADDON
   char DestFileNameA[NM];
-  WideToChar(DestFileName,DestFileNameA,ASIZE(DestFileNameA));
+  WideToUtf(DestFileName,DestFileNameA,ASIZE(DestFileNameA));
   MKDIR_CODE MDCode=MKDIR_ERROR;
   if (kodi::vfs::CreateDirectory(DestFileNameA))
     MDCode=MKDIR_SUCCESS;

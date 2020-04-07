@@ -72,7 +72,6 @@ protected:
   size_t m_extractFileSize = 0;
   size_t m_extractedFileSize = 0;
   bool m_xmlWasAsked = false;
-  bool m_passwordAskAllowed = false;
   int m_passwordStandardCheck = 0;
 };
 

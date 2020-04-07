@@ -10,6 +10,7 @@
 
 #include "RarControl.h"
 
+#include <kodi/AddonBase.h>
 #include <map>
 #include <mutex>
 #include <string>
@@ -21,6 +22,9 @@
 #define EXFILE_NOCACHE 8
 
 #define MAX_PATH_LENGTH NM*6
+
+// Amount of standard passwords where can available on settings
+#define MAX_STANDARD_PASSWORDS 5
 
 class CFileInfo
 {
@@ -49,15 +53,23 @@ public:
                       const std::string& strPathInRar = "");
   bool GetFilesInRar(std::vector<kodi::vfs::CDirEntry>& vecpItems, const std::string& strRarPath,
                      bool bMask=true, const std::string& strPathInRar="");
+  bool GetFileInRar(const std::string& strRarPath, const std::string& strPathInRar, kodi::vfs::CDirEntry& item);
   CFileInfo* GetFileInRar(const std::string& strRarPath, const std::string& strPathInRar);
-  bool IsFileInRar(bool& bResult, const std::string& strRarPath, const std::string& strPathInRar);
+  bool IsFileInRar(const std::string& strRarPath, const std::string& strPathInRar);
   void ClearCache(bool force=false);
   void ClearCachedFile(const std::string& strRarPath, const std::string& strPathInRar);
   void ExtractArchive(const std::string& strArchive, const std::string& strPath);
 
+  void SettingsUpdate(const std::string& settingName, const kodi::CSettingValue& settingValue);
+  bool PasswordAskAllowed() const { return m_passwordAskAllowed; }
+  const std::string& StandardPassword(int no) { return m_standardPasswords[no]; }
+
 private:
-  CRarManager() = default;
+  CRarManager();
 
   std::map<std::string, std::pair<std::vector<RARHeaderDataEx>,std::vector<CFileInfo> > > m_ExFiles;
   std::recursive_mutex m_lock;
+
+  bool m_passwordAskAllowed = false;
+  std::string m_standardPasswords[MAX_STANDARD_PASSWORDS];
 };

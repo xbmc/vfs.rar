@@ -10,6 +10,7 @@
 #include "RarControl.h"
 #include "Helpers.h"
 
+#include <algorithm>
 #include <kodi/General.h>
 #include <locale>
 #include <set>
@@ -33,16 +34,42 @@ void CRarManager::Tokenize(const std::string& input, std::vector<std::string>& t
 CRarManager& CRarManager::Get()
 {
   static CRarManager instance;
-  
+
   return instance;
 }
 
 
 /////////////////////////////////////////////////
 
+CRarManager::CRarManager()
+{
+  // Load the current settings and store to reduce call amount of them
+  m_passwordAskAllowed = kodi::GetSettingBoolean("usercheck_for_password");
+  for (unsigned int i = 0; i < MAX_STANDARD_PASSWORDS; ++i)
+    m_standardPasswords[i] = kodi::GetSettingString("standard_password_" + std::to_string(i+1));
+}
+
 CRarManager::~CRarManager()
 {
   ClearCache(true);
+}
+
+void CRarManager::SettingsUpdate(const std::string& settingName, const kodi::CSettingValue& settingValue)
+{
+  // Update the by CMyAddon called settings values, done after change inside
+  // addon settings by e.g. user.
+  if (settingName == "usercheck_for_password")
+    m_passwordAskAllowed = settingValue.GetBoolean();
+  else if (settingName == "standard_password_1")
+    m_standardPasswords[0] = settingValue.GetString();
+  else if (settingName == "standard_password_2")
+    m_standardPasswords[1] = settingValue.GetString();
+  else if (settingName == "standard_password_3")
+    m_standardPasswords[2] = settingValue.GetString();
+  else if (settingName == "standard_password_4")
+    m_standardPasswords[3] = settingValue.GetString();
+  else if (settingName == "standard_password_5")
+    m_standardPasswords[4] = settingValue.GetString();
 }
 
 bool CRarManager::CacheRarredFile(std::string& strPathInCache, const std::string& strRarPath,
@@ -127,6 +154,10 @@ bool CRarManager::CacheRarredFile(std::string& strPathInCache, const std::string
       }
       else
         kodi::UnknownToUTF8(entry.FileName, strName);
+
+      /* replace back slashes into forward slashes */
+      /* this could get us into troubles, file could two different files, one with / and one with \ */
+      std::replace(strName.begin(), strName.end(), '\\', '/');
 
       if (strName == strPath)
       {
@@ -222,15 +253,7 @@ bool CRarManager::GetFilesInRar(std::vector<kodi::vfs::CDirEntry>& vecpItems, co
 
     /* replace back slashes into forward slashes */
     /* this could get us into troubles, file could two different files, one with / and one with \ */
-    //StringUtils::Replace(strName, '\\', '/');
-    size_t index = 0;
-    std::string oldStr = "\\";
-    std::string newStr = "/";
-    while (index < strName.size() && (index = strName.find(oldStr, index)) != std::string::npos)
-    {
-      strName.replace(index, oldStr.size(), newStr);
-      index += newStr.size();
-    }
+    std::replace(strName.begin(), strName.end(), '\\', '/');
 
     if (bMask)
     {
@@ -244,7 +267,9 @@ bool CRarManager::GetFilesInRar(std::vector<kodi::vfs::CDirEntry>& vecpItems, co
     }
 
     unsigned int iMask = (entry.HostOS==3 ? 0x0040000 : 16); // win32 or unix attribs?
-    if (((entry.FileAttr & iMask) == iMask) || (vec.size() > iDepth + 1 && bMask)) // we have a directory
+    if (entry.Flags & RHDF_DIRECTORY ||
+        entry.FileAttr & iMask ||
+        (vec.size() > iDepth + 1 && bMask)) // we have a directory
     {
       if (!bMask)
         continue;
@@ -259,10 +284,7 @@ bool CRarManager::GetFilesInRar(std::vector<kodi::vfs::CDirEntry>& vecpItems, co
         file.SetPath(vec[iDepth] + '/');
         file.SetSize(0);
         file.SetFolder(true);
-
-        char tmp[16];
-        sprintf(tmp, "%i", entry.Method);
-        file.AddProperty("rarcompressionmethod", tmp);
+        file.AddProperty("rarcompressionmethod", std::to_string(entry.Method));
 
         vecpItems.push_back(file);
       }
@@ -279,10 +301,7 @@ bool CRarManager::GetFilesInRar(std::vector<kodi::vfs::CDirEntry>& vecpItems, co
         file.SetPath(strName.c_str() + strPathInRar.size());
         file.SetSize((uint64_t(entry.UnpSizeHigh)<<32)|entry.UnpSize);
         file.SetFolder(false);
-
-        char tmp[16];
-        sprintf(tmp, "%i", entry.Method);
-        file.AddProperty("rarcompressionmethod", tmp);
+        file.AddProperty("rarcompressionmethod", std::to_string(entry.Method));
 
         vecpItems.push_back(file);
       }
@@ -290,6 +309,57 @@ bool CRarManager::GetFilesInRar(std::vector<kodi::vfs::CDirEntry>& vecpItems, co
   }
 
   return true;
+}
+
+bool CRarManager::GetFileInRar(const std::string& strRarPath, const std::string& strPathInRar, kodi::vfs::CDirEntry& item)
+{
+  std::unique_lock<std::recursive_mutex> lock(m_lock);
+
+  std::vector<RARHeaderDataEx> pFileList;
+  auto it = m_ExFiles.find(strRarPath);
+  if (it == m_ExFiles.end())
+  {
+    CRARControl control(strRarPath);
+    if (control.ArchiveList(pFileList))
+      m_ExFiles.insert(std::make_pair(strRarPath, std::make_pair(pFileList, std::vector<CFileInfo>())));
+    else
+      return false;
+  }
+  else
+    pFileList = it->second.first;
+
+  char name[MAX_PATH_LENGTH];
+  for (const auto& entry : pFileList)
+  {
+    std::string strName;
+
+    /* convert to utf8 */
+    if (entry.FileNameW && wcslen(entry.FileNameW) > 0)
+    {
+      WideToUtf(entry.FileNameW, name, sizeof(name));
+      strName = name;
+    }
+    else
+      kodi::UnknownToUTF8(entry.FileName, strName);
+
+    /* replace back slashes into forward slashes */
+    /* this could get us into troubles, file could two different files, one with / and one with \ */
+    std::replace(strName.begin(), strName.end(), '\\', '/');
+
+    if (strPathInRar != strName)
+      continue;
+
+    unsigned int iMask = (entry.HostOS==3 ? 0x0040000 : 16); // win32 or unix attribs?
+
+    item.SetLabel(strName);
+    item.SetPath(strName.c_str() + strPathInRar.size());
+    item.SetSize((uint64_t(entry.UnpSizeHigh)<<32)|entry.UnpSize);
+    item.SetFolder(entry.Flags & RHDF_DIRECTORY || entry.FileAttr & iMask ? true : false);
+    item.AddProperty("rarcompressionmethod", std::to_string(entry.Method));
+    return true;
+  }
+
+  return false;
 }
 
 CFileInfo* CRarManager::GetFileInRar(const std::string& strRarPath, const std::string& strPathInRar)
@@ -322,26 +392,10 @@ bool CRarManager::GetPathInCache(std::string& strPathInCache, const std::string&
   return false;
 }
 
-bool CRarManager::IsFileInRar(bool& bResult, const std::string& strRarPath, const std::string& strPathInRar)
+bool CRarManager::IsFileInRar(const std::string& strRarPath, const std::string& strPathInRar)
 {
-  bResult = false;
-  std::vector<kodi::vfs::CDirEntry> ItemList;
-
-  if (!GetFilesInRar(ItemList, strRarPath, false))
-    return false;
-
-  size_t it;
-  for (it = 0; it < ItemList.size(); ++it)
-  {
-    if (strPathInRar.compare(ItemList[it].Path()) == 0)
-      break;
-  }
-  if (it != ItemList.size())
-    bResult = true;
-
-  // LEAKs the list
-
-  return true;
+  kodi::vfs::CDirEntry item;
+  return GetFileInRar(strRarPath, strPathInRar, item);
 }
 
 void CRarManager::ClearCache(bool force)
@@ -387,8 +441,7 @@ void CRarManager::ExtractArchive(const std::string& strArchive, const std::strin
   CRARControl m_control(strArchive);
 
   std::string strPath2(strPath);
-  if (!strPath2.empty() && strPath2[strPath2.size()-1] == '/')
-    strPath2.erase(strPath2.end()-1);
+  kodi::vfs::RemoveSlashAtEnd(strPath2);
   if (!m_control.ArchiveExtract(strPath2, ""))
     kodiLog(ADDON_LOG_ERROR,"CRarManager::%s: error while extracting %s", __func__, strArchive.c_str());
 }

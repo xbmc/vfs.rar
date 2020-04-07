@@ -205,7 +205,7 @@ bool File::Create(const wchar *Name,uint Mode)
   bool ShareRead=(Mode & FMF_SHAREREAD)!=0 || File::OpenShared;
 #ifdef BUILD_KODI_ADDON
   char NameA[NM];
-  WideToChar(Name,NameA,ASIZE(NameA));
+  WideToUtf(Name,NameA,ASIZE(NameA));
 
   hFile = new kodi::vfs::CFile;
   if (!hFile->OpenFileForWrite(NameA, true))
@@ -224,7 +224,7 @@ bool File::Create(const wchar *Name,uint Mode)
   // So we detect such names and process them with \\?\ prefix.
   wchar *LastChar=PointToLastChar(Name);
   bool Special=*LastChar=='.' || *LastChar==' ';
-  
+
   if (Special && (Mode & FMF_STANDARDNAMES)==0)
     hFile=FILE_BAD_HANDLE;
   else
@@ -450,7 +450,7 @@ int File::Read(void *Data,size_t Size)
     }
     break;
   }
-  return ReadSize;
+  return ReadSize; // It can return -1 only if AllowExceptions is disabled.
 }
 
 
