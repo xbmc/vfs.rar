@@ -68,6 +68,9 @@ bool CRARPasswordControl::GetPassword(const std::string& path, std::string& pass
   TiXmlDocument xmlDoc;
   std::string strSettingsFile = kodi::GetBaseUserPath("rar-control.xml");
 
+  if (!kodi::vfs::FileExists(strSettingsFile))
+    return false;
+
   if (!xmlDoc.LoadFile(strSettingsFile))
   {
     kodiLog(ADDON_LOG_ERROR, "CRARControl::%s: invalid data (no/invalid data file found at '%s')", __func__, strSettingsFile.c_str());
