@@ -60,7 +60,7 @@ void CRarFileExtractThread::Process()
       }
       catch (...)
       {
-        kodiLog(ADDON_LOG_ERROR, "CFileRarExtractThread::%s: failed. CmdExtract::ExtractCurrentFile threw an Unknown exception", __func__);
+        kodiLog(ADDON_LOG_ERROR, "CFileRarExtractThread::%s: failed. CmdExtract::ExtractCurrentFile threw an Unknown exception (error code of %d)", __func__, ErrHandler.GetErrorCode());
       }
 
       hRunning.Reset();
