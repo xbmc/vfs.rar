@@ -134,6 +134,7 @@ ssize_t CRARFile::Read(void* context, void* lpBuf, size_t uiBufSize)
     uicBufSize -= copy;
   }
 
+  int tries = 3; // Retry amount, TODO: maybe increase if on smaller devices still problems occur?
   while ((uicBufSize > 0) && ctx->m_fileposition < ctx->m_size)
   {
     if (ctx->m_inbuffer <= 0)
@@ -157,10 +158,20 @@ ssize_t CRARFile::Read(void* context, void* lpBuf, size_t uiBufSize)
       // invalid data returned by UnrarXLib, prevent a crash
       kodiLog(ADDON_LOG_ERROR, "CRarFile::%s: Data buffer in inconsistent state", __func__);
       ctx->m_inbuffer = 0;
+      break;
     }
 
     if (ctx->m_inbuffer == 0)
+    {
+      // If buffer size was 0, retry few times to prevent delay problems on
+      // unrar process thread. Without it can have inside Kodi problems as
+      // his requested size not returned. Specially Kodi's BluRay support
+      // have a bug about and stops playback if returned size differ to
+      // often from requested size.
+      if (tries-- > 0)
+        continue;
       break;
+    }
 
     ssize_t copy = std::min(static_cast<ssize_t>(ctx->m_inbuffer), uicBufSize);
     if (copy + ctx->m_fileposition >= ctx->m_size)

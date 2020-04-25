@@ -567,6 +567,10 @@ bool File::RawSeek(int64 Offset,int Method)
   if (Offset > FileLength())
     return false;
 
+  // Worst safe case, to prevent seek lower as 0
+  if (Offset < 0 && Offset + hFile->GetPosition() < 0)
+    Offset = 0;
+
   if (hFile->Seek(Offset,Method) < 0)
     return false;
 #else

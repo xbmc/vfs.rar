@@ -80,7 +80,7 @@ int ComprDataIO::UnpRead(byte *Addr,size_t Count)
       if (!SrcFile->IsOpened())
       {
         NextVolumeMissing = true;
-        return(-1);
+        return -1;
       }
       if (UnpackToMemory)
       {
@@ -89,48 +89,52 @@ int ComprDataIO::UnpRead(byte *Addr,size_t Count)
           if (m_iSeekTo > CurUnpStart+SrcArc->FileHead.PackSize) // need to seek outside this block
           {
             TotalRead += (int)(SrcArc->NextBlockPos-SrcFile->Tell());
-            CurUnpRead=CurUnpStart+SrcArc->FileHead.PackSize;
-            UnpPackedSize=0;
+            CurUnpRead = CurUnpStart+SrcArc->FileHead.PackSize;
+            UnpPackedSize = 0;
             ReadSize = 0;
             bRead = false;
           }
           else
           {
+            int64 iSeekTo;
             size_t MaxWinSize = File::CopyBufferSize();
             int64 iStartOfFile = SrcArc->NextBlockPos-SrcArc->FileHead.PackSize;
             m_iStartOfBuffer = CurUnpStart;
-            int64 iSeekTo=m_iSeekTo-CurUnpStart<MaxWinSize/2?iStartOfFile:iStartOfFile+m_iSeekTo-CurUnpStart-MaxWinSize/2;
-            if (iSeekTo == iStartOfFile) // front
+
+            if (m_iSeekTo - CurUnpStart < MaxWinSize / 2) // front
             {
-              if (CurUnpStart+MaxWinSize>SrcArc->FileHead.UnpSize)
+              iSeekTo = iStartOfFile;
+
+              if (CurUnpStart + MaxWinSize > SrcArc->FileHead.UnpSize)
               {
-                m_iSeekTo=iStartOfFile;
+                m_iSeekTo = iStartOfFile;
                 UnpPackedSize = SrcArc->FileHead.PackSize;
               }
               else
               {
-                m_iSeekTo=MaxWinSize-(m_iSeekTo-CurUnpStart);
+                m_iSeekTo = MaxWinSize - (m_iSeekTo - CurUnpStart);
                 UnpPackedSize = SrcArc->FileHead.PackSize - (m_iStartOfBuffer - CurUnpStart);
               }
             }
             else
             {
-              m_iStartOfBuffer = m_iSeekTo-MaxWinSize/2; // front
-              if (m_iSeekTo+MaxWinSize/2>SrcArc->FileHead.UnpSize)
+              m_iStartOfBuffer = m_iSeekTo - MaxWinSize / 2; // front
+              m_iSeekTo = MaxWinSize - (m_iSeekTo - m_iStartOfBuffer);
+              if (m_iSeekTo + MaxWinSize / 2 > SrcArc->FileHead.UnpSize)
               {
-                iSeekTo = iStartOfFile+SrcArc->FileHead.PackSize-MaxWinSize;
-                m_iStartOfBuffer = CurUnpStart+SrcArc->FileHead.PackSize-MaxWinSize;
-                m_iSeekTo = MaxWinSize-(m_iSeekTo-m_iStartOfBuffer);
+                iSeekTo = iStartOfFile + SrcArc->FileHead.PackSize - MaxWinSize;
+                m_iStartOfBuffer = CurUnpStart + SrcArc->FileHead.PackSize - MaxWinSize;
                 UnpPackedSize = MaxWinSize;
               }
               else
               {
-                m_iSeekTo=MaxWinSize/2;
+                iSeekTo = iStartOfFile + m_iStartOfBuffer - CurUnpStart;
+                m_iSeekTo = MaxWinSize / 2;
                 UnpPackedSize = SrcArc->FileHead.PackSize - (m_iStartOfBuffer - CurUnpStart);
               }
             }
 
-            SrcFile->Seek(iSeekTo,SEEK_SET);
+            SrcFile->Seek(iSeekTo, SEEK_SET);
 
             TotalRead = 0;
             CurUnpRead = CurUnpStart + iSeekTo - iStartOfFile;
