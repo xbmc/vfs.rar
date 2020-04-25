@@ -1,0 +1,83 @@
+# Kodi Media Center language file
+# Addon Name: Archive support
+# Addon id: vfs.rar
+# Addon Provider: Team Kodi
+msgid ""
+msgstr ""
+"Project-Id-Version: KODI Main\n"
+"Report-Msgid-Bugs-To: https://github.com/xbmc/vfs.rar/issues/\n"
+"POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: Kodi Translation Team\n"
+"Language-Team: German (Germany) (http://www.transifex.com/projects/p/kodi-main/language/de_DE/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: de_DE\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#[Consistency] Make terms, settings names, brands and other minutiae, consistent throughout file.
+#[Capitalization] Avoid capitalizing every second word. See http://grammarist.com/capitalization/
+#For example, prefer wording as "This new string" instead of "This New String".
+#[Referencing] If a suitable string already exists, reuse it, making a note of where it's used!
+#[Description / location] For example, "#. Description of some setting" used on "#: xbmc/addons/guidialogaddoninfo.cpp"
+#When writing a description or setting, refer to a setting name in quotes. See existing entries for guidance.
+#For example, "Press \"OK\" for \"All seasons\"" instead of "Press OK for All seasons" after first word.
+
+msgctxt "#30000"
+msgid "RAR file extract"
+msgstr "RAR-Datenextrakt"
+
+msgctxt "#30001"
+msgid "RAR file scan"
+msgstr "RAR-Dateiprüfung"
+
+msgctxt "#30002"
+msgid "RAR solid file scan"
+msgstr "Solid RAR-Dateiprüfung"
+
+msgctxt "#30003"
+msgid "Enter RAR package password for:\n%s"
+msgstr "Geben Sie das RAR-Paketkennwort ein für:\n%s"
+
+msgctxt "#30004"
+msgid "Not enough disk space available"
+msgstr "Nicht genügend Speicherplatz verfügbar"
+
+# Following strings used for addon settings dialog
+
+msgctxt "#30010"
+msgid "General"
+msgstr "Allgemein"
+
+msgctxt "#30011"
+msgid "Ask for password"
+msgstr "Frage nach dem Passwort"
+
+msgctxt "#30012"
+msgid "If archives are password protected, prompt for the password to be entered"
+msgstr "Wenn Archive durch ein Passwort geschützt sind, werden Sie aufgefordert, das Passwort einzugeben"
+
+msgctxt "#30013"
+msgid "Pre-defined password to attempt decompression with"
+msgstr "Vordefiniertes Passwort für den Versuch der Dekomprimierung"
+
+msgctxt "#30014"
+msgid "Stored password 1"
+msgstr "Gespeichertes Passwort 1"
+
+msgctxt "#30015"
+msgid "Stored password 2"
+msgstr "Gespeichertes Passwort 2"
+
+msgctxt "#30016"
+msgid "Stored password 3"
+msgstr "Gespeichertes Passwort 3"
+
+msgctxt "#30017"
+msgid "Stored password 4"
+msgstr "Gespeichertes Passwort 4"
+
+msgctxt "#30018"
+msgid "Stored password 5"
+msgstr "Gespeichertes Passwort 5"

@@ -15,7 +15,13 @@
     encodedhostname="true"
     library_@PLATFORM@="@LIBRARY_FILENAME@" />
   <extension point="xbmc.addon.metadata">
+    <summary lang="de_DE">Entpacker für .rar Dateien</summary>
     <summary lang="en_GB">Unarchiver for .rar files</summary>
+    <description lang="de_DE">Dieses Addon dient zum entpacken von RAR-Archiven.
+
+Es ermöglicht das direkte Lesen nicht komprimierter RAR-Dateien, sodass ein vorheriges Entpacken nicht erforderlich ist. Bei allen anderen Typen wird es vorübergehend entpackt und an Kodi übertragen.
+
+Achtung: Der Archivtyp "Solid RAR" erfordert ein vollständiges Entpacken, um die darin enthaltenen Dateien zu verwenden. Daher können die Zugriffszeiten für größere Pakete länger dauern.</description>
     <description lang="en_GB">This addon is an extraction utility for RAR archives.
 
 It allows direct reading of uncompressed RAR files, so prior unpacking is not necessary. For all other types, it is temporarily unpacked and passed to Kodi.
