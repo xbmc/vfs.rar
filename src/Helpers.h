@@ -27,14 +27,10 @@ inline const char* kodiTranslateLogLevel(const AddonLog logLevel)
       return "LOG_DEBUG:   ";
     case ADDON_LOG_INFO:
       return "LOG_INFO:    ";
-    case ADDON_LOG_NOTICE:
-      return "LOG_NOTICE:  ";
     case ADDON_LOG_WARNING:
       return "LOG_WARNING: ";
     case ADDON_LOG_ERROR:
       return "LOG_ERROR:   ";
-    case ADDON_LOG_SEVERE:
-      return "LOG_SEVERE:  ";
     case ADDON_LOG_FATAL:
       return "LOG_FATAL:   ";
     default:
