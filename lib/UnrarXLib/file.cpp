@@ -766,15 +766,10 @@ void File::GetOpenFileTime(RarTime *ft)
   char NameA[NM];
   WideToChar(FileName,NameA,ASIZE(NameA));
 
-  STAT_STRUCTURE statFile;
+  kodi::vfs::FileStatus statFile;
   if (kodi::vfs::StatFile(NameA, statFile))
   {
-#ifdef _WIN_ALL
-    ft->SetUnix(statFile.modificationTime);
-#endif
-#if defined(_UNIX) || defined(_EMX)
-    ft->SetUnix(statFile.modificationTime.tv_sec);
-#endif
+    ft->SetUnix(statFile.GetModificationTime());
   }
 #else
 #ifdef _WIN_ALL

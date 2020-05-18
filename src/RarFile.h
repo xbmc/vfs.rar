@@ -13,7 +13,7 @@
 class CRARFile : public kodi::addon::CInstanceVFS
 {
 public:
-  CRARFile(KODI_HANDLE instance) : CInstanceVFS(instance) { }
+  CRARFile(KODI_HANDLE instance, const std::string& version) : CInstanceVFS(instance, version) { }
 
   void* Open(const VFSURL& url) override;
   ssize_t Read(void* context, void* buffer, size_t uiBufSize) override;
