@@ -481,18 +481,18 @@ void CRARControl::RarErrorLog(const std::string& func, int ErrCode)
 
 //------------------------------------------------------------------------------
 
-RARContext::RARContext(const VFSURL& url)
-  : CRARControl(url.hostname)
+RARContext::RARContext(const kodi::addon::VFSUrl& url)
+  : CRARControl(url.GetHostname())
   , m_arc(&m_cmd)
   , m_extract(&m_cmd)
 {
   m_cachedir = kodi::GetTempAddonPath("/");
-  m_password = url.password;
-  m_pathinrar = url.filename;
+  m_password = url.GetPassword();
+  m_pathinrar = url.GetFilename();
   std::replace(m_pathinrar.begin(), m_pathinrar.end(), '\\', '/');
 
   std::vector<std::string> options;
-  std::string options2(url.options);
+  std::string options2(url.GetOptions());
   if (!options2.empty())
     CRarManager::Tokenize(options2.substr(1), options, "&");
   m_fileoptions = 0;
