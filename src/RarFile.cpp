@@ -554,7 +554,7 @@ std::string CRARFile::URLEncode(const std::string& strURLData)
 
 //------------------------------------------------------------------------------
 
-class ATTRIBUTE_HIDDEN CMyAddon : public kodi::addon::CAddonBase
+class CMyAddon : public kodi::addon::CAddonBase
 {
 public:
   CMyAddon() = default;
@@ -576,4 +576,6 @@ public:
   }
 };
 
+#pragma GCC visibility push(default)
 ADDONCREATOR(CMyAddon);
+#pragma GCC visibility pop
