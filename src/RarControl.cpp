@@ -257,7 +257,7 @@ int CRARControl::ArchiveExtract(const std::string& targetPath, const std::string
           // After wanted file is found to progress with his real extract
           m_progress->SetTitle(kodi::GetLocalizedString(30000));
           m_progress->SetText(filename);
-          m_progress->SetProgress(m_extractedFileSize, m_extractFileSize);
+          m_progress->SetProgress(int(float(m_extractedFileSize) / float(m_extractFileSize) * 100), 100);
         }
       }
 
@@ -382,7 +382,7 @@ int CRARControl::ProcessData(uint8_t* block, size_t size)
   if (m_progress)
   {
     m_extractedFileSize += size;
-    m_progress->SetProgress(m_extractedFileSize, m_extractFileSize);
+    m_progress->SetProgress(int(float(m_extractedFileSize) / float(m_extractFileSize) * 100), 100);
     kodiLog(ADDON_LOG_DEBUG, "CRARControl::%s: Processing data (%li / %li)", __func__, m_extractedFileSize, m_extractFileSize);
   }
   return CONTINUE_PROCESSING;
