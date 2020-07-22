@@ -49,6 +49,7 @@ CRarManager& CRarManager::Get()
 CRarManager::CRarManager()
 {
   // Load the current settings and store to reduce call amount of them
+  m_asksToUnpack = kodi::GetSettingBoolean("asks_to_unpack");
   m_passwordAskAllowed = kodi::GetSettingBoolean("usercheck_for_password");
   for (unsigned int i = 0; i < MAX_STANDARD_PASSWORDS; ++i)
     m_standardPasswords[i] = kodi::GetSettingString("standard_password_" + std::to_string(i+1));
@@ -63,7 +64,9 @@ void CRarManager::SettingsUpdate(const std::string& settingName, const kodi::CSe
 {
   // Update the by CMyAddon called settings values, done after change inside
   // addon settings by e.g. user.
-  if (settingName == "usercheck_for_password")
+  if (settingName == "asks_to_unpack")
+    m_asksToUnpack = settingValue.GetBoolean();
+  else if (settingName == "usercheck_for_password")
     m_passwordAskAllowed = settingValue.GetBoolean();
   else if (settingName == "standard_password_1")
     m_standardPasswords[0] = settingValue.GetString();
@@ -128,7 +131,7 @@ bool CRarManager::CacheRarredFile(std::string& strPathInCache, const std::string
     }
   }
 
-  if (iSize > EXTRACTION_WARN_SIZE)
+  if (m_asksToUnpack && iSize > EXTRACTION_WARN_SIZE)
   {
     if (!kodi::gui::dialogs::YesNo::ShowAndGetInput(kodi::GetLocalizedString(30019),
                                                     kodi::GetLocalizedString(30020),
