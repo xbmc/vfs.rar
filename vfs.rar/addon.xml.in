@@ -17,6 +17,7 @@
   <extension point="xbmc.addon.metadata">
     <summary lang="de_DE">Entpacker für .rar Dateien</summary>
     <summary lang="en_GB">Unarchiver for .rar files</summary>
+    <summary lang="sv_SE">Uppackare för .rar-filer</summary>
     <description lang="de_DE">Dieses Addon dient zum entpacken von RAR-Archiven.
 
 Es ermöglicht das direkte Lesen nicht komprimierter RAR-Dateien, sodass ein vorheriges Entpacken nicht erforderlich ist. Bei allen anderen Typen wird es vorübergehend entpackt und an Kodi übertragen.
@@ -27,6 +28,11 @@ Achtung: Der Archivtyp "Solid RAR" erfordert ein vollständiges Entpacken, um di
 It allows direct reading of uncompressed RAR files, so prior unpacking is not necessary. For all other types, it is temporarily unpacked and passed to Kodi.
 
 Attention: A "Solid RAR" archive type requires complete unpacking to use files within it. Hence access times may be long for larger packages.</description>
+    <description lang="sv_SE">Detta tillägg är ett uppackningsverktyg för RAR-arkiv.
+
+Detta gör det möjligt att spela upp okomprimerade RAR-filer utan att de först packas upp. För alla andra typer, packas den upp tillfälligt och skickas sedan till Kodi.
+
+Observera: Ett "Fast" arkiv kräver en komplett uppackning av arkivet. Därför kan uppstartstiden ta lång tid om det är ett stort arkiv.</description>
     <disclaimer lang="de_DE">Diese Version erfordert mindestens Kodi Leia 18.6; Bitte verwenden Sie 2.0.8 für frühere Leia-Versionen</disclaimer>
     <disclaimer lang="en_GB">This version requires at least Kodi Leia 18.6; please use 2.0.8 for earlier Leia versions</disclaimer>
     <platform>@PLATFORM@</platform>
