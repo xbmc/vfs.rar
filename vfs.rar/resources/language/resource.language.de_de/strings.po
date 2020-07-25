@@ -81,3 +81,15 @@ msgstr "Gespeichertes Passwort 4"
 msgctxt "#30018"
 msgid "Stored password 5"
 msgstr "Gespeichertes Passwort 5"
+
+msgctxt "#30019"
+msgid "Confirm copy"
+msgstr "Kopieren bestätigen"
+
+msgctxt "#30020"
+msgid "Need to unpack a big file. Continue?"
+msgstr "Eine große Datei muss entpackt werden. Fortfahren?"
+
+msgctxt "#30021"
+msgid "Not enough memory available to decompress file"
+msgstr "Nicht genügend speicher verfügbar um Datei zu entpacken"
