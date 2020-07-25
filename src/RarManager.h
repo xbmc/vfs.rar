@@ -67,6 +67,8 @@ public:
 private:
   CRarManager();
 
+  uint64_t CheckFreeSpace(const std::string& path);
+
   std::map<std::string, std::pair<std::vector<RARHeaderDataEx>,std::vector<CFileInfo> > > m_ExFiles;
   std::recursive_mutex m_lock;
 

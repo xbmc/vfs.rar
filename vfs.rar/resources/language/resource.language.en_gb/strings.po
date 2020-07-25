@@ -81,3 +81,15 @@ msgstr ""
 msgctxt "#30018"
 msgid "Stored password 5"
 msgstr ""
+
+msgctxt "#30019"
+msgid "Confirm copy"
+msgstr ""
+
+msgctxt "#30020"
+msgid "Need to unpack a big file. Continue?"
+msgstr ""
+
+msgctxt "#30021"
+msgid "Not enough memory available to decompress file"
+msgstr ""
