@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <addon
   id="vfs.rar"
-  version="3.4.0"
+  version="3.5.0"
   name="RAR archive support"
   provider-name="spiff">
   <requires>@ADDON_DEPENDS@</requires>
