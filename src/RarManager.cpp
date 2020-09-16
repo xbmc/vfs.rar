@@ -18,6 +18,12 @@
 #include <locale>
 #include <set>
 
+#ifdef _WIN32 // windows
+#ifdef RemoveDirectory
+#undef RemoveDirectory
+#endif // RemoveDirectory
+#endif // _WIN32
+
 #define EXTRACTION_WARN_SIZE 50*1024*1024
 
 void CRarManager::Tokenize(const std::string& input, std::vector<std::string>& tokens, const std::string& delimiters)
