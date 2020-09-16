@@ -78,7 +78,7 @@ protected:
 class RARContext : public CRARControl
 {
 public:
-  RARContext(const VFSURL& url);
+  RARContext(const kodi::addon::VFSUrl& url);
   ~RARContext() override;
 
   bool OpenInArchive();
@@ -101,14 +101,3 @@ public:
   int64_t m_bufferstart = 0;
   bool m_seekable = true;
 };
-
-
-
-
-
-
-
-
-
-
-

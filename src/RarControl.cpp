@@ -257,7 +257,7 @@ int CRARControl::ArchiveExtract(const std::string& targetPath, const std::string
           // After wanted file is found to progress with his real extract
           m_progress->SetTitle(kodi::GetLocalizedString(30000));
           m_progress->SetText(filename);
-          m_progress->SetProgress(m_extractedFileSize, m_extractFileSize);
+          m_progress->SetProgress(int(float(m_extractedFileSize) / float(m_extractFileSize) * 100), 100);
         }
       }
 
@@ -382,7 +382,7 @@ int CRARControl::ProcessData(uint8_t* block, size_t size)
   if (m_progress)
   {
     m_extractedFileSize += size;
-    m_progress->SetProgress(m_extractedFileSize, m_extractFileSize);
+    m_progress->SetProgress(int(float(m_extractedFileSize) / float(m_extractFileSize) * 100), 100);
     kodiLog(ADDON_LOG_DEBUG, "CRARControl::%s: Processing data (%li / %li)", __func__, m_extractedFileSize, m_extractFileSize);
   }
   return CONTINUE_PROCESSING;
@@ -481,18 +481,18 @@ void CRARControl::RarErrorLog(const std::string& func, int ErrCode)
 
 //------------------------------------------------------------------------------
 
-RARContext::RARContext(const VFSURL& url)
-  : CRARControl(url.hostname)
+RARContext::RARContext(const kodi::addon::VFSUrl& url)
+  : CRARControl(url.GetHostname())
   , m_arc(&m_cmd)
   , m_extract(&m_cmd)
 {
   m_cachedir = kodi::GetTempAddonPath("/");
-  m_password = url.password;
-  m_pathinrar = url.filename;
+  m_password = url.GetPassword();
+  m_pathinrar = url.GetFilename();
   std::replace(m_pathinrar.begin(), m_pathinrar.end(), '\\', '/');
 
   std::vector<std::string> options;
-  std::string options2(url.options);
+  std::string options2(url.GetOptions());
   if (!options2.empty())
     CRarManager::Tokenize(options2.substr(1), options, "&");
   m_fileoptions = 0;

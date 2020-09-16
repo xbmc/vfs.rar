@@ -32,7 +32,7 @@
 
 #define SEEKTIMOUT 30000
 
-void* CRARFile::Open(const VFSURL& url)
+kodi::addon::VFSFileHandle CRARFile::Open(const kodi::addon::VFSUrl& url)
 {
   RARContext* result = new RARContext(url);
 
@@ -99,7 +99,7 @@ void* CRARFile::Open(const VFSURL& url)
   return nullptr;
 }
 
-ssize_t CRARFile::Read(void* context, void* lpBuf, size_t uiBufSize)
+ssize_t CRARFile::Read(kodi::addon::VFSFileHandle context, uint8_t* lpBuf, size_t uiBufSize)
 {
   RARContext* ctx = static_cast<RARContext*>(context);
 
@@ -119,7 +119,7 @@ ssize_t CRARFile::Read(void* context, void* lpBuf, size_t uiBufSize)
   }
 
   size_t bufferSize = File::CopyBufferSize();
-  uint8_t* pBuf = static_cast<uint8_t*>(lpBuf);
+  uint8_t* pBuf = lpBuf;
   ssize_t uicBufSize = uiBufSize;
   if (ctx->m_inbuffer > 0)
   {
@@ -189,7 +189,7 @@ ssize_t CRARFile::Read(void* context, void* lpBuf, size_t uiBufSize)
   return uiBufSize-uicBufSize;
 }
 
-bool CRARFile::Close(void* context)
+bool CRARFile::Close(kodi::addon::VFSFileHandle context)
 {
   RARContext* ctx = static_cast<RARContext*>(context);
   if (!ctx)
@@ -210,7 +210,7 @@ bool CRARFile::Close(void* context)
   return true;
 }
 
-int64_t CRARFile::GetLength(void* context)
+int64_t CRARFile::GetLength(kodi::addon::VFSFileHandle context)
 {
   RARContext* ctx = static_cast<RARContext*>(context);
 
@@ -221,7 +221,7 @@ int64_t CRARFile::GetLength(void* context)
 }
 
 //*********************************************************************************************
-int64_t CRARFile::GetPosition(void* context)
+int64_t CRARFile::GetPosition(kodi::addon::VFSFileHandle context)
 {
   RARContext* ctx = static_cast<RARContext*>(context);
 
@@ -232,7 +232,7 @@ int64_t CRARFile::GetPosition(void* context)
 }
 
 
-int64_t CRARFile::Seek(void* context, int64_t iFilePosition, int iWhence)
+int64_t CRARFile::Seek(kodi::addon::VFSFileHandle context, int64_t iFilePosition, int iWhence)
 {
   RARContext* ctx = static_cast<RARContext*>(context);
 
@@ -386,7 +386,7 @@ int64_t CRARFile::Seek(void* context, int64_t iFilePosition, int iWhence)
   return ctx->m_fileposition;
 }
 
-bool CRARFile::Exists(const VFSURL& url)
+bool CRARFile::Exists(const kodi::addon::VFSUrl& url)
 {
   RARContext ctx(url);
 
@@ -400,14 +400,13 @@ bool CRARFile::Exists(const VFSURL& url)
   return CRarManager::Get().IsFileInRar(ctx.GetPath(), ctx.m_pathinrar);
 }
 
-int CRARFile::Stat(const VFSURL& url, struct __stat64* buffer)
+int CRARFile::Stat(const kodi::addon::VFSUrl& url, kodi::vfs::FileStatus& buffer)
 {
-  memset(buffer, 0, sizeof(struct __stat64));
   RARContext* ctx = static_cast<RARContext*>(Open(url));
   if (ctx)
   {
-    buffer->st_size = ctx->m_size;
-    buffer->st_mode = S_IFREG;
+    buffer.SetSize(ctx->m_size);
+    buffer.SetIsRegular(true);
     Close(ctx);
     errno = 0;
     return 0;
@@ -416,7 +415,7 @@ int CRARFile::Stat(const VFSURL& url, struct __stat64* buffer)
   Close(ctx);
   if (DirectoryExists(url))
   {
-    buffer->st_mode = S_IFDIR;
+    buffer.SetIsDirectory(true);
     return 0;
   }
 
@@ -424,14 +423,9 @@ int CRARFile::Stat(const VFSURL& url, struct __stat64* buffer)
   return -1;
 }
 
-int CRARFile::IoControl(void* context, VFS_IOCTRL request, void* param)
+bool CRARFile::IoControlGetSeekPossible(kodi::addon::VFSFileHandle context)
 {
-  RARContext* ctx = static_cast<RARContext*>(context);
-
-  if(request == VFS_IOCTRL_SEEK_POSSIBLE)
-    return ctx->m_seekable ? 1 : 0;
-
-  return -1;
+  return static_cast<RARContext*>(context)->m_seekable;
 }
 
 void CRARFile::ClearOutIdle()
@@ -443,16 +437,16 @@ void CRARFile::DisconnectAll()
   CRarManager::Get().ClearCache(true);
 }
 
-bool CRARFile::DirectoryExists(const VFSURL& url)
+bool CRARFile::DirectoryExists(const kodi::addon::VFSUrl& url)
 {
   std::vector<kodi::vfs::CDirEntry> items;
   CVFSCallbacks callbacks(nullptr);
   return GetDirectory(url, items, callbacks);
 }
 
-bool CRARFile::GetDirectory(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>& items, CVFSCallbacks callbacks)
+bool CRARFile::GetDirectory(const kodi::addon::VFSUrl& url, std::vector<kodi::vfs::CDirEntry>& items, CVFSCallbacks callbacks)
 {
-  std::string strPath(url.url);
+  std::string strPath(url.GetURL());
   std::replace(strPath.begin(), strPath.end(), '\\', '/');
 
   size_t pos;
@@ -463,9 +457,9 @@ bool CRARFile::GetDirectory(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>
   if (strPath[strPath.size()-1] != '/')
     strPath += '/';
 
-  std::string strArchive = url.hostname;
-  std::string strOptions = url.options;
-  std::string strPathInArchive = url.filename;
+  std::string strArchive = url.GetHostname();
+  std::string strOptions = url.GetOptions();
+  std::string strPathInArchive = url.GetFilename();
 
   std::replace(strArchive.begin(), strArchive.end(), '\\', '/');
   std::replace(strPathInArchive.begin(), strPathInArchive.end(), '\\', '/');
@@ -476,7 +470,7 @@ bool CRARFile::GetDirectory(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>
     for (auto& entry : items)
     {
       std::stringstream str;
-      str << strPath << entry.Path() << url.options;
+      str << strPath << entry.Path() << url.GetOptions();
       entry.SetPath(str.str());
     }
     return true;
@@ -488,10 +482,10 @@ bool CRARFile::GetDirectory(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>
   }
 }
 
-bool CRARFile::ContainsFiles(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>& items, std::string& rootpath)
+bool CRARFile::ContainsFiles(const kodi::addon::VFSUrl& url, std::vector<kodi::vfs::CDirEntry>& items, std::string& rootpath)
 {
   // only list .part1.rar
-  std::string fname = kodi::vfs::GetFileName(url.filename);
+  std::string fname = kodi::vfs::GetFileName(url.GetFilename());
   std::regex part_re("\\.part([0-9]+)\\.rar$");
   std::smatch match;
   if (std::regex_search(fname, match, part_re))
@@ -500,7 +494,7 @@ bool CRARFile::ContainsFiles(const VFSURL& url, std::vector<kodi::vfs::CDirEntry
       return false;
   }
 
-  std::string strPath(url.url);
+  std::string strPath(url.GetURL());
   std::replace(strPath.begin(), strPath.end(), '\\', '/');
 
   if (CRarManager::Get().GetFilesInRar(items, strPath))
@@ -524,7 +518,7 @@ bool CRARFile::ContainsFiles(const VFSURL& url, std::vector<kodi::vfs::CDirEntry
     for (auto& entry : items)
     {
       std::stringstream str;
-      str << "rar://" << encoded << "/" << entry.Path() << url.options;
+      str << "rar://" << encoded << "/" << entry.Path() << url.GetOptions();
       entry.SetPath(str.str());
     }
   }
@@ -560,7 +554,7 @@ std::string CRARFile::URLEncode(const std::string& strURLData)
 
 //------------------------------------------------------------------------------
 
-class ATTRIBUTE_HIDDEN CMyAddon : public kodi::addon::CAddonBase
+class CMyAddon : public kodi::addon::CAddonBase
 {
 public:
   CMyAddon() = default;
@@ -582,4 +576,6 @@ public:
   }
 };
 
+#pragma GCC visibility push(default)
 ADDONCREATOR(CMyAddon);
+#pragma GCC visibility pop
