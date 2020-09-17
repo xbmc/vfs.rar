@@ -11,9 +11,14 @@
 #include "Helpers.h"
 
 #include <algorithm>
+#include <climits>
+#include <kodi/Filesystem.h>
 #include <kodi/General.h>
+#include <kodi/gui/dialogs/YesNo.h>
 #include <locale>
 #include <set>
+
+#define EXTRACTION_WARN_SIZE 50*1024*1024
 
 void CRarManager::Tokenize(const std::string& input, std::vector<std::string>& tokens, const std::string& delimiters)
 {
@@ -44,6 +49,7 @@ CRarManager& CRarManager::Get()
 CRarManager::CRarManager()
 {
   // Load the current settings and store to reduce call amount of them
+  m_asksToUnpack = kodi::GetSettingBoolean("asks_to_unpack");
   m_passwordAskAllowed = kodi::GetSettingBoolean("usercheck_for_password");
   for (unsigned int i = 0; i < MAX_STANDARD_PASSWORDS; ++i)
     m_standardPasswords[i] = kodi::GetSettingString("standard_password_" + std::to_string(i+1));
@@ -58,7 +64,9 @@ void CRarManager::SettingsUpdate(const std::string& settingName, const kodi::CSe
 {
   // Update the by CMyAddon called settings values, done after change inside
   // addon settings by e.g. user.
-  if (settingName == "usercheck_for_password")
+  if (settingName == "asks_to_unpack")
+    m_asksToUnpack = settingValue.GetBoolean();
+  else if (settingName == "usercheck_for_password")
     m_passwordAskAllowed = settingValue.GetBoolean();
   else if (settingName == "standard_password_1")
     m_standardPasswords[0] = settingValue.GetString();
@@ -80,9 +88,6 @@ bool CRarManager::CacheRarredFile(std::string& strPathInCache, const std::string
   if ((iSize > 1024*1024 || iSize == -2) && !(bOptions & EXFILE_NOCACHE)) // 1MB
     bShowProgress=true;
 
-  //If file is listed in the cache, then use listed copy or cleanup before overwriting.
-  bool bOverwrite = (bOptions & EXFILE_OVERWRITE) != 0;
-
   /*
    * alwinus:
    * Mallet on my Head, hard if main thread is locked somewhere in this class
@@ -102,6 +107,8 @@ bool CRarManager::CacheRarredFile(std::string& strPathInCache, const std::string
   if (bShowProgress)
     lock.unlock();
 
+  //If file is listed in the cache, then use listed copy or cleanup before overwriting.
+  bool bOverwrite = (bOptions & EXFILE_OVERWRITE) != 0;
   auto j = m_ExFiles.find(strRarPath);
   CFileInfo* pFile = nullptr;
   if (j != m_ExFiles.end())
@@ -121,6 +128,27 @@ bool CRarManager::CacheRarredFile(std::string& strPathInCache, const std::string
         kodi::vfs::DeleteFile(pFile->m_strCachedPath);
         pFile->m_iUsed++;
       }
+    }
+  }
+
+  if (m_asksToUnpack && iSize > EXTRACTION_WARN_SIZE)
+  {
+    if (!kodi::gui::dialogs::YesNo::ShowAndGetInput(kodi::GetLocalizedString(30019),
+                                                    kodi::GetLocalizedString(30020),
+                                                    kodi::vfs::GetFileName(strRarPath),
+                                                    ""))
+      return false;
+  }
+
+  if (CheckFreeSpace(strDir) < iSize)
+  {
+    ClearCache();
+    if (CheckFreeSpace(strDir) < iSize)
+    {
+      kodiLog(ADDON_LOG_ERROR, "CRarManager::%s: Not enough disk space available (%li) to store from '%s' (size %li)",
+          __func__, CheckFreeSpace(strDir), kodi::vfs::GetFileName(strRarPath).c_str(), iSize);
+      kodi::QueueNotification(QUEUE_ERROR, "", kodi::GetLocalizedString(30021));
+      return false;
     }
   }
 
@@ -444,4 +472,11 @@ void CRarManager::ExtractArchive(const std::string& strArchive, const std::strin
   kodi::vfs::RemoveSlashAtEnd(strPath2);
   if (!m_control.ArchiveExtract(strPath2, ""))
     kodiLog(ADDON_LOG_ERROR,"CRarManager::%s: error while extracting %s", __func__, strArchive.c_str());
+}
+
+int64_t CRarManager::CheckFreeSpace(const std::string& path)
+{
+  wchar targetPath[MAX_PATH_LENGTH];
+  GetWideName(path.c_str(), nullptr, targetPath, ASIZE(targetPath));
+  return GetFreeDisk(targetPath);
 }

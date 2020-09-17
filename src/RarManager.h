@@ -67,9 +67,12 @@ public:
 private:
   CRarManager();
 
+  int64_t CheckFreeSpace(const std::string& path);
+
   std::map<std::string, std::pair<std::vector<RARHeaderDataEx>,std::vector<CFileInfo> > > m_ExFiles;
   std::recursive_mutex m_lock;
 
+  bool m_asksToUnpack = true;
   bool m_passwordAskAllowed = false;
   std::string m_standardPasswords[MAX_STANDARD_PASSWORDS];
 };
