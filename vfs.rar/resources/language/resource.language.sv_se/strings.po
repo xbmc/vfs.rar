@@ -81,3 +81,27 @@ msgstr "Sparat lösenord 4"
 msgctxt "#30018"
 msgid "Stored password 5"
 msgstr "Sparat lösenord 5"
+
+msgctxt "#30019"
+msgid "Confirm copy"
+msgstr "Bekräfta kopieringen"
+
+msgctxt "#30020"
+msgid "Need to unpack a big file. Continue?"
+msgstr "En stor fil behöver packas upp. Fortsätta?"
+
+msgctxt "#30021"
+msgid "Not enough memory available to decompress file"
+msgstr "Det finns inte tillräckligt med minne för att dekomprimera filen"
+
+msgctxt "#30022"
+msgid "Passwords"
+msgstr "Lösenord"
+
+msgctxt "#30023"
+msgid "Asks to unpack"
+msgstr "Frågar dig om du vill packa upp filen"
+
+msgctxt "#30024"
+msgid "Asks you with a dialog to confirm the unpacking of a larger file."
+msgstr "Visar en dialogruta där du måste bekräfta uppackningen av stora filer"
