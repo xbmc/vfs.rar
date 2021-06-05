@@ -1,0 +1,105 @@
+# Kodi Media Center language file
+# Addon Name: Archive support
+# Addon id: vfs.rar
+# Addon Provider: Team Kodi
+msgid ""
+msgstr ""
+"Project-Id-Version: KODI Main\n"
+"Report-Msgid-Bugs-To: https://github.com/xbmc/vfs.rar/issues/\n"
+"POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: nb_no\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+
+#[Consistency] Make terms, settings names, brands and other minutiae, consistent throughout file.
+#[Capitalization] Avoid capitalizing every second word. See http://grammarist.com/capitalization/
+#For example, prefer wording as "This new string" instead of "This New String".
+#[Referencing] If a suitable string already exists, reuse it, making a note of where it's used!
+#[Description / location] For example, "#. Description of some setting" used on "#: xbmc/addons/guidialogaddoninfo.cpp"
+#When writing a description or setting, refer to a setting name in quotes. See existing entries for guidance.
+#For example, "Press \"OK\" for \"All seasons\"" instead of "Press OK for All seasons" after first word.
+msgctxt "#30000"
+msgid "RAR file extract"
+msgstr ""
+
+msgctxt "#30001"
+msgid "RAR file scan"
+msgstr ""
+
+msgctxt "#30002"
+msgid "RAR solid file scan"
+msgstr ""
+
+msgctxt "#30003"
+msgid "Enter RAR package password for:\n%s"
+msgstr ""
+
+msgctxt "#30004"
+msgid "Not enough disk space available"
+msgstr ""
+
+# Following strings used for addon settings dialog
+msgctxt "#30010"
+msgid "General"
+msgstr ""
+
+msgctxt "#30011"
+msgid "Ask for password"
+msgstr ""
+
+msgctxt "#30012"
+msgid "If archives are password protected, prompt for the password to be entered"
+msgstr ""
+
+msgctxt "#30013"
+msgid "Pre-defined password to attempt decompression with"
+msgstr ""
+
+msgctxt "#30014"
+msgid "Stored password 1"
+msgstr ""
+
+msgctxt "#30015"
+msgid "Stored password 2"
+msgstr ""
+
+msgctxt "#30016"
+msgid "Stored password 3"
+msgstr ""
+
+msgctxt "#30017"
+msgid "Stored password 4"
+msgstr ""
+
+msgctxt "#30018"
+msgid "Stored password 5"
+msgstr ""
+
+msgctxt "#30019"
+msgid "Confirm copy"
+msgstr ""
+
+msgctxt "#30020"
+msgid "Need to unpack a big file. Continue?"
+msgstr ""
+
+msgctxt "#30021"
+msgid "Not enough memory available to decompress file"
+msgstr ""
+
+msgctxt "#30022"
+msgid "Passwords"
+msgstr ""
+
+msgctxt "#30023"
+msgid "Asks to unpack"
+msgstr ""
+
+msgctxt "#30024"
+msgid "Asks you with a dialog to confirm the unpacking of a larger file."
+msgstr ""
