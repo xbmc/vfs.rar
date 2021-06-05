@@ -1,0 +1,106 @@
+# Kodi Media Center language file
+# Addon Name: Archive support
+# Addon id: vfs.rar
+# Addon Provider: Team Kodi
+msgid ""
+msgstr ""
+"Project-Id-Version: KODI Main\n"
+"Report-Msgid-Bugs-To: https://github.com/xbmc/vfs.rar/issues/\n"
+"POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2021-06-05 10:29+0000\n"
+"Last-Translator: Christian Gade <gade@kodi.tv>\n"
+"Language-Team: Danish <https://kodi.weblate.cloud/projects/kodi-add-ons-virtual-filesystems/vfs-rar/da_dk/>\n"
+"Language: da_dk\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.6.2\n"
+
+#[Consistency] Make terms, settings names, brands and other minutiae, consistent throughout file.
+#[Capitalization] Avoid capitalizing every second word. See http://grammarist.com/capitalization/
+#For example, prefer wording as "This new string" instead of "This New String".
+#[Referencing] If a suitable string already exists, reuse it, making a note of where it's used!
+#[Description / location] For example, "#. Description of some setting" used on "#: xbmc/addons/guidialogaddoninfo.cpp"
+#When writing a description or setting, refer to a setting name in quotes. See existing entries for guidance.
+#For example, "Press \"OK\" for \"All seasons\"" instead of "Press OK for All seasons" after first word.
+msgctxt "#30000"
+msgid "RAR file extract"
+msgstr "RAR filekstrakt"
+
+msgctxt "#30001"
+msgid "RAR file scan"
+msgstr "RAR filskanning"
+
+msgctxt "#30002"
+msgid "RAR solid file scan"
+msgstr "RAR solid filskanning"
+
+msgctxt "#30003"
+msgid "Enter RAR package password for:\n%s"
+msgstr ""
+
+msgctxt "#30004"
+msgid "Not enough disk space available"
+msgstr "Ikke nok diskplads tilgængelig"
+
+# Following strings used for addon settings dialog
+msgctxt "#30010"
+msgid "General"
+msgstr "Generel"
+
+msgctxt "#30011"
+msgid "Ask for password"
+msgstr "Spørg efter kodeord"
+
+msgctxt "#30012"
+msgid "If archives are password protected, prompt for the password to be entered"
+msgstr ""
+
+msgctxt "#30013"
+msgid "Pre-defined password to attempt decompression with"
+msgstr ""
+
+msgctxt "#30014"
+msgid "Stored password 1"
+msgstr "Gemt kodeord 1"
+
+msgctxt "#30015"
+msgid "Stored password 2"
+msgstr "Gemt kodeord 2"
+
+msgctxt "#30016"
+msgid "Stored password 3"
+msgstr "Gemt kodeord 3"
+
+msgctxt "#30017"
+msgid "Stored password 4"
+msgstr "Gemt kodeord 4"
+
+msgctxt "#30018"
+msgid "Stored password 5"
+msgstr "Gemt kodeord 5"
+
+msgctxt "#30019"
+msgid "Confirm copy"
+msgstr "Bekræft kopiering"
+
+msgctxt "#30020"
+msgid "Need to unpack a big file. Continue?"
+msgstr "Kræver udpakning af stor fil. Fortsæt?"
+
+msgctxt "#30021"
+msgid "Not enough memory available to decompress file"
+msgstr ""
+
+msgctxt "#30022"
+msgid "Passwords"
+msgstr "Kodeord"
+
+msgctxt "#30023"
+msgid "Asks to unpack"
+msgstr ""
+
+msgctxt "#30024"
+msgid "Asks you with a dialog to confirm the unpacking of a larger file."
+msgstr ""

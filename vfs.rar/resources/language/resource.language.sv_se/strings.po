@@ -1,0 +1,108 @@
+# Kodi Media Center language file
+# Addon Name: Archive support
+# Addon id: vfs.rar
+# Addon Provider: Team Kodi
+msgid ""
+msgstr ""
+"Project-Id-Version: KODI Main\n"
+"Report-Msgid-Bugs-To: https://github.com/xbmc/vfs.rar/issues/\n"
+"POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2021-04-25 19:29+0000\n"
+"Last-Translator: Sopor <sopor@hotmail.com>\n"
+"Language-Team: Swedish <https://kodi.weblate.cloud/projects/kodi-add-ons-virtual-filesystems/vfs-rar/sv_se/>\n"
+"Language: sv_se\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.6\n"
+
+#[Consistency] Make terms, settings names, brands and other minutiae, consistent throughout file.
+#[Capitalization] Avoid capitalizing every second word. See http://grammarist.com/capitalization/
+#For example, prefer wording as "This new string" instead of "This New String".
+#[Referencing] If a suitable string already exists, reuse it, making a note of where it's used!
+#[Description / location] For example, "#. Description of some setting" used on "#: xbmc/addons/guidialogaddoninfo.cpp"
+#When writing a description or setting, refer to a setting name in quotes. See existing entries for guidance.
+#For example, "Press \"OK\" for \"All seasons\"" instead of "Press OK for All seasons" after first word.
+msgctxt "#30000"
+msgid "RAR file extract"
+msgstr "Extrahera RAR-fil"
+
+msgctxt "#30001"
+msgid "RAR file scan"
+msgstr "Genomsökning av RAR-fil"
+
+msgctxt "#30002"
+msgid "RAR solid file scan"
+msgstr "Genomsökning av solid RAR-fil"
+
+msgctxt "#30003"
+msgid "Enter RAR package password for:\n%s"
+msgstr ""
+"Ange lösenordet för RAR-arkivet:\n"
+"%s"
+
+msgctxt "#30004"
+msgid "Not enough disk space available"
+msgstr "Inte tillräckligt med ledigt diskutrymme"
+
+# Following strings used for addon settings dialog
+msgctxt "#30010"
+msgid "General"
+msgstr "Allmänt"
+
+msgctxt "#30011"
+msgid "Ask for password"
+msgstr "Fråga efter lösenord"
+
+msgctxt "#30012"
+msgid "If archives are password protected, prompt for the password to be entered"
+msgstr "Om arkivet är lösenordsskyddat, fråga efter lösenordet"
+
+msgctxt "#30013"
+msgid "Pre-defined password to attempt decompression with"
+msgstr "Fördefinierade lösenord att använda vid uppackning"
+
+msgctxt "#30014"
+msgid "Stored password 1"
+msgstr "Sparat lösenord 1"
+
+msgctxt "#30015"
+msgid "Stored password 2"
+msgstr "Sparat lösenord 2"
+
+msgctxt "#30016"
+msgid "Stored password 3"
+msgstr "Sparat lösenord 3"
+
+msgctxt "#30017"
+msgid "Stored password 4"
+msgstr "Sparat lösenord 4"
+
+msgctxt "#30018"
+msgid "Stored password 5"
+msgstr "Sparat lösenord 5"
+
+msgctxt "#30019"
+msgid "Confirm copy"
+msgstr "Bekräfta kopieringen"
+
+msgctxt "#30020"
+msgid "Need to unpack a big file. Continue?"
+msgstr "En stor fil behöver packas upp. Fortsätta?"
+
+msgctxt "#30021"
+msgid "Not enough memory available to decompress file"
+msgstr "Det finns inte tillräckligt med minne för att packa upp filen"
+
+msgctxt "#30022"
+msgid "Passwords"
+msgstr "Lösenord"
+
+msgctxt "#30023"
+msgid "Asks to unpack"
+msgstr "Frågar dig om du vill packa upp filen"
+
+msgctxt "#30024"
+msgid "Asks you with a dialog to confirm the unpacking of a larger file."
+msgstr "Visar en dialogruta där du måste bekräfta uppackningen av stora filer."
