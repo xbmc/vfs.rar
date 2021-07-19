@@ -17,6 +17,14 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 4.6\n"
 
+msgctxt "Addon Summary"
+msgid "Unarchiver for .rar files"
+msgstr "Uppackare för .rar-filer"
+
+msgctxt "Addon Description"
+msgid "This addon is an extraction utility for RAR archives.[CR][CR]It allows direct reading of uncompressed RAR files, so prior unpacking is not necessary. For all other types, it is temporarily unpacked and passed to Kodi.[CR][CR]Attention: A \"Solid RAR\" archive type requires complete unpacking to use files within it. Hence access times may be long for larger packages."
+msgstr "Detta tillägg är ett uppackningsverktyg för RAR-arkiv.[CR][CR]Detta gör det möjligt att spela upp okomprimerade RAR-filer utan att de först packas upp. För alla andra typer, packas den upp tillfälligt och skickas sedan till Kodi.[CR][CR]Observera: Ett \"Fast\" arkiv kräver en komplett uppackning av arkivet. Därför kan uppstartstiden ta lång tid om det är ett stort arkiv."
+
 #[Consistency] Make terms, settings names, brands and other minutiae, consistent throughout file.
 #[Capitalization] Avoid capitalizing every second word. See http://grammarist.com/capitalization/
 #For example, prefer wording as "This new string" instead of "This New String".
