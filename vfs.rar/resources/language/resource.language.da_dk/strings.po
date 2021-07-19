@@ -5,9 +5,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: KODI Main\n"
-"Report-Msgid-Bugs-To: https://github.com/xbmc/vfs.rar/issues/\n"
+"Report-Msgid-Bugs-To: translations@kodi.tv\n"
 "POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"PO-Revision-Date: 2021-06-05 10:29+0000\n"
+"PO-Revision-Date: 2021-07-19 13:13+0000\n"
 "Last-Translator: Christian Gade <gade@kodi.tv>\n"
 "Language-Team: Danish <https://kodi.weblate.cloud/projects/kodi-add-ons-virtual-filesystems/vfs-rar/da_dk/>\n"
 "Language: da_dk\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.6.2\n"
+"X-Generator: Weblate 4.7.1\n"
 
 #[Consistency] Make terms, settings names, brands and other minutiae, consistent throughout file.
 #[Capitalization] Avoid capitalizing every second word. See http://grammarist.com/capitalization/
@@ -91,7 +91,7 @@ msgstr "Kræver udpakning af stor fil. Fortsæt?"
 
 msgctxt "#30021"
 msgid "Not enough memory available to decompress file"
-msgstr ""
+msgstr "Ikke nok tilgængelig hukommelse til at dekomprimere filen"
 
 msgctxt "#30022"
 msgid "Passwords"
@@ -99,7 +99,7 @@ msgstr "Kodeord"
 
 msgctxt "#30023"
 msgid "Asks to unpack"
-msgstr ""
+msgstr "Spørg om at pakke ud"
 
 msgctxt "#30024"
 msgid "Asks you with a dialog to confirm the unpacking of a larger file."
