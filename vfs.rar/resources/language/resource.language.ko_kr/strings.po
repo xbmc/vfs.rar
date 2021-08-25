@@ -5,24 +5,25 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: KODI Main\n"
-"Report-Msgid-Bugs-To: https://github.com/xbmc/vfs.rar/issues/\n"
+"Report-Msgid-Bugs-To: translations@kodi.tv\n"
 "POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
+"PO-Revision-Date: 2021-08-25 08:29+0000\n"
+"Last-Translator: Minho Park <parkmino@gmail.com>\n"
+"Language-Team: Korean <https://kodi.weblate.cloud/projects/kodi-add-ons-virtual-filesystems/vfs-rar/ko_kr/>\n"
 "Language: ko_kr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Weblate 4.8\n"
 
 msgctxt "Addon Summary"
 msgid "Unarchiver for .rar files"
-msgstr ""
+msgstr ".rar 파일용 아카이브 추출"
 
 msgctxt "Addon Description"
 msgid "This addon is an extraction utility for RAR archives.[CR][CR]It allows direct reading of uncompressed RAR files, so prior unpacking is not necessary. For all other types, it is temporarily unpacked and passed to Kodi.[CR][CR]Attention: A \"Solid RAR\" archive type requires complete unpacking to use files within it. Hence access times may be long for larger packages."
-msgstr ""
+msgstr "이 애드온은 RAR 아카이브용 추출 유틸리티입니다.[CR][CR]압축되지 않은 RAR 파일을 직접 읽을 수 있으므로 사전 압축 풀기가 필요하지 않습니다. 다른 모든 유형의 경우 일시적으로 압축을 풀고 Kodi로 전달됩니다.[CR][CR]주의: \"Solid RAR\" 아카이브 유형은 그 안에 있는 파일을 사용하기 위해 완전히 압축을 풀어야 합니다. 따라서 더 큰 패키지의 경우 액세스 시간이 길어질 수 있습니다."
 
 # [Consistency] Make terms, settings names, brands and other minutiae, consistent throughout file.
 # [Capitalization] Avoid capitalizing every second word. See http://grammarist.com/capitalization/
@@ -33,83 +34,85 @@ msgstr ""
 # For example, "Press \"OK\" for \"All seasons\"" instead of "Press OK for All seasons" after first word.
 msgctxt "#30000"
 msgid "RAR file extract"
-msgstr ""
+msgstr "RAR 파일 추출"
 
 msgctxt "#30001"
 msgid "RAR file scan"
-msgstr ""
+msgstr "RAR 파일 스캔"
 
 msgctxt "#30002"
 msgid "RAR solid file scan"
-msgstr ""
+msgstr "RAR 솔리드 파일 스캔"
 
 msgctxt "#30003"
 msgid ""
 "Enter RAR package password for:\n"
 "%s"
 msgstr ""
+"RAR 패키지 비밀번호 입력:\n"
+"%s"
 
 msgctxt "#30004"
 msgid "Not enough disk space available"
-msgstr ""
+msgstr "사용 가능한 디스크 공간이 충분하지 않음"
 
 # Following strings used for addon settings dialog
 msgctxt "#30010"
 msgid "General"
-msgstr ""
+msgstr "일반"
 
 msgctxt "#30011"
 msgid "Ask for password"
-msgstr ""
+msgstr "비밀번호 확인"
 
 msgctxt "#30012"
 msgid "If archives are password protected, prompt for the password to be entered"
-msgstr ""
+msgstr "아카이브가 암호로 보호되어 있는 경우, 암호를 입력하라는 메시지가 표시됨"
 
 msgctxt "#30013"
 msgid "Pre-defined password to attempt decompression with"
-msgstr ""
+msgstr "압축 해제를 시도할 사전 정의된 암호"
 
 msgctxt "#30014"
 msgid "Stored password 1"
-msgstr ""
+msgstr "저장된 비밀번호 1"
 
 msgctxt "#30015"
 msgid "Stored password 2"
-msgstr ""
+msgstr "저장된 비밀번호 2"
 
 msgctxt "#30016"
 msgid "Stored password 3"
-msgstr ""
+msgstr "저장된 비밀번호 3"
 
 msgctxt "#30017"
 msgid "Stored password 4"
-msgstr ""
+msgstr "저장된 비밀번호 4"
 
 msgctxt "#30018"
 msgid "Stored password 5"
-msgstr ""
+msgstr "저장된 비밀번호 5"
 
 msgctxt "#30019"
 msgid "Confirm copy"
-msgstr ""
+msgstr "복사 확인"
 
 msgctxt "#30020"
 msgid "Need to unpack a big file. Continue?"
-msgstr ""
+msgstr "큰 압축 파일을 풀어야 합니다. 계속할까요?"
 
 msgctxt "#30021"
 msgid "Not enough memory available to decompress file"
-msgstr ""
+msgstr "파일 압축을 푸는 데 사용할 메모리가 부족함"
 
 msgctxt "#30022"
 msgid "Passwords"
-msgstr ""
+msgstr "비밀번호"
 
 msgctxt "#30023"
 msgid "Asks to unpack"
-msgstr ""
+msgstr "압축 풀기 요청"
 
 msgctxt "#30024"
 msgid "Asks you with a dialog to confirm the unpacking of a larger file."
-msgstr ""
+msgstr "더 큰 파일의 압축 풀기를 확인하는 대화 상자가 표시됩니다."

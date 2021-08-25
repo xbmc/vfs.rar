@@ -5,24 +5,25 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: KODI Main\n"
-"Report-Msgid-Bugs-To: https://github.com/xbmc/vfs.rar/issues/\n"
+"Report-Msgid-Bugs-To: translations@kodi.tv\n"
 "POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
+"PO-Revision-Date: 2021-08-25 08:29+0000\n"
+"Last-Translator: Xean <xeanhort007@gmail.com>\n"
+"Language-Team: Catalan (Spain) <https://kodi.weblate.cloud/projects/kodi-add-ons-virtual-filesystems/vfs-rar/ca_es/>\n"
 "Language: ca_es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.8\n"
 
 msgctxt "Addon Summary"
 msgid "Unarchiver for .rar files"
-msgstr ""
+msgstr "Desarxivador per fitxers .rar"
 
 msgctxt "Addon Description"
 msgid "This addon is an extraction utility for RAR archives.[CR][CR]It allows direct reading of uncompressed RAR files, so prior unpacking is not necessary. For all other types, it is temporarily unpacked and passed to Kodi.[CR][CR]Attention: A \"Solid RAR\" archive type requires complete unpacking to use files within it. Hence access times may be long for larger packages."
-msgstr ""
+msgstr "Aquest complement és una utilitat d'extracció per a arxius RAR.[CR][CR]Permet la lectura directa de fitxers RAR sense comprimir, de manera que no és necessari desempaquetar prèviament. Per a la resta de tipus, es desempaqueta temporalment i es passa a Kodi.[CR][CR]Atenció: el tipus d'arxiu \"RAR sòlid\" requereix descomprimir completament per utilitzar els fitxers. Per tant, els temps d'accés poden ser llargs pels paquets més grans."
 
 # [Consistency] Make terms, settings names, brands and other minutiae, consistent throughout file.
 # [Capitalization] Avoid capitalizing every second word. See http://grammarist.com/capitalization/
@@ -33,83 +34,85 @@ msgstr ""
 # For example, "Press \"OK\" for \"All seasons\"" instead of "Press OK for All seasons" after first word.
 msgctxt "#30000"
 msgid "RAR file extract"
-msgstr ""
+msgstr "Extreure fitxer RAR"
 
 msgctxt "#30001"
 msgid "RAR file scan"
-msgstr ""
+msgstr "Explorar fitxer RAR"
 
 msgctxt "#30002"
 msgid "RAR solid file scan"
-msgstr ""
+msgstr "Explorar fitxer RAR sòlid"
 
 msgctxt "#30003"
 msgid ""
 "Enter RAR package password for:\n"
 "%s"
 msgstr ""
+"Introduïu la contrasenya del paquet RAR per:\n"
+"%s"
 
 msgctxt "#30004"
 msgid "Not enough disk space available"
-msgstr ""
+msgstr "No hi ha prou espai disponible al disc"
 
 # Following strings used for addon settings dialog
 msgctxt "#30010"
 msgid "General"
-msgstr ""
+msgstr "General"
 
 msgctxt "#30011"
 msgid "Ask for password"
-msgstr ""
+msgstr "Demanar contrasenya"
 
 msgctxt "#30012"
 msgid "If archives are password protected, prompt for the password to be entered"
-msgstr ""
+msgstr "Si els arxius estan protegits amb contrasenya, demaneu que s'introdueixi la contrasenya"
 
 msgctxt "#30013"
 msgid "Pre-defined password to attempt decompression with"
-msgstr ""
+msgstr "Contrasenya predefinida per intentar descomprimir amb"
 
 msgctxt "#30014"
 msgid "Stored password 1"
-msgstr ""
+msgstr "Contrasenya emmagatzemada 1"
 
 msgctxt "#30015"
 msgid "Stored password 2"
-msgstr ""
+msgstr "Contrasenya emmagatzemada 2"
 
 msgctxt "#30016"
 msgid "Stored password 3"
-msgstr ""
+msgstr "Contrasenya emmagatzemada 3"
 
 msgctxt "#30017"
 msgid "Stored password 4"
-msgstr ""
+msgstr "Contrasenya emmagatzemada 4"
 
 msgctxt "#30018"
 msgid "Stored password 5"
-msgstr ""
+msgstr "Contrasenya emmagatzemada 5"
 
 msgctxt "#30019"
 msgid "Confirm copy"
-msgstr ""
+msgstr "Confirmeu la còpia"
 
 msgctxt "#30020"
 msgid "Need to unpack a big file. Continue?"
-msgstr ""
+msgstr "Cal descomprimir un fitxer gran. Continuar?"
 
 msgctxt "#30021"
 msgid "Not enough memory available to decompress file"
-msgstr ""
+msgstr "No hi ha prou memòria disponible per descomprimir el fitxer"
 
 msgctxt "#30022"
 msgid "Passwords"
-msgstr ""
+msgstr "Contrasenyes"
 
 msgctxt "#30023"
 msgid "Asks to unpack"
-msgstr ""
+msgstr "Demana descomprimir"
 
 msgctxt "#30024"
 msgid "Asks you with a dialog to confirm the unpacking of a larger file."
-msgstr ""
+msgstr "Us demana amb quadre de diàleg per confirmar la descompressió d’un fitxer més gran."
