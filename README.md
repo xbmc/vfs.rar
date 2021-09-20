@@ -3,6 +3,7 @@
 This is a [Kodi](https://kodi.tv) VFS addon to extract RAR archives or direct playback stored files in RAR archives.
 
 [![License: GPL-2.0-or-later](https://img.shields.io/badge/License-GPL%20v2+-blue.svg)](LICENSE.md)
+[![Build and run tests](https://github.com/xbmc/vfs.rar/actions/workflows/build.yml/badge.svg?branch=Matrix)](https://github.com/xbmc/vfs.rar/actions/workflows/build.yml)
 [![Build Status](https://travis-ci.org/xbmc/vfs.rar.svg?branch=Matrix)](https://travis-ci.org/xbmc/vfs.rar/branches)
 [![Build Status](https://dev.azure.com/teamkodi/binary-addons/_apis/build/status/xbmc.vfs.rar?branchName=Matrix)](https://dev.azure.com/teamkodi/binary-addons/_build/latest?definitionId=52&branchName=Matrix)
 [![Build Status](https://jenkins.kodi.tv/view/Addons/job/xbmc/job/vfs.rar/job/Matrix/badge/icon)](https://jenkins.kodi.tv/blue/organizations/jenkins/xbmc%2Fvfs.rar/branches/)
