@@ -5,24 +5,25 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: KODI Main\n"
-"Report-Msgid-Bugs-To: https://github.com/xbmc/vfs.rar/issues/\n"
+"Report-Msgid-Bugs-To: translations@kodi.tv\n"
 "POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
+"PO-Revision-Date: 2021-12-07 00:13+0000\n"
+"Last-Translator: Fabio <fabioihle+kodi@alunos.utfpr.edu.br>\n"
+"Language-Team: Portuguese (Brazil) <https://kodi.weblate.cloud/projects/kodi-add-ons-virtual-filesystems/vfs-rar/pt_br/>\n"
 "Language: pt_br\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
+"X-Generator: Weblate 4.9.1\n"
 
 msgctxt "Addon Summary"
 msgid "Unarchiver for .rar files"
-msgstr ""
+msgstr "Descompactador para arquivos .rar"
 
 msgctxt "Addon Description"
 msgid "This addon is an extraction utility for RAR archives.[CR][CR]It allows direct reading of uncompressed RAR files, so prior unpacking is not necessary. For all other types, it is temporarily unpacked and passed to Kodi.[CR][CR]Attention: A \"Solid RAR\" archive type requires complete unpacking to use files within it. Hence access times may be long for larger packages."
-msgstr ""
+msgstr "Este add-on é um utilitário de extração para arquivos RAR.[CR][CR]Ele permite a leitura direta de arquivos RAR sem compressão, nos quais a descompactação prévia não é necessária. Para todos os outros tipos, os arquivos são descompactados temporariamente e repassados para o Kodi.[CR][CR]Atenção: Um arquivo do tipo \"RAR Sólido\" requer uma descompactação completa para acesso aos arquivos contidos. Consequentemente, os tempos de acesso podem ser mais longos em pacotes maiores."
 
 # [Consistency] Make terms, settings names, brands and other minutiae, consistent throughout file.
 # [Capitalization] Avoid capitalizing every second word. See http://grammarist.com/capitalization/
@@ -33,83 +34,85 @@ msgstr ""
 # For example, "Press \"OK\" for \"All seasons\"" instead of "Press OK for All seasons" after first word.
 msgctxt "#30000"
 msgid "RAR file extract"
-msgstr ""
+msgstr "Extração de arquivo RAR"
 
 msgctxt "#30001"
 msgid "RAR file scan"
-msgstr ""
+msgstr "Verificação de arquivo RAR"
 
 msgctxt "#30002"
 msgid "RAR solid file scan"
-msgstr ""
+msgstr "Verificação de arquivo RAR sólido"
 
 msgctxt "#30003"
 msgid ""
 "Enter RAR package password for:\n"
 "%s"
 msgstr ""
+"Insira a senha do pacote RAR para:\n"
+"%s"
 
 msgctxt "#30004"
 msgid "Not enough disk space available"
-msgstr ""
+msgstr "Espaço disponível em disco insuficiente"
 
 # Following strings used for addon settings dialog
 msgctxt "#30010"
 msgid "General"
-msgstr ""
+msgstr "Geral"
 
 msgctxt "#30011"
 msgid "Ask for password"
-msgstr ""
+msgstr "Solicitar senha"
 
 msgctxt "#30012"
 msgid "If archives are password protected, prompt for the password to be entered"
-msgstr ""
+msgstr "Se os arquivos forem protegidos por senha, solicite que a senha seja inserida"
 
 msgctxt "#30013"
 msgid "Pre-defined password to attempt decompression with"
-msgstr ""
+msgstr "Senha pré-definida para tentar a descompressão com"
 
 msgctxt "#30014"
 msgid "Stored password 1"
-msgstr ""
+msgstr "Senha memorizada 1"
 
 msgctxt "#30015"
 msgid "Stored password 2"
-msgstr ""
+msgstr "Senha memorizada 2"
 
 msgctxt "#30016"
 msgid "Stored password 3"
-msgstr ""
+msgstr "Senha memorizada 3"
 
 msgctxt "#30017"
 msgid "Stored password 4"
-msgstr ""
+msgstr "Senha memorizada 4"
 
 msgctxt "#30018"
 msgid "Stored password 5"
-msgstr ""
+msgstr "Senha memorizada 5"
 
 msgctxt "#30019"
 msgid "Confirm copy"
-msgstr ""
+msgstr "Confirmar cópia"
 
 msgctxt "#30020"
 msgid "Need to unpack a big file. Continue?"
-msgstr ""
+msgstr "Necessário descompactar um arquivo grande. Prosseguir?"
 
 msgctxt "#30021"
 msgid "Not enough memory available to decompress file"
-msgstr ""
+msgstr "Memória disponível insuficiente para descompactar o arquivo"
 
 msgctxt "#30022"
 msgid "Passwords"
-msgstr ""
+msgstr "Senhas"
 
 msgctxt "#30023"
 msgid "Asks to unpack"
-msgstr ""
+msgstr "Perguntar para descompactar"
 
 msgctxt "#30024"
 msgid "Asks you with a dialog to confirm the unpacking of a larger file."
-msgstr ""
+msgstr "Solicita através de uma caixa de diálogo a confirmação para iniciar a descompactação de um arquivo grande."
