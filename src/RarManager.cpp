@@ -89,6 +89,7 @@ bool CRarManager::CacheRarredFile(std::string& strPathInCache, const std::string
                                   const std::string& strPathInRar, uint8_t bOptions,
                                   const std::string& strDir, const int64_t iSize)
 {
+fprintf(stderr, "---------------------------------------------------------------------------- '%s' '%s'\n", strRarPath.c_str(), strPathInRar.c_str());
   bool bShowProgress=false;
   if ((iSize > 1024*1024 || iSize == -2) && !(bOptions & EXFILE_NOCACHE)) // 1MB
     bShowProgress=true;
@@ -145,7 +146,7 @@ bool CRarManager::CacheRarredFile(std::string& strPathInCache, const std::string
       return false;
   }
 
-  if (CheckFreeSpace(strDir) < iSize)
+/*  if (CheckFreeSpace(strDir) < iSize)
   {
     ClearCache();
     if (CheckFreeSpace(strDir) < iSize)
@@ -170,7 +171,7 @@ bool CRarManager::CacheRarredFile(std::string& strPathInCache, const std::string
         return false;
       }
     }
-  }
+  }*/
 
   std::string cf = strDir+"rarfolderXXXXXX";
 #ifdef _WIN32
