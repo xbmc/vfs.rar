@@ -54,10 +54,10 @@ CRarManager& CRarManager::Get()
 CRarManager::CRarManager()
 {
   // Load the current settings and store to reduce call amount of them
-  m_asksToUnpack = kodi::GetSettingBoolean("asks_to_unpack");
-  m_passwordAskAllowed = kodi::GetSettingBoolean("usercheck_for_password");
+  m_asksToUnpack = kodi::addon::GetSettingBoolean("asks_to_unpack");
+  m_passwordAskAllowed = kodi::addon::GetSettingBoolean("usercheck_for_password");
   for (unsigned int i = 0; i < MAX_STANDARD_PASSWORDS; ++i)
-    m_standardPasswords[i] = kodi::GetSettingString("standard_password_" + std::to_string(i+1));
+    m_standardPasswords[i] = kodi::addon::GetSettingString("standard_password_" + std::to_string(i+1));
 }
 
 CRarManager::~CRarManager()
@@ -65,7 +65,7 @@ CRarManager::~CRarManager()
   ClearCache(true);
 }
 
-void CRarManager::SettingsUpdate(const std::string& settingName, const kodi::CSettingValue& settingValue)
+void CRarManager::SettingsUpdate(const std::string& settingName, const kodi::addon::CSettingValue& settingValue)
 {
   // Update the by CMyAddon called settings values, done after change inside
   // addon settings by e.g. user.
@@ -139,8 +139,8 @@ fprintf(stderr, "---------------------------------------------------------------
 
   if (m_asksToUnpack && iSize > EXTRACTION_WARN_SIZE)
   {
-    if (!kodi::gui::dialogs::YesNo::ShowAndGetInput(kodi::GetLocalizedString(30019),
-                                                    kodi::GetLocalizedString(30020),
+    if (!kodi::gui::dialogs::YesNo::ShowAndGetInput(kodi::addon::GetLocalizedString(30019),
+                                                    kodi::addon::GetLocalizedString(30020),
                                                     kodi::vfs::GetFileName(strRarPath),
                                                     ""))
       return false;
@@ -152,7 +152,7 @@ fprintf(stderr, "---------------------------------------------------------------
     if (CheckFreeSpace(strDir) < iSize)
     {
       std::vector<kodi::vfs::CDirEntry> items;
-      kodi::vfs::GetDirectory(kodi::GetTempAddonPath("/"), "", items);
+      kodi::vfs::GetDirectory(kodi::addon::GetTempPath("/"), "", items);
       while (!items.empty() && CheckFreeSpace(strDir) < iSize)
       {
         std::string path = items.back().Path();
@@ -167,7 +167,7 @@ fprintf(stderr, "---------------------------------------------------------------
 
       if (items.empty())
       {
-        kodi::QueueNotification(QUEUE_ERROR, "", kodi::GetLocalizedString(30021));
+        kodi::QueueNotification(QUEUE_ERROR, "", kodi::addon::GetLocalizedString(30021));
         return false;
       }
     }

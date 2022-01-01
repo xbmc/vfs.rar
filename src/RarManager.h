@@ -59,7 +59,7 @@ public:
   void ClearCachedFile(const std::string& strRarPath, const std::string& strPathInRar);
   void ExtractArchive(const std::string& strArchive, const std::string& strPath);
 
-  void SettingsUpdate(const std::string& settingName, const kodi::CSettingValue& settingValue);
+  void SettingsUpdate(const std::string& settingName, const kodi::addon::CSettingValue& settingValue);
   bool PasswordAskAllowed() const { return m_passwordAskAllowed; }
   const std::string& StandardPassword(int no) { return m_standardPasswords[no]; }
 

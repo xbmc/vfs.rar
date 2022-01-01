@@ -16,7 +16,7 @@
 void CRARPasswordControl::CleanupPasswordList()
 {
   TiXmlDocument xmlDoc;
-  std::string strSettingsFile = kodi::GetBaseUserPath("rar-control.xml");
+  std::string strSettingsFile = kodi::addon::GetUserPath("rar-control.xml");
 
   // Check file present and available, if not do nothing
   if (!kodi::vfs::FileExists(strSettingsFile))
@@ -65,7 +65,7 @@ void CRARPasswordControl::CleanupPasswordList()
 bool CRARPasswordControl::GetPassword(const std::string& path, std::string& password, bool& passwordSeemsBad)
 {
   TiXmlDocument xmlDoc;
-  std::string strSettingsFile = kodi::GetBaseUserPath("rar-control.xml");
+  std::string strSettingsFile = kodi::addon::GetUserPath("rar-control.xml");
 
   if (!kodi::vfs::FileExists(strSettingsFile))
     return false;
@@ -113,7 +113,7 @@ bool CRARPasswordControl::GetPassword(const std::string& path, std::string& pass
 bool CRARPasswordControl::SavePassword(const std::string& path, const std::string& password, const bool& passwordSeemsBad)
 {
   TiXmlDocument xmlDoc;
-  std::string strSettingsFile = kodi::GetBaseUserPath("rar-control.xml");
+  std::string strSettingsFile = kodi::addon::GetUserPath("rar-control.xml");
 
   if (kodi::vfs::FileExists(strSettingsFile))
   {
@@ -124,7 +124,7 @@ bool CRARPasswordControl::SavePassword(const std::string& path, const std::strin
     }
   }
   else
-    kodi::vfs::CreateDirectory(kodi::GetBaseUserPath());
+    kodi::vfs::CreateDirectory(kodi::addon::GetUserPath());
 
   bool isUpdated = false;
   TiXmlElement* pElement = xmlDoc.FirstChildElement("data");

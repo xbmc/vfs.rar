@@ -18,7 +18,7 @@
 namespace
 {
 
-inline const char* kodiTranslateLogLevel(const AddonLog logLevel)
+inline const char* kodiTranslateLogLevel(const ADDON_LOG logLevel)
 {
   switch (logLevel)
   {
@@ -38,7 +38,7 @@ inline const char* kodiTranslateLogLevel(const AddonLog logLevel)
   return "LOG_UNKNOWN: ";
 }
 
-inline void kodiLog(const AddonLog logLevel, const char* format, ...)
+inline void kodiLog(const ADDON_LOG logLevel, const char* format, ...)
 {
   char buffer[16384];
   va_list args;

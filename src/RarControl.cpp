@@ -22,6 +22,11 @@
 #define CONTINUE_PROCESSING 1
 #define SUCCESS 0
 
+// Prevent conflicts with Windows macros where have this names.
+#ifdef GetTempPath
+#undef GetTempPath
+#endif // GetTempPath
+
 CRARControl::CRARControl(const std::string& rarPath)
   : m_path(rarPath)
 {
@@ -177,7 +182,7 @@ int CRARControl::ArchiveExtract(const std::string& targetPath, const std::string
     // is to see that something works
     m_progress = std::make_shared<kodi::gui::dialogs::CExtendedProgress>();
     m_progress->SetPercentage(0.0f);
-    m_progress->SetTitle(kodi::GetLocalizedString(solid ? 30002 : 30001));
+    m_progress->SetTitle(kodi::addon::GetLocalizedString(solid ? 30002 : 30001));
     m_progress->SetText(m_path);
   }
 
@@ -247,14 +252,14 @@ int CRARControl::ArchiveExtract(const std::string& targetPath, const std::string
         {
           kodiLog(ADDON_LOG_ERROR, "CRARControl::%s: Not enough diskSpace with %li MB for file %s with size %li MB",
                       __func__, diskSpace / 1024 / 1024, m_path.c_str(), m_extractFileSize / 1024 / 1024);
-          kodi::QueueNotification(QUEUE_ERROR, kodi::GetLocalizedString(30000), kodi::GetLocalizedString(30004));
+          kodi::QueueNotification(QUEUE_ERROR, kodi::addon::GetLocalizedString(30000), kodi::addon::GetLocalizedString(30004));
           return 0;
         }*/
 
         if (m_progress)
         {
           // After wanted file is found to progress with his real extract
-          m_progress->SetTitle(kodi::GetLocalizedString(30000));
+          m_progress->SetTitle(kodi::addon::GetLocalizedString(30000));
           m_progress->SetText(filename);
           m_progress->SetProgress(int(float(m_extractedFileSize) / float(m_extractFileSize) * 100), 100);
         }
@@ -426,7 +431,7 @@ int CRARControl::NeedPassword(char* password, size_t size)
   if (!passwordAskAllowed && pw.empty())
     return STOP_PROCESSING;
 
-  std::string header = StringFormat(kodi::GetLocalizedString(30003).c_str(), m_path.length() > 45 ? kodi::vfs::GetFileName(m_path).c_str() : m_path.c_str());
+  std::string header = StringFormat(kodi::addon::GetLocalizedString(30003).c_str(), m_path.length() > 45 ? kodi::vfs::GetFileName(m_path).c_str() : m_path.c_str());
   if (!pw.empty() || kodi::gui::dialogs::Keyboard::ShowAndGetInput(pw, header, false, true))
   {
     strncpy(password, pw.c_str(), size);
@@ -485,7 +490,7 @@ RARContext::RARContext(const kodi::addon::VFSUrl& url)
   , m_arc(&m_cmd)
   , m_extract(&m_cmd)
 {
-  m_cachedir = kodi::GetTempAddonPath("/");
+  m_cachedir = kodi::addon::GetTempPath("/");
   m_password = url.GetPassword();
   m_pathinrar = url.GetFilename();
   std::replace(m_pathinrar.begin(), m_pathinrar.end(), '\\', '/');

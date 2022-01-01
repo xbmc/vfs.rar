@@ -12,7 +12,7 @@
 class CRARFile : public kodi::addon::CInstanceVFS
 {
 public:
-  CRARFile(KODI_HANDLE instance, const std::string& version) : CInstanceVFS(instance, version) { }
+  CRARFile(const kodi::addon::IInstanceInfo& instance) : CInstanceVFS(instance) { }
 
   kodi::addon::VFSFileHandle Open(const kodi::addon::VFSUrl& url) override;
   bool Close(kodi::addon::VFSFileHandle context) override;
