@@ -5,24 +5,25 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: KODI Main\n"
-"Report-Msgid-Bugs-To: https://github.com/xbmc/vfs.rar/issues/\n"
+"Report-Msgid-Bugs-To: translations@kodi.tv\n"
 "POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
+"PO-Revision-Date: 2022-10-01 18:15+0000\n"
+"Last-Translator: Coool (github.com/Coool) <coool@mail.lv>\n"
+"Language-Team: Latvian <https://kodi.weblate.cloud/projects/kodi-add-ons-virtual-filesystems/vfs-rar/lv_lv/>\n"
 "Language: lv_lv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= 19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
+"X-Generator: Weblate 4.14.1\n"
 
 msgctxt "Addon Summary"
 msgid "Unarchiver for .rar files"
-msgstr ""
+msgstr ".rar arhīvu atpakotājs"
 
 msgctxt "Addon Description"
 msgid "This addon is an extraction utility for RAR archives.[CR][CR]It allows direct reading of uncompressed RAR files, so prior unpacking is not necessary. For all other types, it is temporarily unpacked and passed to Kodi.[CR][CR]Attention: A \"Solid RAR\" archive type requires complete unpacking to use files within it. Hence access times may be long for larger packages."
-msgstr ""
+msgstr "Šis papildinājums ir RAR arhīvu atpakotājs.[CR][CR]Tas ļauj tieši lasīt nesaspiestus RAR failus, tāpēc nav nepieciešama izsaiņošana. Visiem pārējiem arhīva veidiem arhīvs tiek īslaicīgi izsaiņots un dati tiek pārsūtīti uz Kodi.[CR][CR]Uzmanību: Arhīva formātam \"Nepārtraukts RAR\" ir nepieciešama pilnīga izpakošana, lai varētu izmantot tajā esošos failus. Tāpēc piekļuves laiks failiem, kas atrodas apjomīgos arhīvos, var pieaugt."
 
 # [Consistency] Make terms, settings names, brands and other minutiae, consistent throughout file.
 # [Capitalization] Avoid capitalizing every second word. See http://grammarist.com/capitalization/
@@ -33,83 +34,85 @@ msgstr ""
 # For example, "Press \"OK\" for \"All seasons\"" instead of "Press OK for All seasons" after first word.
 msgctxt "#30000"
 msgid "RAR file extract"
-msgstr ""
+msgstr "RAR faila atpakošana"
 
 msgctxt "#30001"
 msgid "RAR file scan"
-msgstr ""
+msgstr "RAR failu skenēšana"
 
 msgctxt "#30002"
 msgid "RAR solid file scan"
-msgstr ""
+msgstr "Nepārtraukto RAR faila skenēšana"
 
 msgctxt "#30003"
 msgid ""
 "Enter RAR package password for:\n"
 "%s"
 msgstr ""
+"Ievadiet RAR arhīva paroli:\n"
+"%s"
 
 msgctxt "#30004"
 msgid "Not enough disk space available"
-msgstr ""
+msgstr "Nav pietiekami daudz brīvas vietas diskā"
 
 # Following strings used for addon settings dialog
 msgctxt "#30010"
 msgid "General"
-msgstr ""
+msgstr "Vispārīgie"
 
 msgctxt "#30011"
 msgid "Ask for password"
-msgstr ""
+msgstr "Pieprasīt paroli"
 
 msgctxt "#30012"
 msgid "If archives are password protected, prompt for the password to be entered"
-msgstr ""
+msgstr "Ja arhīvi ir aizsargāti ar paroli, pieprasīt ievadīt paroli"
 
 msgctxt "#30013"
 msgid "Pre-defined password to attempt decompression with"
-msgstr ""
+msgstr "Iepriekš iestatīta parole, ar kuru mēģināt veikt atpakošanu"
 
 msgctxt "#30014"
 msgid "Stored password 1"
-msgstr ""
+msgstr "Saglabātā parole 1"
 
 msgctxt "#30015"
 msgid "Stored password 2"
-msgstr ""
+msgstr "Saglabātā parole 2"
 
 msgctxt "#30016"
 msgid "Stored password 3"
-msgstr ""
+msgstr "Saglabātā parole 3"
 
 msgctxt "#30017"
 msgid "Stored password 4"
-msgstr ""
+msgstr "Saglabātā parole 4"
 
 msgctxt "#30018"
 msgid "Stored password 5"
-msgstr ""
+msgstr "Saglabātā parole 5"
 
 msgctxt "#30019"
 msgid "Confirm copy"
-msgstr ""
+msgstr "Apstiprināt kopēšanu"
 
 msgctxt "#30020"
 msgid "Need to unpack a big file. Continue?"
-msgstr ""
+msgstr "Nepieciešams atpakot apjomīgu failu. Vai turpināt?"
 
 msgctxt "#30021"
 msgid "Not enough memory available to decompress file"
-msgstr ""
+msgstr "Nepietiek atmiņas, lai atpakotu failu"
 
 msgctxt "#30022"
 msgid "Passwords"
-msgstr ""
+msgstr "Paroles"
 
 msgctxt "#30023"
 msgid "Asks to unpack"
-msgstr ""
+msgstr "Jautā atpakot"
 
 msgctxt "#30024"
 msgid "Asks you with a dialog to confirm the unpacking of a larger file."
-msgstr ""
+msgstr "Prasa dialoglogu, lai apstiprinātu apjomīga faila atpakošanu."
