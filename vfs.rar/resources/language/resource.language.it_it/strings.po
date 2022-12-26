@@ -7,7 +7,7 @@ msgstr ""
 "Project-Id-Version: KODI Main\n"
 "Report-Msgid-Bugs-To: translations@kodi.tv\n"
 "POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"PO-Revision-Date: 2022-08-18 22:14+0000\n"
+"PO-Revision-Date: 2022-12-24 13:15+0000\n"
 "Last-Translator: Massimo Pissarello <mapi68@gmail.com>\n"
 "Language-Team: Italian <https://kodi.weblate.cloud/projects/kodi-add-ons-virtual-filesystems/vfs-rar/it_it/>\n"
 "Language: it_it\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.13\n"
+"X-Generator: Weblate 4.15\n"
 
 msgctxt "Addon Summary"
 msgid "Unarchiver for .rar files"
@@ -23,7 +23,7 @@ msgstr "Estrattore per file .rar"
 
 msgctxt "Addon Description"
 msgid "This addon is an extraction utility for RAR archives.[CR][CR]It allows direct reading of uncompressed RAR files, so prior unpacking is not necessary. For all other types, it is temporarily unpacked and passed to Kodi.[CR][CR]Attention: A \"Solid RAR\" archive type requires complete unpacking to use files within it. Hence access times may be long for larger packages."
-msgstr "Questo componente aggiuntivo è un'utilità di estrazione per archivi RAR.[CR][CR]Consente la lettura diretta di file RAR non compressi, quindi non è necessario decomprimere prima. Per tutti gli altri tipi, viene temporaneamente decompresso e passato a Kodi.[CR][CR]Attenzione: un tipo di archivio \"Solid RAR\" richiede la decompressione completa per utilizzare i file al suo interno. Quindi i tempi di accesso potrebbero essere lunghi per i pacchetti più grandi."
+msgstr "Questo Add-on è un'utilità di estrazione per archivi RAR.[CR][CR]Consente la lettura diretta di file RAR non compressi, quindi non è necessario decomprimere prima. Per tutti gli altri tipi, viene temporaneamente decompresso e passato a Kodi.[CR][CR]Attenzione: un tipo di archivio \"Solid RAR\" richiede la decompressione completa per utilizzare i file al suo interno. Quindi i tempi di accesso potrebbero essere lunghi per i pacchetti più grandi."
 
 # [Consistency] Make terms, settings names, brands and other minutiae, consistent throughout file.
 # [Capitalization] Avoid capitalizing every second word. See http://grammarist.com/capitalization/
@@ -54,7 +54,7 @@ msgstr ""
 
 msgctxt "#30004"
 msgid "Not enough disk space available"
-msgstr "Spazio su disco insufficiente"
+msgstr "Spazio disponibile su disco insufficiente"
 
 # Following strings used for addon settings dialog
 msgctxt "#30010"
@@ -67,7 +67,7 @@ msgstr "Richiedi la password"
 
 msgctxt "#30012"
 msgid "If archives are password protected, prompt for the password to be entered"
-msgstr "Se gli archivi sono protetti da password, richiede l'inserimento della password"
+msgstr "Se gli archivi sono protetti da password, richiedi l'inserimento della password"
 
 msgctxt "#30013"
 msgid "Pre-defined password to attempt decompression with"
@@ -99,11 +99,11 @@ msgstr "Conferma copia"
 
 msgctxt "#30020"
 msgid "Need to unpack a big file. Continue?"
-msgstr "È necessario decomprimere un file di grandi dimensioni. Continuo?"
+msgstr "È necessario decomprimere un file di grandi dimensioni. Continuare?"
 
 msgctxt "#30021"
 msgid "Not enough memory available to decompress file"
-msgstr "Memoria insufficiente per decomprimere il file"
+msgstr "Memoria disponibile insufficiente per decomprimere il file"
 
 msgctxt "#30022"
 msgid "Passwords"
