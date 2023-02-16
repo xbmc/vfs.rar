@@ -5,24 +5,25 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: KODI Main\n"
-"Report-Msgid-Bugs-To: https://github.com/xbmc/vfs.rar/issues/\n"
+"Report-Msgid-Bugs-To: translations@kodi.tv\n"
 "POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
+"PO-Revision-Date: 2022-07-21 11:14+0000\n"
+"Last-Translator: Oskari Lavinto <olavinto@protonmail.com>\n"
+"Language-Team: Finnish <https://kodi.weblate.cloud/projects/kodi-add-ons-virtual-filesystems/vfs-rar/fi_fi/>\n"
 "Language: fi_fi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.13\n"
 
 msgctxt "Addon Summary"
 msgid "Unarchiver for .rar files"
-msgstr ""
+msgstr "Purkulisäosa -rar-tiedostoille"
 
 msgctxt "Addon Description"
 msgid "This addon is an extraction utility for RAR archives.[CR][CR]It allows direct reading of uncompressed RAR files, so prior unpacking is not necessary. For all other types, it is temporarily unpacked and passed to Kodi.[CR][CR]Attention: A \"Solid RAR\" archive type requires complete unpacking to use files within it. Hence access times may be long for larger packages."
-msgstr ""
+msgstr "Tämä lisäosa on RAR-tiedostojen työkalu.[CR][CR]Se mahdollistaa pakkaamattomien RAR-tiedostojen suoran lukemisen, jolloin pakkaamattomia RAR-tiedostoja ei tarvitse purkaa etukäteen. Kaikki muut tyypit puretaan väliaikaisesti ja välitetään Kodille.[CR][CR]Huomioi: \"Solid RAR\" -tyyppi vaatii täydellisen purun sen sisältämien tiedostojen käyttämiseksi. Tämän vuoksi suurien tiedostojen käyttöviiveet voivat olla pitkiä."
 
 # [Consistency] Make terms, settings names, brands and other minutiae, consistent throughout file.
 # [Capitalization] Avoid capitalizing every second word. See http://grammarist.com/capitalization/
@@ -33,83 +34,85 @@ msgstr ""
 # For example, "Press \"OK\" for \"All seasons\"" instead of "Press OK for All seasons" after first word.
 msgctxt "#30000"
 msgid "RAR file extract"
-msgstr ""
+msgstr "RAR-tiedostojen purku"
 
 msgctxt "#30001"
 msgid "RAR file scan"
-msgstr ""
+msgstr "RAR-tiedoston tarkistus"
 
 msgctxt "#30002"
 msgid "RAR solid file scan"
-msgstr ""
+msgstr "Solid RAR -tiedostojen tarkistus"
 
 msgctxt "#30003"
 msgid ""
 "Enter RAR package password for:\n"
 "%s"
 msgstr ""
+"Syötä RAR-tiedoston salasana:\n"
+"%s"
 
 msgctxt "#30004"
 msgid "Not enough disk space available"
-msgstr ""
+msgstr "Tallennusmedialla ei ole riittävästi vapaata tilaa."
 
 # Following strings used for addon settings dialog
 msgctxt "#30010"
 msgid "General"
-msgstr ""
+msgstr "Yleiset"
 
 msgctxt "#30011"
 msgid "Ask for password"
-msgstr ""
+msgstr "Kysy salasanaa"
 
 msgctxt "#30012"
 msgid "If archives are password protected, prompt for the password to be entered"
-msgstr ""
+msgstr "Jos tiedosto on suojattu salasanalla, pyydä salasanaa."
 
 msgctxt "#30013"
 msgid "Pre-defined password to attempt decompression with"
-msgstr ""
+msgstr "Ennalta määritetty salasana, jolla purkua yritetään."
 
 msgctxt "#30014"
 msgid "Stored password 1"
-msgstr ""
+msgstr "Tallennettu salasana 1"
 
 msgctxt "#30015"
 msgid "Stored password 2"
-msgstr ""
+msgstr "Tallennettu salasana 2"
 
 msgctxt "#30016"
 msgid "Stored password 3"
-msgstr ""
+msgstr "Tallennettu salasana 3"
 
 msgctxt "#30017"
 msgid "Stored password 4"
-msgstr ""
+msgstr "Tallennettu salasana 4"
 
 msgctxt "#30018"
 msgid "Stored password 5"
-msgstr ""
+msgstr "Tallennettu salasana 5"
 
 msgctxt "#30019"
 msgid "Confirm copy"
-msgstr ""
+msgstr "Vahvista kopiointi"
 
 msgctxt "#30020"
 msgid "Need to unpack a big file. Continue?"
-msgstr ""
+msgstr "On purettava suuri tiedosto. Jatketaanko?"
 
 msgctxt "#30021"
 msgid "Not enough memory available to decompress file"
-msgstr ""
+msgstr "Tiedoston purkuun ei ole riittävästi muistia."
 
 msgctxt "#30022"
 msgid "Passwords"
-msgstr ""
+msgstr "Salasanat"
 
 msgctxt "#30023"
 msgid "Asks to unpack"
-msgstr ""
+msgstr "Vahvista purku"
 
 msgctxt "#30024"
 msgid "Asks you with a dialog to confirm the unpacking of a larger file."
-msgstr ""
+msgstr "Kysyy vahvistuksen ennen suurten tiedostojen purkua."

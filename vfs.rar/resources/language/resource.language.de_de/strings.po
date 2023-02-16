@@ -7,7 +7,7 @@ msgstr ""
 "Project-Id-Version: KODI Main\n"
 "Report-Msgid-Bugs-To: translations@kodi.tv\n"
 "POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"PO-Revision-Date: 2021-08-25 08:29+0000\n"
+"PO-Revision-Date: 2023-02-05 23:15+0000\n"
 "Last-Translator: Kai Sommerfeld <kai.sommerfeld@gmx.com>\n"
 "Language-Team: German <https://kodi.weblate.cloud/projects/kodi-add-ons-virtual-filesystems/vfs-rar/de_de/>\n"
 "Language: de_de\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.8\n"
+"X-Generator: Weblate 4.15.2\n"
 
 msgctxt "Addon Summary"
 msgid "Unarchiver for .rar files"
@@ -23,7 +23,7 @@ msgstr "Entpacker für Rar-Dateien"
 
 msgctxt "Addon Description"
 msgid "This addon is an extraction utility for RAR archives.[CR][CR]It allows direct reading of uncompressed RAR files, so prior unpacking is not necessary. For all other types, it is temporarily unpacked and passed to Kodi.[CR][CR]Attention: A \"Solid RAR\" archive type requires complete unpacking to use files within it. Hence access times may be long for larger packages."
-msgstr "Dieses Addon dient zum Entpacken von RAR-Archiven.[CR][CR]Es ermöglicht das direkte Lesen nicht komprimierter RAR-Dateien, sodass ein vorheriges Entpacken nicht erforderlich ist. Bei allen anderen Typen wird der Inhalt temporär entpackt und an Kodi übertragen.[CR][CR]Achtung: Der Archivtyp \"Solid RAR\" erfordert ein vollständiges Entpacken, um die darin enthaltenen Dateien zu verwenden. Daher können die Zugriffszeiten für größere Pakete länger sein."
+msgstr "Dieses Addon dient zum Entpacken von RAR-Archiven.[CR][CR]Es ermöglicht das direkte Lesen nicht komprimierter RAR-Dateien, sodass ein vorheriges Entpacken nicht erforderlich ist. Bei allen anderen Typen wird der Inhalt temporär entpackt und an Kodi übertragen.[CR][CR]Achtung: Der Archivtyp „Solid RAR“ erfordert ein vollständiges Entpacken, um die darin enthaltenen Dateien zu verwenden. Daher können die Zugriffszeiten für größere Pakete länger sein."
 
 # [Consistency] Make terms, settings names, brands and other minutiae, consistent throughout file.
 # [Capitalization] Avoid capitalizing every second word. See http://grammarist.com/capitalization/
