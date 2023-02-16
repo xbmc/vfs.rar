@@ -5,24 +5,25 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: KODI Main\n"
-"Report-Msgid-Bugs-To: https://github.com/xbmc/vfs.rar/issues/\n"
+"Report-Msgid-Bugs-To: translations@kodi.tv\n"
 "POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
+"PO-Revision-Date: 2023-01-15 18:15+0000\n"
+"Last-Translator: gogogogi <trebelnik2@gmail.com>\n"
+"Language-Team: Croatian <https://kodi.weblate.cloud/projects/kodi-add-ons-virtual-filesystems/vfs-rar/hr_hr/>\n"
 "Language: hr_hr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+"X-Generator: Weblate 4.15\n"
 
 msgctxt "Addon Summary"
 msgid "Unarchiver for .rar files"
-msgstr ""
+msgstr "Raspakiratelj za .rar datoteke"
 
 msgctxt "Addon Description"
 msgid "This addon is an extraction utility for RAR archives.[CR][CR]It allows direct reading of uncompressed RAR files, so prior unpacking is not necessary. For all other types, it is temporarily unpacked and passed to Kodi.[CR][CR]Attention: A \"Solid RAR\" archive type requires complete unpacking to use files within it. Hence access times may be long for larger packages."
-msgstr ""
+msgstr "Ovaj dodatak je pomagalo raspakiravanja za RAR arhive.[CR][CR]Dopušta izravno čitanje nesažetih RAR datoteka, tako da raspakiravanje nije potrebno. Za sve ostale vrste, privremeno su otpakirane i proslijeđene u Kodi.[CR][CR]Upozorenje: \"Čvrsta RAR\" arhiva zahtjeva potpuno raspakiravanje kako bi koristila sadržane datoteke. Stoga vrijeme pristupa može biti dugo za veće pakete."
 
 # [Consistency] Make terms, settings names, brands and other minutiae, consistent throughout file.
 # [Capitalization] Avoid capitalizing every second word. See http://grammarist.com/capitalization/
@@ -33,83 +34,85 @@ msgstr ""
 # For example, "Press \"OK\" for \"All seasons\"" instead of "Press OK for All seasons" after first word.
 msgctxt "#30000"
 msgid "RAR file extract"
-msgstr ""
+msgstr "RAR datoteka za raspakiravanje"
 
 msgctxt "#30001"
 msgid "RAR file scan"
-msgstr ""
+msgstr "RAR datoteka za pretragu"
 
 msgctxt "#30002"
 msgid "RAR solid file scan"
-msgstr ""
+msgstr "RAR čvrsta datoteka za pretragu"
 
 msgctxt "#30003"
 msgid ""
 "Enter RAR package password for:\n"
 "%s"
 msgstr ""
+"Upiši lozinku RAR paketa za:\n"
+"%s"
 
 msgctxt "#30004"
 msgid "Not enough disk space available"
-msgstr ""
+msgstr "Nedovoljno dostupnog diskovnog prostora"
 
 # Following strings used for addon settings dialog
 msgctxt "#30010"
 msgid "General"
-msgstr ""
+msgstr "Općenito"
 
 msgctxt "#30011"
 msgid "Ask for password"
-msgstr ""
+msgstr "Upitaj za lozinku"
 
 msgctxt "#30012"
 msgid "If archives are password protected, prompt for the password to be entered"
-msgstr ""
+msgstr "Aku su arhive zaštićene lozinkom, upitaj za upis lozinke"
 
 msgctxt "#30013"
 msgid "Pre-defined password to attempt decompression with"
-msgstr ""
+msgstr "Preddefinirana lozinka za pokušaj raspakirivanja"
 
 msgctxt "#30014"
 msgid "Stored password 1"
-msgstr ""
+msgstr "Spremljena lozinka 1"
 
 msgctxt "#30015"
 msgid "Stored password 2"
-msgstr ""
+msgstr "Spremljena lozinka 2"
 
 msgctxt "#30016"
 msgid "Stored password 3"
-msgstr ""
+msgstr "Spremljena lozinka 3"
 
 msgctxt "#30017"
 msgid "Stored password 4"
-msgstr ""
+msgstr "Spremljena lozinka 4"
 
 msgctxt "#30018"
 msgid "Stored password 5"
-msgstr ""
+msgstr "Spremljena lozinka 5"
 
 msgctxt "#30019"
 msgid "Confirm copy"
-msgstr ""
+msgstr "Potvrdi kopiranje"
 
 msgctxt "#30020"
 msgid "Need to unpack a big file. Continue?"
-msgstr ""
+msgstr "Potrebno je raspakiravanje velike datoteke. NastavI?"
 
 msgctxt "#30021"
 msgid "Not enough memory available to decompress file"
-msgstr ""
+msgstr "Nedovoljno dostupne memorije za raspakiravanje datoteke"
 
 msgctxt "#30022"
 msgid "Passwords"
-msgstr ""
+msgstr "Lozinke"
 
 msgctxt "#30023"
 msgid "Asks to unpack"
-msgstr ""
+msgstr "Upitaj za raspakiravanje"
 
 msgctxt "#30024"
 msgid "Asks you with a dialog to confirm the unpacking of a larger file."
-msgstr ""
+msgstr "Upit s dijalogom za potvrdu raspakiravanje veće datoteke."
