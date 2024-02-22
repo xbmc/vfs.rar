@@ -1,0 +1,149 @@
+name: Changelog and Release
+# Update the changelog and news(optionally), bump the version, and create a release
+#
+# The release is created on the given branch, release and tag name format will be <version>-<branch> and
+# the body of the release will be created from the changelog.txt or news element in the addon.xml.in
+#
+# options:
+# - version_type: 'minor' / 'micro' # whether to do a minor or micro version bump
+# - changelog_text: string to add to the changelog and news
+# - update_news: 'true' / 'false' # whether to update the news in the addon.xml.in
+# - add_date: 'true' / 'false' # Add date to version number in changelog and news. ie. v1.0.1 (2021-7-17)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Create a ''minor'' or ''micro'' release?'
+        required: true
+        default: 'minor'
+      changelog_text:
+        description: 'Input the changes you''d like to add to the changelogs. Your text should be encapsulated in "''s with line feeds represented by literal \n''s. ie. "This is the first change\nThis is the second change"'
+        required: true
+        default: ''
+      update_news:
+        description: 'Update news in addon.xml.in? [true|false]'
+        required: true
+        default: 'true'
+      add_date:
+        description: 'Add date to version number in changelog and news. ie. "v1.0.1 (2021-7-17)" [true|false]'
+        required: true
+        default: 'false'
+
+jobs:
+  default:
+    runs-on: ubuntu-latest
+    name: Changelog and Release
+
+    steps:
+
+      # Checkout the current repository into a directory (repositories name)
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          path: ${{ github.event.repository.name }}
+
+      # Checkout the required scripts from xbmc/binary-addon-scripts into the 'scripts' directory
+      - name: Checkout Scripts
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          repository: xbmc/binary-addon-scripts
+          path: scripts
+
+      # Install all dependencies required by the following steps
+      # - libxml2-utils, xmlstarlet: reading news and version from addon.xml.in
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install libxml2-utils xmlstarlet
+
+      # Setup python version 3.9
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      # Run the python script to increment the version, changelog and news
+      - name: Increment version and update changelogs
+        run: |
+          arguments=
+          if [[ ${{ github.event.inputs.update_news }} == true ]] ;
+          then
+            arguments=$(echo $arguments && echo --update-news)
+          fi
+          if [[ ${{ github.event.inputs.add_date }} == true ]] ;
+          then
+            arguments=$(echo $arguments && echo --add-date)
+          fi
+          python3 ../scripts/changelog_and_release.py ${{ github.event.inputs.version_type }} ${{ github.event.inputs.changelog_text }} $arguments
+        working-directory: ${{ github.event.repository.name }}
+
+      # Create the variables required by the following steps
+      # - steps.required-variables.outputs.changes: latest entry in the changelog.txt (if exists), or addon.xml.in news element
+      # - steps.required-variables.outputs.version: version element from addon.xml.in
+      # - steps.required-variables.outputs.branch: branch of the triggering ref
+      # - steps.required-variables.outputs.today: today's date in format '%Y-%m-%d'
+      # Note: we use a random EOF for 'changes' as is best practice for for multiline variables
+      - name: Get required variables
+        id: required-variables
+        run: |
+          changes=$(cat "$(find . -name changelog.txt)" | awk -v RS= 'NR==1')
+          if [ -z "$changes" ] ;
+          then
+            changes=$(xmlstarlet fo -R "$(find . -name addon.xml.in)" | xmlstarlet sel -t -v 'string(/addon/extension/news)' | awk -v RS= 'NR==1')
+          fi
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "changes<<$EOF" >> $GITHUB_OUTPUT
+          echo "$changes" >> $GITHUB_OUTPUT
+          echo "$EOF" >> $GITHUB_OUTPUT
+          version=$(xmlstarlet fo -R "$(find . -name addon.xml.in)" | xmlstarlet sel -t -v 'string(/addon/@version)')
+          echo "version=$version" >> $GITHUB_OUTPUT
+          branch=$(echo ${GITHUB_REF#refs/heads/})
+          echo "branch=$branch" >> $GITHUB_OUTPUT
+          echo "today=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+        working-directory: ${{ github.event.repository.name }}
+
+      # Create a commit of the incremented version and changelog, news changes
+      # Commit message (add_date=false): changelog and version v{steps.required-variables.outputs.version}
+      # Commit message (add_date=true): changelog and version v{steps.required-variables.outputs.version} ({steps.required-variables.outputs.today})
+      - name: Commit changes
+        run: |
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          commit_message="changelog and version v${{ steps.required-variables.outputs.version }}"
+          if [[ ${{ github.event.inputs.add_date }} == true ]] ;
+          then
+            commit_message="$commit_message (${{ steps.required-variables.outputs.today }})"
+          fi
+          git commit -m "$commit_message" -a
+        working-directory: ${{ github.event.repository.name }}
+
+      # Push the commit(s) created above to the triggering branch
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          branch: ${{ github.ref }}
+          directory: ${{ github.event.repository.name }}
+
+      # Sleep for 60 seconds to allow for any delays in the push
+      - name: Sleep for 60 seconds
+        run: sleep 60s
+        shell: bash
+
+      # Create a release at {steps.required-variables.outputs.branch}
+      # - tag and release name format: {steps.required-variables.outputs.version}-{steps.required-variables.outputs.branch} ie. 21.0.0-Omega
+      # - release body: {steps.required-variables.outputs.changes}
+      - name: Create Release
+        id: create-release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.required-variables.outputs.version }}-${{ steps.required-variables.outputs.branch }}
+          release_name: ${{ steps.required-variables.outputs.version }}-${{ steps.required-variables.outputs.branch }}
+          body: ${{ steps.required-variables.outputs.changes }}
+          draft: false
+          prerelease: false
+          commitish: ${{ steps.required-variables.outputs.branch }}
