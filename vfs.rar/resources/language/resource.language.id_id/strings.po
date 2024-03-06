@@ -5,24 +5,25 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: KODI Main\n"
-"Report-Msgid-Bugs-To: https://github.com/xbmc/vfs.rar/issues/\n"
+"Report-Msgid-Bugs-To: translations@kodi.tv\n"
 "POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
+"PO-Revision-Date: 2024-03-06 21:51+0000\n"
+"Last-Translator: Linerly <linerly@proton.me>\n"
+"Language-Team: Indonesian <https://kodi.weblate.cloud/projects/kodi-add-ons-virtual-filesystems/vfs-rar/id_id/>\n"
 "Language: id_id\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Weblate 5.4\n"
 
 msgctxt "Addon Summary"
 msgid "Unarchiver for .rar files"
-msgstr ""
+msgstr "Pembuka berkas .rar"
 
 msgctxt "Addon Description"
 msgid "This addon is an extraction utility for RAR archives.[CR][CR]It allows direct reading of uncompressed RAR files, so prior unpacking is not necessary. For all other types, it is temporarily unpacked and passed to Kodi.[CR][CR]Attention: A \"Solid RAR\" archive type requires complete unpacking to use files within it. Hence access times may be long for larger packages."
-msgstr ""
+msgstr "Pengaya ini adalah alat ekstrasi untuk arsip RAR.[CR][CR]Ini memungkinkan pembacaan langsung dari berkas RAR yang tidak terkompresi, jadi tidak memerlukan pembukaan. Untuk semua jenis lain, berkasnya dibuka secara sementara dan disediakan ke Kodi.[CR][CR]Perignatan: Sebuah jenis arsip \"Solid RAR\" memerlukan pembukaan lengkap untuk menggunakan berkas-berkas di dalamnya. Waktu pengaksesan dapat memakan waktu panjang untuk paket yang lebih besar."
 
 # [Consistency] Make terms, settings names, brands and other minutiae, consistent throughout file.
 # [Capitalization] Avoid capitalizing every second word. See http://grammarist.com/capitalization/
@@ -33,83 +34,85 @@ msgstr ""
 # For example, "Press \"OK\" for \"All seasons\"" instead of "Press OK for All seasons" after first word.
 msgctxt "#30000"
 msgid "RAR file extract"
-msgstr ""
+msgstr "Ekstrak berkas RAR"
 
 msgctxt "#30001"
 msgid "RAR file scan"
-msgstr ""
+msgstr "Pemindaian berkas RAR"
 
 msgctxt "#30002"
 msgid "RAR solid file scan"
-msgstr ""
+msgstr "Pemindaian berkas solid RAR"
 
 msgctxt "#30003"
 msgid ""
 "Enter RAR package password for:\n"
 "%s"
 msgstr ""
+"Masukkan kata sandi paket RAR untuk:\n"
+"%s"
 
 msgctxt "#30004"
 msgid "Not enough disk space available"
-msgstr ""
+msgstr "Ruang diska tidak cukup"
 
 # Following strings used for addon settings dialog
 msgctxt "#30010"
 msgid "General"
-msgstr ""
+msgstr "Umum"
 
 msgctxt "#30011"
 msgid "Ask for password"
-msgstr ""
+msgstr "Tanyakan kata sandi"
 
 msgctxt "#30012"
 msgid "If archives are password protected, prompt for the password to be entered"
-msgstr ""
+msgstr "Jika arsip dilindungi oleh kata sandi, minta kata sandi untuk dimasukkan"
 
 msgctxt "#30013"
 msgid "Pre-defined password to attempt decompression with"
-msgstr ""
+msgstr "Kata sandi yang dipradefinisikan untuk mencoba dekompresi"
 
 msgctxt "#30014"
 msgid "Stored password 1"
-msgstr ""
+msgstr "Kata sandi yang tersimpan 1"
 
 msgctxt "#30015"
 msgid "Stored password 2"
-msgstr ""
+msgstr "Kata sandi yang tersimpan 2"
 
 msgctxt "#30016"
 msgid "Stored password 3"
-msgstr ""
+msgstr "Kata sandi yang tersimpan 3"
 
 msgctxt "#30017"
 msgid "Stored password 4"
-msgstr ""
+msgstr "Kata sandi yang tersimpan 4"
 
 msgctxt "#30018"
 msgid "Stored password 5"
-msgstr ""
+msgstr "Kata sandi yang tersimpan 5"
 
 msgctxt "#30019"
 msgid "Confirm copy"
-msgstr ""
+msgstr "Konfirmasi penyalinan"
 
 msgctxt "#30020"
 msgid "Need to unpack a big file. Continue?"
-msgstr ""
+msgstr "Perlu membuka berkas besar. Lanjut?"
 
 msgctxt "#30021"
 msgid "Not enough memory available to decompress file"
-msgstr ""
+msgstr "Memori tidak cukup untuk mendekrompresi berkas"
 
 msgctxt "#30022"
 msgid "Passwords"
-msgstr ""
+msgstr "Kata sandi"
 
 msgctxt "#30023"
 msgid "Asks to unpack"
-msgstr ""
+msgstr "Meminta untuk membuka"
 
 msgctxt "#30024"
 msgid "Asks you with a dialog to confirm the unpacking of a larger file."
-msgstr ""
+msgstr "Meminta Anda dengan dialog untuk mengonfirmasi pembukaan berkas yang lebih besar."
